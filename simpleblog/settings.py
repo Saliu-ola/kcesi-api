@@ -15,6 +15,7 @@ from pathlib import Path
 import dj_database_url
 from decouple import config
 import os
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -50,6 +51,9 @@ INSTALLED_APPS = [
 ]
 
 AUTH_USER_MODEL = "accounts.User"
+
+
+CLIENT_URL = os.environ.get('CLIENT_URL')
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -179,10 +183,20 @@ if not DEBUG:
     # in your application directory on Render.
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # Turn on WhiteNoise storage backend that takes care of compressing static files
-    # and creating unique names for each version so they can safely be cached forever.
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'    
+# and creating unique names for each version so they can safely be cached forever.
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# for Emails
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = config("EMAIL_HOST")
+EMAIL_PORT = config("EMAIL_PORT")
+EMAIL_HOST_USER = config("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+EMAIL_USE_TLS = "EMAIL_USE_TLS"

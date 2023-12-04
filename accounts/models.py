@@ -1,9 +1,13 @@
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+import uuid
+from django.utils.crypto import get_random_string
 
-# Create your models here.
-
+TOKEN_TYPE = (
+    ('ACCOUNT_VERIFICATION', 'ACCOUNT_VERIFICATION'),
+    ('PASSWORD_RESET', 'PASSWORD_RESET'),
+)
 
 # Create a new user
 class CustomUserManager(BaseUserManager):
@@ -47,6 +51,8 @@ class User(AbstractUser):
     date_of_birth = models.DateField(null=True)
     role_id = models.IntegerField()
     group_id = models.IntegerField()
+    organization_id =  models.CharField(max_length=20,null=True)
+    is_verified = models.BooleanField(default=False,null=True)
 
     objects = CustomUserManager()
     USERNAME_FIELD = "email"
@@ -54,3 +60,27 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+
+class Token(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User,
+                             on_delete=models.CASCADE)
+    token = models.CharField(max_length=255, null=True)
+    token_type = models.CharField(
+        max_length=100, choices=TOKEN_TYPE, default='ACCOUNT_VERIFICATION')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{str(self.user)} {self.token}"
+
+
+    def generate_random_token(self):
+        if not self.token:
+            self.token = get_random_string(30)
+            self.save()
+
+    def reset_user_password(self, password):
+        self.user.set_password(password)
+        self.user.save()
+
