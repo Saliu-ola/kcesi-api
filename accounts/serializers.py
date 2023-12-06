@@ -6,15 +6,7 @@ from .models import User
 
 
 class SignUpSerializer(serializers.ModelSerializer):
-    email = serializers.CharField(max_length=80)
-    username = serializers.CharField(max_length=45)
     password = serializers.CharField(min_length=8, write_only=True)
-    first_name = serializers.CharField(max_length=45)
-    last_name = serializers.CharField(max_length=45)
-    role_id = serializers.IntegerField()
-    group_id = serializers.IntegerField()
-    is_superuser = serializers.BooleanField()
-    is_staff = serializers.BooleanField()
 
     class Meta:
         model = User
@@ -22,12 +14,15 @@ class SignUpSerializer(serializers.ModelSerializer):
             "email",
             "username",
             "password",
+            "phone",
             "first_name",
             "last_name",
             "group_id",
             "role_id",
             "is_superuser",
             "is_staff",
+            "organization_id",
+            "organization_name",
         ]
 
     def validate(self, attrs):

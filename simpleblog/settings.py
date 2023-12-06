@@ -53,7 +53,7 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = "accounts.User"
 
 
-CLIENT_URL = os.environ.get('CLIENT_URL')
+CLIENT_URL = config('CLIENT_URL')
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

@@ -14,6 +14,7 @@ from .models import Post
 from .serializers import PostSerializer
 from .permissions import ReadOnly, AuthorOrReadOnly
 from rest_framework.pagination import PageNumberPagination
+from drf_spectacular.utils import extend_schema
 
 
 class CustomPaginator(PageNumberPagination):
@@ -23,9 +24,8 @@ class CustomPaginator(PageNumberPagination):
 
 
 @api_view(http_method_names=["GET", "POST"])
-@permission_classes([AllowAny]) #IsAuthenticated
+@permission_classes([AllowAny])  # IsAuthenticated
 def homepage(request: Request):
-
     if request.method == "POST":
         data = request.data
 
@@ -37,16 +37,16 @@ def homepage(request: Request):
     return Response(data=response, status=status.HTTP_200_OK)
 
 
-class PostListCreateView(
-    generics.GenericAPIView, mixins.ListModelMixin, mixins.CreateModelMixin
-):
+class PostListCreateView(generics.GenericAPIView, mixins.ListModelMixin, mixins.CreateModelMixin):
 
     """
     a view for creating and listing posts
     """
 
     serializer_class = PostSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly] # The custom permission: ReadOnly (allows only GET)
+    permission_classes = [
+        IsAuthenticatedOrReadOnly
+    ]  # The custom permission: ReadOnly (allows only GET)
     pagination_class = CustomPaginator
     queryset = Post.objects.all()
 
@@ -84,6 +84,9 @@ class PostRetrieveUpdateDeleteView(
 
 @api_view(http_method_names=["GET"])
 @permission_classes([IsAuthenticated])
+@extend_schema(
+    responses={200: CurrentUserPostsSerializer(many=True)},
+)
 def get_posts_for_current_user(request: Request):
     user = request.user
 
@@ -101,7 +104,6 @@ class ListPostsForAuthor(generics.GenericAPIView, mixins.ListModelMixin):
         username = self.kwargs.get("username")
 
         return Post.objects.filter(author__username=username)
-
 
         # username = self.request.query_params.get("username") or None
 
