@@ -9,10 +9,10 @@ TOKEN_TYPE = (
     ('PASSWORD_RESET', 'PASSWORD_RESET'),
 )
 
+
 # Create a new user
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password, **extra_fields):
-        
         # if extra_fields.get("role_id") == 1:
         #     newValue = True
         #     extra_fields.setdefault("is_superuser", True)
@@ -28,8 +28,7 @@ class CustomUserManager(BaseUserManager):
 
         return user
 
-
-# Use this to create a super user
+    # Use this to create a super user
     def create_superuser(self, email, password, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
@@ -43,7 +42,6 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(email=email, password=password, **extra_fields)
 
 
-
 # Define the columns here and set their properties
 class User(AbstractUser):
     email = models.CharField(max_length=80, unique=True)
@@ -51,8 +49,10 @@ class User(AbstractUser):
     date_of_birth = models.DateField(null=True)
     role_id = models.IntegerField()
     group_id = models.IntegerField()
-    organization_id =  models.CharField(max_length=20,null=True)
-    is_verified = models.BooleanField(default=False,null=True)
+    organization_id = models.CharField(max_length=15, null=True)
+    organization_name = models.CharField(max_length=50, null=True)
+    phone = models.CharField(max_length=25, null=True, unique=True)
+    is_verified = models.BooleanField(default=False, null=True)
 
     objects = CustomUserManager()
     USERNAME_FIELD = "email"
@@ -64,16 +64,15 @@ class User(AbstractUser):
 
 class Token(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User,
-                             on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     token = models.CharField(max_length=255, null=True)
     token_type = models.CharField(
-        max_length=100, choices=TOKEN_TYPE, default='ACCOUNT_VERIFICATION')
+        max_length=100, choices=TOKEN_TYPE, default='ACCOUNT_VERIFICATION'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{str(self.user)} {self.token}"
-
 
     def generate_random_token(self):
         if not self.token:
@@ -83,4 +82,3 @@ class Token(models.Model):
     def reset_user_password(self, password):
         self.user.set_password(password)
         self.user.save()
-
