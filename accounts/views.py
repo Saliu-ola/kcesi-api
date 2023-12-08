@@ -42,7 +42,7 @@ class SignUpView(generics.GenericAPIView):
             )
             token.generate_random_token()
 
-            verification_url = f"{settings.CLIENT_URL}/verify_account/?token={token.token}"
+            verification_url = f"{settings.CLIENT_URL}/auth/verify_account/?token={token.token}"
 
             # user_data = {'id': user.id, 'email': user.email, 'username': f"{user.username}",
             #          'url': verification_url} will be done with celery and proper email content
@@ -149,7 +149,7 @@ class PasswordResetRequestView(APIView):
             )
 
             token.generate_random_token()
-            reset_url = f"{settings.CLIENT_URL}/password-reset/?token={token.token}"
+            reset_url = f"{settings.CLIENT_URL}/auth/password-reset/?token={token.token}"
 
             # Send email with password reset link
             send_mail(
