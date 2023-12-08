@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 import uuid
 from django.utils.crypto import get_random_string
+from django.utils.translation import gettext_lazy as _
 
 TOKEN_TYPE = (
     ('ACCOUNT_VERIFICATION', 'ACCOUNT_VERIFICATION'),
@@ -44,14 +45,14 @@ class CustomUserManager(BaseUserManager):
 
 # Define the columns here and set their properties
 class User(AbstractUser):
-    email = models.CharField(max_length=80, unique=True)
+    email = models.EmailField(_('email address'), null=True, blank=True, unique=True)
     username = models.CharField(max_length=45)
     date_of_birth = models.DateField(null=True)
     role_id = models.IntegerField()
     group_id = models.IntegerField()
     organization_id = models.CharField(max_length=15, null=True)
     organization_name = models.CharField(max_length=50, null=True)
-    phone = models.CharField(max_length=25, null=True, unique=True)
+    phone = models.CharField(max_length=17, blank=True, null=True)
     is_verified = models.BooleanField(default=False, null=True)
 
     objects = CustomUserManager()
