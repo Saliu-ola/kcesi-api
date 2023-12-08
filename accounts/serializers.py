@@ -5,8 +5,17 @@ from rest_framework.validators import ValidationError
 from .models import User
 
 
+class ListUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = "__all__"
+
+
 class SignUpSerializer(serializers.ModelSerializer):
     password = serializers.CharField(min_length=8, write_only=True)
+    email = serializers.EmailField()
+    group_id = serializers.IntegerField(default=0)
+    role_id = serializers.IntegerField(default=0)
 
     class Meta:
         model = User
