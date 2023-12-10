@@ -1,15 +1,21 @@
 from django.contrib.auth import authenticate
 from django.shortcuts import render
-from rest_framework import generics, status
+from rest_framework import generics, status, viewsets, filters
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import User, Token
+from django_filters.rest_framework import DjangoFilterBackend
 from django.core.mail import send_mail
 from django.urls import reverse
 from django.conf import settings
 from django.shortcuts import get_object_or_404
-
+from rest_framework.permissions import (
+    AllowAny,
+    IsAdminUser,
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
 
 from .serializers import (
     SignUpSerializer,
@@ -17,6 +23,7 @@ from .serializers import (
     VerifyTokenSerializer,
     PasswordResetSerializer,
     PasswordResetConfirmSerializer,
+    ListUserSerializer,
 )
 from .tokens import create_jwt_pair_for_user
 
@@ -27,7 +34,7 @@ class SignUpView(generics.GenericAPIView):
     """Sign up endpoint"""
 
     serializer_class = SignUpSerializer
-    permission_classes = []
+    permission_classes = [AllowAny]
 
     def post(self, request: Request):
         data = request.data
@@ -65,7 +72,7 @@ class SignUpView(generics.GenericAPIView):
 class VerifyAccountView(generics.GenericAPIView):
     """Endpoint to verify the token and set user verified field to True"""
 
-    permission_classes = []
+    permission_classes = [AllowAny]
     serializer_class = VerifyTokenSerializer
 
     def post(self, request: Request):
@@ -98,7 +105,7 @@ class VerifyAccountView(generics.GenericAPIView):
 
 
 class LoginView(generics.GenericAPIView):
-    permission_classes = []
+    permission_classes = [AllowAny]
     serializer_class = LoginUserSerializer
 
     def post(self, request: Request):
@@ -134,7 +141,7 @@ class LoginView(generics.GenericAPIView):
 
 
 class PasswordResetRequestView(APIView):
-    permission_classes = []
+    permission_classes = [AllowAny]
     serializer_class = PasswordResetSerializer
 
     def post(self, request: Request):
@@ -167,7 +174,7 @@ class PasswordResetRequestView(APIView):
 
 
 class PasswordResetConfirmView(APIView):
-    permission_classes = []
+    permission_classes = [AllowAny]
     serializer_class = PasswordResetConfirmSerializer
 
     def post(self, request: Request):
@@ -184,3 +191,21 @@ class PasswordResetConfirmView(APIView):
             return Response({"message": "Password reset successfully"}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserViewSets(viewsets.ModelViewSet):
+    http_method_names = ["get", "post", "patch", "put", "delete"]
+    serializer_class = ListUserSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = User.objects.all()
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = [
+        'is_verified',
+        'email',
+        'organization_id',
+        'group_id',
+        'role_id',
+        'phone',
+    ]
+    search_fields = ['email', 'username', 'phone', 'organization_name']
+    ordering_fields = ['created_at', 'last_login', 'email', 'role_id', 'group_id']
