@@ -22,4 +22,4 @@ django-cors-headers
 drf-spectacular
 django-debug-toolbar
 whitenoise
-
+django-filter
