@@ -70,7 +70,7 @@ class PostRetrieveUpdateDeleteView(
 ):
     serializer_class = PostSerializer
     queryset = Post.objects.all()
-    permission_classes = [AuthorOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get(self, request: Request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
