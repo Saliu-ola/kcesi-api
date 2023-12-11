@@ -126,6 +126,7 @@ class LoginView(generics.GenericAPIView):
                         "tokens": tokens,
                         "email": email,
                         "role": user.role_id,
+                        "organization_id": user.organization_id,
                     }
                     return Response(data=response, status=status.HTTP_200_OK)
                 else:
