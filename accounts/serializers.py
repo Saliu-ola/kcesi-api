@@ -9,6 +9,9 @@ class ListUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = "__all__"
+        extra_kwargs = {
+            "password": {"write_only": True},
+        }
 
 
 class SignUpSerializer(serializers.ModelSerializer):
@@ -16,10 +19,12 @@ class SignUpSerializer(serializers.ModelSerializer):
     email = serializers.EmailField()
     group_id = serializers.IntegerField(default=0)
     role_id = serializers.IntegerField(default=0)
+    is_superuser = serializers.BooleanField(default=False)
 
     class Meta:
         model = User
         fields = [
+            "id",
             "email",
             "username",
             "password",
@@ -32,6 +37,9 @@ class SignUpSerializer(serializers.ModelSerializer):
             "is_staff",
             "organization_id",
             "organization_name",
+        ]
+        read_only_fields = [
+            "id",
         ]
 
     def validate(self, attrs):

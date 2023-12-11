@@ -194,9 +194,9 @@ class PasswordResetConfirmView(APIView):
 
 
 class UserViewSets(viewsets.ModelViewSet):
-    http_method_names = ["get", "post", "patch", "put", "delete"]
+    http_method_names = ["get", "patch", "put", "delete"]
     serializer_class = ListUserSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     queryset = User.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [
@@ -209,3 +209,11 @@ class UserViewSets(viewsets.ModelViewSet):
     ]
     search_fields = ['email', 'username', 'phone', 'organization_name']
     ordering_fields = ['created_at', 'last_login', 'email', 'role_id', 'group_id']
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', 'destroy']:
+            return [IsAdminUser()]
+        elif self.action in ['update', 'partial_update']:
+            return [IsAuthenticated()]
+        else:
+            return [AllowAny()]
