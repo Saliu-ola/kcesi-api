@@ -96,11 +96,11 @@ SPECTACULAR_SETTINGS = {
         "displayRequestDuration": True,
     },
     "UPLOADED_FILES_USE_URL": True,
-    "TITLE": "Blog",
-    "DESCRIPTION": "Blog",
+    "TITLE": "KCESI-API",
+    "DESCRIPTION": "KCESI-API",
     "VERSION": "1.0.0",
     "LICENCE": {"name": "BSD License"},
-    "CONTACT": {"name": "Your name ", "email": "yourmail@gmail.com"},
+    "CONTACT": {"name": "Oladitan Saliu ", "email": "saliuoladitan@gmail.com"},
 }
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=2),
