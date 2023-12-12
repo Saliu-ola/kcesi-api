@@ -4,8 +4,13 @@ from .models import Post
 
 
 class PostSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(max_length=50)
+    organization_id = serializers.StringRelatedField(source='author.organization_id')
 
     class Meta:
         model = Post
-        fields = ["id", "title", "content", "created"]
+        fields = "__all__"
+        read_only_fields = [
+            "id",
+            "organization_id",
+            "author",
+        ]
