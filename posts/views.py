@@ -12,107 +12,43 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from .models import Post
 from .serializers import PostSerializer
+from django_filters.rest_framework import DjangoFilterBackend
 from .permissions import ReadOnly, AuthorOrReadOnly
-from rest_framework.pagination import PageNumberPagination
 from drf_spectacular.utils import extend_schema
+from rest_framework import generics, status, viewsets, filters
+from rest_framework.decorators import action
 
 
-class CustomPaginator(PageNumberPagination):
-    page_size = 3
-    page_query_param = "page"
-    page_size_query_param = "page_size"
-
-
-@api_view(http_method_names=["GET", "POST"])
-@permission_classes([AllowAny])  # IsAuthenticated
-def homepage(request: Request):
-    if request.method == "POST":
-        data = request.data
-
-        response = {"message": "Hello  World", "data": data}
-
-        return Response(data=response, status=status.HTTP_201_CREATED)
-
-    response = {"message": "Hello World"}
-    return Response(data=response, status=status.HTTP_200_OK)
-
-
-class PostListCreateView(generics.GenericAPIView, mixins.ListModelMixin, mixins.CreateModelMixin):
-
-    """
-    a view for creating and listing posts
-    """
-
+class PostViewSets(viewsets.ModelViewSet):
+    http_method_names = ["get", "patch", "put", "post", "delete"]
     serializer_class = PostSerializer
-    permission_classes = [
-        IsAuthenticatedOrReadOnly
-    ]  # The custom permission: ReadOnly (allows only GET)
-    pagination_class = CustomPaginator
+    permission_classes = [IsAuthenticatedOrReadOnly]
     queryset = Post.objects.all()
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['title', 'author', 'author__organization_id', 'author__group_id']
+    search_fields = ['title', 'content']
+    ordering_fields = ['created_at']
 
     def perform_create(self, serializer):
         user = self.request.user
         serializer.save(author=user)
         return super().perform_create(serializer)
 
-    def get(self, request: Request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
+    def paginate_results(self, queryset):
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
-    def post(self, request: Request, *args, **kwargs):
-        return self.create(request, *args, **kwargs)
-
-
-class PostRetrieveUpdateDeleteView(
-    generics.GenericAPIView,
-    mixins.RetrieveModelMixin,
-    mixins.UpdateModelMixin,
-    mixins.DestroyModelMixin,
-):
-    serializer_class = PostSerializer
-    queryset = Post.objects.all()
-    permission_classes = [IsAuthenticatedOrReadOnly]
-
-    def get(self, request: Request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
-
-    def put(self, request: Request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
-
-    def delete(self, request: Request, *args, **kwargs):
-        return self.destroy(request, *args, **kwargs)
-
-
-@api_view(http_method_names=["GET"])
-@permission_classes([IsAuthenticated])
-@extend_schema(
-    responses={200: CurrentUserPostsSerializer(many=True)},
-)
-def get_posts_for_current_user(request: Request):
-    user = request.user
-
-    serializer = CurrentUserPostsSerializer(instance=user, context={"request": request})
-
-    return Response(data=serializer.data, status=status.HTTP_200_OK)
-
-
-class ListPostsForAuthor(generics.GenericAPIView, mixins.ListModelMixin):
-    queryset = Post.objects.all()
-    serializer_class = PostSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        username = self.kwargs.get("username")
-
-        return Post.objects.filter(author__username=username)
-
-        # username = self.request.query_params.get("username") or None
-
-        # queryset = Post.objects.all()
-
-        # if username is not None:
-        #     return Post.objects.filter(author__username=username)
-
-        # return queryset
-
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
+    @action(
+        methods=["get"],
+        detail=False,
+        serializer_class=PostSerializer,
+        permission_classes=[IsAuthenticated],
+        url_path='current_user',
+    )
+    def get_post_for_current_user(self, request, pk=None):
+        current_user_data = Post.objects.filter(author=request.user)
+        return self.paginate_results(current_user_data)
