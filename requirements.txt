@@ -23,3 +23,8 @@ drf-spectacular
 django-debug-toolbar
 whitenoise
 django-filter
+pytest
+pytest-django
+factory-boy
+mock
+faker

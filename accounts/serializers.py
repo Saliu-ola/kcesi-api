@@ -18,7 +18,7 @@ class SignUpSerializer(serializers.ModelSerializer):
     password = serializers.CharField(min_length=8, write_only=True)
     email = serializers.EmailField()
     group_id = serializers.IntegerField(default=0)
-    role_id = serializers.IntegerField(default=0)
+    role_id = serializers.IntegerField(default=3)
     is_superuser = serializers.BooleanField(default=False)
 
     class Meta:
