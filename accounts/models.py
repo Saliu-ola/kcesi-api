@@ -51,7 +51,7 @@ class User(AbstractUser):
     date_of_birth = models.DateField(null=True)
     role_id = models.IntegerField(null=True)
     group_id = models.IntegerField(null=True)
-    organization_id = models.CharField(max_length=15, null=True)
+    organization_id = models.CharField(max_length=15, null=True,)
     organization_name = models.CharField(max_length=50, null=True)
     phone = models.CharField(max_length=17, blank=True, null=True)
     is_verified = models.BooleanField(default=False, null=True)
@@ -63,10 +63,14 @@ class User(AbstractUser):
     REQUIRED_FIELDS = []
 
     def generate_organization_id(self):
-        prefix = self.organization_name[:3].upper()
-        middle_part = f"{self.pk:05d}{timezone.now().strftime('%y%m%d')}"
-        random_part = "".join(str(randint(0, 9)) for _ in range(7))
-        return f"{prefix}-{middle_part}{random_part}"[:15]
+        if self.is_superuser and self.role_id == 1:
+            return f"S-{randint(100000, 999999)}{timezone.now().strftime('%y%m')}"
+
+        if self.role_id == 2 and not self.is_superuser:
+            # Format for role_id=2 and not superuser
+            prefix = self.organization_name[:3].upper()
+            middle_part = f"{randint(100000, 999999)}{timezone.now().strftime('%y%m')}"
+            return f"{prefix}-{middle_part}"[:15]
 
     def __str__(self):
         if self.username:
@@ -80,7 +84,7 @@ class User(AbstractUser):
 
 @receiver(post_save, sender=User)
 def generate_organization_id(sender, instance, created, **kwargs):
-    if created and not instance.is_superuser and instance.role_id not in [1,3]:
+    if created and instance.role_id in [1, 2]:
         if not instance.organization_id:
             instance.organization_id = instance.generate_organization_id()
             instance.save()
