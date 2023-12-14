@@ -13,3 +13,6 @@ class UserFactory(factory.django.DjangoModelFactory):
     phone = factory.Sequence(lambda n: "+234801234567{}".format(n))
     password = factory.PostGenerationMethodCall("set_password", "passer@@@111")
     username = fake.name()
+    first_name = fake.name()
+    last_name = fake.name()
+    
