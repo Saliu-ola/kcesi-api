@@ -28,3 +28,10 @@ class TestAuthEndpoints:
         data = {"email": verified_user.email, "password": "wrong@pass"}
         response = api_client.post(login_url, data)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    
+    # def test_signup_regular_user(self):
+    #     payload ={
+
+    #     }
+
+    #todo  test_verify user, password reset and initiate,

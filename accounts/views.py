@@ -18,22 +18,26 @@ from rest_framework.permissions import (
 )
 
 from .serializers import (
-    SignUpSerializer,
+    UserSignUpSerializer,
     LoginUserSerializer,
     VerifyTokenSerializer,
     PasswordResetSerializer,
     PasswordResetConfirmSerializer,
     ListUserSerializer,
+    OrganizationByNameInputSerializer,
+    OrganizationByIDInputSerializer,
 )
+from rest_framework.decorators import action
 from .tokens import create_jwt_pair_for_user
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 # Create your views here.
 
 
-class SignUpView(generics.GenericAPIView):
+class UserSignUpView(generics.GenericAPIView):
     """Sign up endpoint"""
 
-    serializer_class = SignUpSerializer
+    serializer_class = UserSignUpSerializer
     permission_classes = [AllowAny]
 
     def post(self, request: Request):
@@ -127,6 +131,7 @@ class LoginView(generics.GenericAPIView):
                         "email": email,
                         "role": user.role_id,
                         "organization_id": user.organization_id,
+                        "organization_name": user.organization_name,
                     }
                     return Response(data=response, status=status.HTTP_200_OK)
                 else:
@@ -207,6 +212,7 @@ class UserViewSets(viewsets.ModelViewSet):
         'group_id',
         'role_id',
         'phone',
+        'organization_name',
     ]
     search_fields = ['email', 'username', 'phone', 'organization_name']
     ordering_fields = ['created_at', 'last_login', 'email', 'role_id', 'group_id']
@@ -226,3 +232,68 @@ class UserViewSets(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="organization_name", description="organization_name", required=True, type=str
+            ),
+        ],
+    )
+    @action(
+        methods=['GET'],
+        detail=False,
+        serializer_class=OrganizationByNameInputSerializer,
+        permission_classes=[AllowAny],
+        url_path='get-organization-by-name',
+    )
+    def get_organization_by_name(self, request, pk=None):
+        organization_name = request.query_params.get("organization_name")
+
+        if not organization_name:
+            return Response(
+                {"error": "organization_name parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        output = (
+            User.objects.filter(organization_name=organization_name)
+            .values('organization_id', 'organization_name')
+            .first()
+        )
+        serializer = self.get_serializer(output)
+        return Response(
+            {"success": True, "data": serializer.data},
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="organization_id", description="organization_id", required=True, type=str
+            ),
+        ],
+    )
+    @action(
+        methods=['GET'],
+        detail=False,
+        serializer_class=OrganizationByIDInputSerializer,
+        permission_classes=[AllowAny],
+        url_path='get-organization-id',
+    )
+    def get_organization_by_id(self, request, pk=None):
+        organization_id = request.query_params.get("organization_id")
+
+        if not organization_id:
+            return Response(
+                {"error": "organization_id parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        output = User.objects.filter(organization_id=organization_id).first()
+        serializer = self.get_serializer(output)
+
+        return Response(
+            {"success": True, "data": serializer.data},
+            status=status.HTTP_200_OK,
+        )

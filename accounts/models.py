@@ -4,6 +4,10 @@ from django.db import models
 import uuid
 from django.utils.crypto import get_random_string
 from django.utils.translation import gettext_lazy as _
+from django.dispatch import receiver
+from random import randint
+from django.db.models.signals import post_save
+from django.utils import timezone
 
 TOKEN_TYPE = (
     ('ACCOUNT_VERIFICATION', 'ACCOUNT_VERIFICATION'),
@@ -14,11 +18,6 @@ TOKEN_TYPE = (
 # Create a new user
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password, **extra_fields):
-        # if extra_fields.get("role_id") == 1:
-        #     newValue = True
-        #     extra_fields.setdefault("is_superuser", True)
-        #     extra_fields.setdefault("is_staff", True)
-
         email = self.normalize_email(email)
 
         user = self.model(email=email, **extra_fields)
@@ -46,11 +45,13 @@ class CustomUserManager(BaseUserManager):
 # Define the columns here and set their properties
 class User(AbstractUser):
     email = models.EmailField(_('email address'), null=True, blank=True, unique=True)
-    username = models.CharField(max_length=45)
+    username = models.CharField(max_length=45, null=True)
+    first_name = models.CharField(max_length=45, null=True)
+    last_name = models.CharField(max_length=45, null=True)
     date_of_birth = models.DateField(null=True)
-    role_id = models.IntegerField(default=3)
-    group_id = models.IntegerField(default=0)
-    organization_id = models.CharField(max_length=15, null=True)
+    role_id = models.IntegerField(null=True)
+    group_id = models.IntegerField(null=True)
+    organization_id = models.CharField(max_length=15, null=True,)
     organization_name = models.CharField(max_length=50, null=True)
     phone = models.CharField(max_length=17, blank=True, null=True)
     is_verified = models.BooleanField(default=False, null=True)
@@ -59,13 +60,34 @@ class User(AbstractUser):
 
     objects = CustomUserManager()
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["username"]
+    REQUIRED_FIELDS = []
+
+    def generate_organization_id(self):
+        if self.is_superuser and self.role_id == 1:
+            return f"S-{randint(100000, 999999)}{timezone.now().strftime('%y%m')}"
+
+        if self.role_id == 2 and not self.is_superuser:
+            # Format for role_id=2 and not superuser
+            prefix = self.organization_name[:3].upper()
+            middle_part = f"{randint(100000, 999999)}{timezone.now().strftime('%y%m')}"
+            return f"{prefix}-{middle_part}"[:15]
 
     def __str__(self):
-        return self.username
+        if self.username:
+            return f"{self.username}"
+        else:
+            return self.organization_name
 
     class Meta:
         ordering = ("-created_at",)
+
+
+@receiver(post_save, sender=User)
+def generate_organization_id(sender, instance, created, **kwargs):
+    if created and instance.role_id in [1, 2]:
+        if not instance.organization_id:
+            instance.organization_id = instance.generate_organization_id()
+            instance.save()
 
 
 class Token(models.Model):

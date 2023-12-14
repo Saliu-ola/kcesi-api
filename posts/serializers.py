@@ -4,13 +4,10 @@ from .models import Post
 
 
 class PostSerializer(serializers.ModelSerializer):
-    organization_id = serializers.StringRelatedField(source='author.organization_id')
-
     class Meta:
         model = Post
         fields = "__all__"
-        read_only_fields = [
-            "id",
-            "organization_id",
-            "author",
-        ]
+
+
+class OrganizationPostSerializer(serializers.Serializer):
+    organization_id = serializers.CharField(max_length=15,min_length=15, required=True)
