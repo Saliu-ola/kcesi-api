@@ -1,26 +1,21 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, mixins, status
 from rest_framework.decorators import APIView, api_view, permission_classes
-from rest_framework.permissions import (
-    IsAuthenticated,
-    AllowAny,
-    IsAuthenticatedOrReadOnly,
-    IsAdminUser,
-)
+from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 from .models import Post
 from .serializers import PostSerializer
 from django_filters.rest_framework import DjangoFilterBackend
-from .permissions import ReadOnly, AuthorOrReadOnly
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
+from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperOrAdminAdmin
 
 
 class PostViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "put", "post", "delete"]
     serializer_class = PostSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsSuperOrAdminAdmin]
     queryset = Post.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [

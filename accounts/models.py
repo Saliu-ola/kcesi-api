@@ -51,7 +51,10 @@ class User(AbstractUser):
     date_of_birth = models.DateField(null=True)
     role_id = models.IntegerField(null=True)
     group_id = models.IntegerField(null=True)
-    organization_id = models.CharField(max_length=15, null=True,)
+    organization_id = models.CharField(
+        max_length=15,
+        null=True,
+    )
     organization_name = models.CharField(max_length=50, null=True)
     phone = models.CharField(max_length=17, blank=True, null=True)
     is_verified = models.BooleanField(default=False, null=True)
@@ -64,13 +67,14 @@ class User(AbstractUser):
 
     def generate_organization_id(self):
         if self.is_superuser and self.role_id == 1:
-            return f"S-{randint(100000, 999999)}{timezone.now().strftime('%y%m')}"
+            org_id = f"S-{randint(100000000, 999999999)}{timezone.now().strftime('%y%m')}"
 
-        if self.role_id == 2 and not self.is_superuser:
-            # Format for role_id=2 and not superuser
+        elif self.role_id == 2 and not self.is_superuser:
             prefix = self.organization_name[:3].upper()
-            middle_part = f"{randint(100000, 999999)}{timezone.now().strftime('%y%m')}"
-            return f"{prefix}-{middle_part}"[:15]
+            middle_part = f"{randint(1000000, 9999999):07d}{timezone.now().strftime('%y%m')}"
+            org_id = f"{prefix}-{middle_part}"
+
+        return org_id[:14] + str(randint(0, 9))
 
     def __str__(self):
         if self.username:

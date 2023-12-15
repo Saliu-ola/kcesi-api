@@ -12,10 +12,8 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import (
     AllowAny,
-    IsAdminUser,
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly,
 )
+from accounts.permissions import IsAdmin, IsSuperAdmin, IsUser, IsSuperOrAdminAdmin
 
 from .serializers import (
     UserSignUpSerializer,
@@ -25,7 +23,6 @@ from .serializers import (
     PasswordResetConfirmSerializer,
     ListUserSerializer,
     OrganizationByNameInputSerializer,
-    OrganizationByIDInputSerializer,
 )
 from rest_framework.decorators import action
 from .tokens import create_jwt_pair_for_user
@@ -202,7 +199,7 @@ class PasswordResetConfirmView(APIView):
 class UserViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "put", "delete"]
     serializer_class = ListUserSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsSuperOrAdminAdmin()]
     queryset = User.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [
@@ -218,10 +215,9 @@ class UserViewSets(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'last_login', 'email', 'role_id', 'group_id']
 
     def get_permissions(self):
-        if self.action in ['list', 'retrieve', 'destroy']:
-            return [IsAdminUser()]
-        elif self.action in ['update', 'partial_update']:
-            return [IsAuthenticated()]
+        if self.action in ['list', 'retrieve', 'update', 'partial_update', 'destroy']:
+            return [IsSuperOrAdminAdmin()]
+
         else:
             return [AllowAny()]
 
@@ -244,7 +240,7 @@ class UserViewSets(viewsets.ModelViewSet):
         methods=['GET'],
         detail=False,
         serializer_class=OrganizationByNameInputSerializer,
-        permission_classes=[AllowAny],
+        permission_classes=[AllowAny()],
         url_path='get-organization-by-name',
     )
     def get_organization_by_name(self, request, pk=None):
@@ -277,8 +273,8 @@ class UserViewSets(viewsets.ModelViewSet):
     @action(
         methods=['GET'],
         detail=False,
-        serializer_class=OrganizationByIDInputSerializer,
-        permission_classes=[AllowAny],
+        serializer_class=None,
+        permission_classes=[AllowAny()],
         url_path='get-organization-id',
     )
     def get_organization_by_id(self, request, pk=None):
@@ -290,10 +286,17 @@ class UserViewSets(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        output = User.objects.filter(organization_id=organization_id).first()
-        serializer = self.get_serializer(output)
+        users = User.objects.filter(organization_id=organization_id)
+        if not users.exists():
+            return Response(
+                {"error": "No users found with the specified organization_id"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
-        return Response(
-            {"success": True, "data": serializer.data},
-            status=status.HTTP_200_OK,
-        )
+        result = {
+            'organization_id': organization_id,
+            'organization_name': users[0].organization_name,
+            'groups': [{'group_id': user.group_id} for user in users],
+        }
+
+        return Response(result)
