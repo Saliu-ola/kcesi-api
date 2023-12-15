@@ -103,9 +103,6 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     new_password = serializers.CharField(write_only=True)
 
 
-class OrganizationByIDInputSerializer(serializers.Serializer):
-    organization_id = serializers.CharField(max_length=15, min_length=15, required=True)
-    organization_name = serializers.CharField(read_only=True)
 
 
 class OrganizationByNameInputSerializer(serializers.Serializer):

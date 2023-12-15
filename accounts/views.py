@@ -23,7 +23,6 @@ from .serializers import (
     PasswordResetConfirmSerializer,
     ListUserSerializer,
     OrganizationByNameInputSerializer,
-    OrganizationByIDInputSerializer,
 )
 from rest_framework.decorators import action
 from .tokens import create_jwt_pair_for_user
@@ -274,7 +273,7 @@ class UserViewSets(viewsets.ModelViewSet):
     @action(
         methods=['GET'],
         detail=False,
-        serializer_class=OrganizationByIDInputSerializer,
+        serializer_class=None,
         permission_classes=[AllowAny()],
         url_path='get-organization-id',
     )
@@ -287,10 +286,17 @@ class UserViewSets(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        output = User.objects.filter(organization_id=organization_id).first()
-        serializer = self.get_serializer(output)
+        users = User.objects.filter(organization_id=organization_id)
+        if not users.exists():
+            return Response(
+                {"error": "No users found with the specified organization_id"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
-        return Response(
-            {"success": True, "data": serializer.data},
-            status=status.HTTP_200_OK,
-        )
+        result = {
+            'organization_id': organization_id,
+            'organization_name': users[0].organization_name,
+            'groups': [{'group_id': user.group_id} for user in users],
+        }
+
+        return Response(result)
