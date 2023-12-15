@@ -12,10 +12,8 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import (
     AllowAny,
-    IsAdminUser,
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly,
 )
+from accounts.permissions import IsAdmin, IsSuperAdmin, IsUser, IsSuperOrAdminAdmin
 
 from .serializers import (
     UserSignUpSerializer,
@@ -202,7 +200,7 @@ class PasswordResetConfirmView(APIView):
 class UserViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "put", "delete"]
     serializer_class = ListUserSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsSuperOrAdminAdmin()]
     queryset = User.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [
@@ -218,10 +216,9 @@ class UserViewSets(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'last_login', 'email', 'role_id', 'group_id']
 
     def get_permissions(self):
-        if self.action in ['list', 'retrieve', 'destroy']:
-            return [IsAdminUser()]
-        elif self.action in ['update', 'partial_update']:
-            return [IsAuthenticated()]
+        if self.action in ['list', 'retrieve', 'update', 'partial_update', 'destroy']:
+            return [IsSuperOrAdminAdmin()]
+
         else:
             return [AllowAny()]
 
@@ -244,7 +241,7 @@ class UserViewSets(viewsets.ModelViewSet):
         methods=['GET'],
         detail=False,
         serializer_class=OrganizationByNameInputSerializer,
-        permission_classes=[AllowAny],
+        permission_classes=[AllowAny()],
         url_path='get-organization-by-name',
     )
     def get_organization_by_name(self, request, pk=None):
@@ -278,7 +275,7 @@ class UserViewSets(viewsets.ModelViewSet):
         methods=['GET'],
         detail=False,
         serializer_class=OrganizationByIDInputSerializer,
-        permission_classes=[AllowAny],
+        permission_classes=[AllowAny()],
         url_path='get-organization-id',
     )
     def get_organization_by_id(self, request, pk=None):
