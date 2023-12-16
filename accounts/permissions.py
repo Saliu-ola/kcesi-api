@@ -1,11 +1,11 @@
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework import permissions
 
 ADMIN_ROLE_ID = 2
 SUPER_ADMIN_ROLE_ID = 1
 USER_ROLE_ID = 3
 
 
-class IsAdmin(BasePermission):
+class IsAdmin(permissions.BasePermission):
     """Allows access only to admin users."""
 
     message = "Only Admins are authorized to perform this action."
@@ -14,7 +14,7 @@ class IsAdmin(BasePermission):
         return bool(request.user.is_authenticated and request.user.role_id == ADMIN_ROLE_ID)
 
 
-class IsSuperAdmin(BasePermission):
+class IsSuperAdmin(permissions.BasePermission):
     """Allows access only to superadmin users."""
 
     message = "Only SuperAdmin are authorized to perform this action."
@@ -23,7 +23,7 @@ class IsSuperAdmin(BasePermission):
         return bool(request.user.is_authenticated and request.user.role_id == SUPER_ADMIN_ROLE_ID)
 
 
-class IsUser(BasePermission):
+class IsUser(permissions.BasePermission):
     """Allows access only to  users."""
 
     message = "Only Users are authorized to perform this action."
@@ -32,7 +32,7 @@ class IsUser(BasePermission):
         return bool(request.user.is_authenticated and request.user.role_id == USER_ROLE_ID)
 
 
-class IsSuperOrAdminAdmin(BasePermission):
+class IsSuperOrAdminAdmin(permissions.BasePermission):
 
     """Allows access only to  super_admin users."""
 
