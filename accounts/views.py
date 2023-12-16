@@ -14,7 +14,6 @@ from rest_framework.permissions import (
     AllowAny,
 )
 from accounts.permissions import IsAdmin, IsSuperAdmin, IsUser, IsSuperOrAdminAdmin
-
 from .serializers import (
     UserSignUpSerializer,
     LoginUserSerializer,
@@ -27,6 +26,7 @@ from .serializers import (
 from rest_framework.decorators import action
 from .tokens import create_jwt_pair_for_user
 from drf_spectacular.utils import extend_schema, OpenApiParameter
+from posts.models import Post
 
 # Create your views here.
 
@@ -199,7 +199,7 @@ class PasswordResetConfirmView(APIView):
 class UserViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "put", "delete"]
     serializer_class = ListUserSerializer
-    permission_classes = [IsSuperOrAdminAdmin()]
+    permission_classes = [AllowAny]
     queryset = User.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [
@@ -218,8 +218,7 @@ class UserViewSets(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve', 'update', 'partial_update', 'destroy']:
             return [IsSuperOrAdminAdmin()]
 
-        else:
-            return [AllowAny()]
+        return super().get_permissions()
 
     def paginate_results(self, queryset):
         page = self.paginate_queryset(queryset)
@@ -240,7 +239,6 @@ class UserViewSets(viewsets.ModelViewSet):
         methods=['GET'],
         detail=False,
         serializer_class=OrganizationByNameInputSerializer,
-        permission_classes=[AllowAny()],
         url_path='get-organization-by-name',
     )
     def get_organization_by_name(self, request, pk=None):
@@ -274,7 +272,6 @@ class UserViewSets(viewsets.ModelViewSet):
         methods=['GET'],
         detail=False,
         serializer_class=None,
-        permission_classes=[AllowAny()],
         url_path='get-organization-id',
     )
     def get_organization_by_id(self, request, pk=None):
@@ -286,17 +283,21 @@ class UserViewSets(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        users = User.objects.filter(organization_id=organization_id)
-        if not users.exists():
+        user = User.objects.filter(organization_id=organization_id).first()
+        if not user:
             return Response(
                 {"error": "No users found with the specified organization_id"},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        posts = Post.objects.filter(organization_id=organization_id)
 
         result = {
             'organization_id': organization_id,
-            'organization_name': users[0].organization_name,
-            'groups': [{'group_id': user.group_id} for user in users],
+            'organization_name': user.organization_name,
+            'groups': [
+                {'group': {'id': post.id, 'title': post.title, "content": post.content}}
+                for post in posts
+            ],
         }
 
         return Response(result)
