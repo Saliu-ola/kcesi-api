@@ -63,7 +63,7 @@ class User(AbstractUser):
 
     objects = CustomUserManager()
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = ["username"]
 
     def generate_organization_id(self):
         if self.is_superuser and self.role_id == 1:
