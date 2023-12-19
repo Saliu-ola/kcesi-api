@@ -1,18 +1,18 @@
 import pytest
 from django.urls import reverse
-from .factories import PostFactroy
+from .factories import GroupFactroy
 from accounts.tests.factories import UserFactory
 
 pytestmark = pytest.mark.django_db
 
-POST_LIST_URL = "post:post-list"
-POST_DETAIL_URL = "post:post-detail"
-CURRENT_USER_POST_URL = "post:post-get-post-for-current-user"
+Group_LIST_URL = "group:group-list"
+Group_DETAIL_URL = "group:group-detail"
+CURRENT_USER_Group_URL = "group:group-get-group-for-current-user"
 
 
-class TestPost:
-    def test_list_all_posts(self, api_client, mocked_admin_authentication):
-        """Test list all posts for all organizations by admin"""
+class TestGroup:
+    def test_list_all_groups(self, api_client, mocked_admin_authentication):
+        """Test list all group for all organizations by admin"""
 
         user_1 = UserFactory.create(
             is_verified=True,
@@ -28,16 +28,16 @@ class TestPost:
             group_id=1,
         )
 
-        PostFactroy.create_batch(3, organization_id=user_1.organization_id)
-        PostFactroy.create_batch(4, organization_id=user_2.organization_id)
+        GroupFactroy.create_batch(3, organization_id=user_1.organization_id)
+        GroupFactroy.create_batch(4, organization_id=user_2.organization_id)
         mocked_admin_authentication()
-        url = reverse(POST_LIST_URL)
+        url = reverse(Group_LIST_URL)
         response = api_client.get(url)
         assert response.status_code == 200
         assert response.json()["total"] == 7
 
-    def test_create_post(self, verified_admin_user, api_client, mocked_admin_authentication):
-        """Test create post"""
+    def test_create_group(self, verified_admin_user, api_client, mocked_admin_authentication):
+        """Test create group"""
 
         user = UserFactory.create(
             is_verified=True,
@@ -47,7 +47,7 @@ class TestPost:
             group_id=1,
         )
         mocked_admin_authentication()
-        url = reverse(POST_LIST_URL)
+        url = reverse(Group_LIST_URL)
         payload = {
             "title": "some title",
             "content": "Loren ipsinmsn enjjenndd",
@@ -59,8 +59,8 @@ class TestPost:
         assert response.data["content"] == payload["content"]
         assert response.data["organization_id"] == user.organization_id
 
-    def test_get_post(self, verified_admin_user, api_client, mocked_admin_authentication):
-        """Test retrieve a posts"""
+    def test_get_group(self, verified_admin_user, api_client, mocked_admin_authentication):
+        """Test retrieve a Groups"""
         user = UserFactory.create(
             is_verified=True,
             organization_name=verified_admin_user.organization_name,
@@ -68,21 +68,21 @@ class TestPost:
             role_id=3,
             group_id=1,
         )
-        post = PostFactroy(organization_id=user.organization_id)
+        group = GroupFactroy(organization_id=user.organization_id)
         mocked_admin_authentication()
-        url = reverse(POST_DETAIL_URL, kwargs={"pk": post.id})
+        url = reverse(Group_DETAIL_URL, kwargs={"pk": group.id})
         response = api_client.get(url)
         print(response.data)
         assert response.status_code == 200
-        assert response.data["title"] == post.title
-        assert response.data["content"] == post.content
+        assert response.data["title"] == group.title
+        assert response.data["content"] == group.content
         assert response.data["organization_id"] == user.organization_id
 
     @pytest.mark.parametrize("method_name", ['patch', 'put'])
-    def test_update_post(
+    def test_update_group(
         self, api_client, verified_admin_user, method_name, mocked_admin_authentication
     ):
-        """Test updating a post"""
+        """Test updating a Group"""
         user = UserFactory.create(
             is_verified=True,
             organization_id=verified_admin_user.organization_id,
@@ -90,21 +90,21 @@ class TestPost:
             role_id=3,
             group_id=1,
         )
-        post = PostFactroy(
+        group = GroupFactroy(
             organization_id=user.organization_id, title="Old title", content="Old content"
         )
         mocked_admin_authentication()
         payload = {"title": "new title", "content": "new content"}
-        url = reverse(POST_DETAIL_URL, kwargs={"pk": post.id})
+        url = reverse(Group_DETAIL_URL, kwargs={"pk": group.id})
         response = getattr(api_client, method_name)(url, data=payload)
-        post.refresh_from_db()
+        group.refresh_from_db()
         assert response.status_code == 200
         assert response.json()['title'] == payload['title']
-        assert post.title == payload['title']
-        assert post.content == payload['content']
+        assert group.title == payload['title']
+        assert group.content == payload['content']
 
-    def test_delete_post(self, api_client, verified_admin_user, mocked_admin_authentication):
-        """Test deleting of a post"""
+    def test_delete_group(self, api_client, verified_admin_user, mocked_admin_authentication):
+        """Test deleting of a group"""
         user = UserFactory.create(
             is_verified=True,
             organization_id=verified_admin_user.organization_id,
@@ -112,14 +112,14 @@ class TestPost:
             role_id=3,
             group_id=1,
         )
-        post = PostFactroy(organization_id=user.organization_id)
+        group = GroupFactroy(organization_id=user.organization_id)
         mocked_admin_authentication()
-        url = reverse(POST_DETAIL_URL, kwargs={"pk": post.id})
+        url = reverse(Group_DETAIL_URL, kwargs={"pk": group.id})
         response = api_client.delete(url)
         assert response.status_code == 204
 
-    def test_get_current_organization_posts(self, api_client, mocked_admin_authentication):
-        """Test get all posts for current user"""
+    def test_get_current_organization_group(self, api_client, mocked_admin_authentication):
+        """Test get all Groups for current user"""
         user_1 = UserFactory.create(
             is_verified=True,
             organization_name="LMONJI",
@@ -127,7 +127,7 @@ class TestPost:
             role_id=3,
             group_id=1,
         )
-        PostFactroy.create_batch(5, organization_id=user_1.organization_id)
+        GroupFactroy.create_batch(5, organization_id=user_1.organization_id)
         user_2 = UserFactory.create(
             is_verified=True,
             organization_name="FIKJK",
@@ -135,7 +135,7 @@ class TestPost:
             role_id=3,
             group_id=3,
         )
-        PostFactroy.create_batch(3, organization_id=user_2.organization_id)
+        GroupFactroy.create_batch(3, organization_id=user_2.organization_id)
         user_3 = UserFactory.create(
             is_verified=True,
             organization_name="REUSJ",
@@ -143,9 +143,9 @@ class TestPost:
             role_id=3,
             group_id=3,
         )
-        PostFactroy.create_batch(2, organization_id=user_3.organization_id)
+        GroupFactroy.create_batch(2, organization_id=user_3.organization_id)
         mocked_admin_authentication()
-        url = reverse(POST_LIST_URL) + f'?organization_id={user_2.organization_id}'
+        url = reverse(Group_LIST_URL) + f'?organization_id={user_2.organization_id}'
         response = api_client.get(url)
         print(response.data)
         assert response.status_code == 200

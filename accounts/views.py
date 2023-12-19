@@ -22,13 +22,118 @@ from .serializers import (
     PasswordResetConfirmSerializer,
     ListUserSerializer,
     OrganizationByNameInputSerializer,
+    OrganizationByIDInputSerializer,
 )
 from rest_framework.decorators import action
 from .tokens import create_jwt_pair_for_user
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from posts.models import Post
+from drf_spectacular.types import OpenApiTypes
+from group.models import Group
 
 # Create your views here.
+
+
+class UserViewSets(viewsets.ModelViewSet):
+    http_method_names = ["get", "patch", "put", "delete"]
+    serializer_class = ListUserSerializer
+    permission_classes = [AllowAny]
+    queryset = User.objects.all()
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = [
+        'is_verified',
+        'email',
+        'organization_id',
+        'group_id',
+        'role_id',
+        'phone',
+        'organization_name',
+    ]
+    search_fields = ['email', 'username', 'phone', 'organization_name']
+    ordering_fields = ['created_at', 'last_login', 'email', 'role_id', 'group_id']
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', 'create', 'update', 'partial_update', 'destroy']:
+            return [IsSuperOrAdminAdmin()]
+
+        return super().get_permissions()
+    
+    
+    def paginate_results(self, queryset):
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="organization_name", description="organization_name", required=True, type=str
+            ),
+        ],
+    )
+    @action(
+        methods=['GET'],
+        detail=False,
+        serializer_class=OrganizationByNameInputSerializer,
+        url_path='get-organization-by-name',
+    )
+    def get_organization_by_name(self, request, pk=None):
+        organization_name = request.query_params.get("organization_name")
+
+        if not organization_name:
+            return Response(
+                {"error": "organization_name parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        output = (
+            User.objects.filter(organization_name=organization_name)
+            .values('organization_id', 'organization_name')
+            .first()
+        )
+        serializer = self.get_serializer(output)
+        return Response(
+            {"success": True, "data": serializer.data},
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="organization_id",
+                description="organization_id",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+        ],
+        responses={200: OrganizationByIDInputSerializer},
+    )
+    @action(
+        methods=['GET'],
+        detail=False,
+        serializer_class=OrganizationByIDInputSerializer,
+        url_path='get-organization-id',
+    )
+    def get_organization_by_id(self, request, pk=None):
+        serializer = self.get_serializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        organization_id = serializer.validated_data["organization_id"]
+        user = User.objects.filter(organization_id=organization_id).first()
+        groups = Group.objects.filter(organization_id=organization_id)
+
+        context_data = {
+            "organization_id": user.organization_id,
+            "organization_name": user.organization_name,
+            "groups": groups,
+        }
+
+        return Response(
+            {"success": True, "data": OrganizationByIDInputSerializer(context_data).data},
+            status=status.HTTP_200_OK,
+        )
 
 
 class UserSignUpView(generics.GenericAPIView):
@@ -105,44 +210,6 @@ class VerifyAccountView(generics.GenericAPIView):
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class LoginView(generics.GenericAPIView):
-    permission_classes = [AllowAny]
-    serializer_class = LoginUserSerializer
-
-    def post(self, request: Request):
-        data = request.data
-        serializer = self.serializer_class(data=data)
-
-        if serializer.is_valid():
-            email = serializer.validated_data["email"]
-            password = serializer.validated_data["password"]
-
-            user = authenticate(email=email, password=password)
-
-            if user is not None:
-                if user.is_verified:
-                    tokens = create_jwt_pair_for_user(user)
-                    response = {
-                        "message": "Login Successful",
-                        "tokens": tokens,
-                        "email": email,
-                        "role": user.role_id,
-                        "organization_id": user.organization_id,
-                        "organization_name": user.organization_name,
-                    }
-                    return Response(data=response, status=status.HTTP_200_OK)
-                else:
-                    return Response(
-                        data={"message": "User account not verified"},
-                        status=status.HTTP_401_UNAUTHORIZED,
-                    )
-            else:
-                return Response(
-                    data={"message": "Invalid email or password"},
-                    status=status.HTTP_401_UNAUTHORIZED,
-                )
-
-
 class PasswordResetRequestView(APIView):
     permission_classes = [AllowAny]
     serializer_class = PasswordResetSerializer
@@ -196,108 +263,39 @@ class PasswordResetConfirmView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class UserViewSets(viewsets.ModelViewSet):
-    http_method_names = ["get", "patch", "put", "delete"]
-    serializer_class = ListUserSerializer
+class LoginView(generics.GenericAPIView):
     permission_classes = [AllowAny]
-    queryset = User.objects.all()
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = [
-        'is_verified',
-        'email',
-        'organization_id',
-        'group_id',
-        'role_id',
-        'phone',
-        'organization_name',
-    ]
-    search_fields = ['email', 'username', 'phone', 'organization_name']
-    ordering_fields = ['created_at', 'last_login', 'email', 'role_id', 'group_id']
+    serializer_class = LoginUserSerializer
 
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve', 'update', 'partial_update', 'destroy']:
-            return [IsSuperOrAdminAdmin()]
+    def post(self, request: Request):
+        data = request.data
+        serializer = self.serializer_class(data=data)
 
-        return super().get_permissions()
+        if serializer.is_valid():
+            email = serializer.validated_data["email"]
+            password = serializer.validated_data["password"]
 
-    def paginate_results(self, queryset):
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+            user = authenticate(email=email, password=password)
 
-    @extend_schema(
-        parameters=[
-            OpenApiParameter(
-                name="organization_name", description="organization_name", required=True, type=str
-            ),
-        ],
-    )
-    @action(
-        methods=['GET'],
-        detail=False,
-        serializer_class=OrganizationByNameInputSerializer,
-        url_path='get-organization-by-name',
-    )
-    def get_organization_by_name(self, request, pk=None):
-        organization_name = request.query_params.get("organization_name")
-
-        if not organization_name:
-            return Response(
-                {"error": "organization_name parameter is required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        output = (
-            User.objects.filter(organization_name=organization_name)
-            .values('organization_id', 'organization_name')
-            .first()
-        )
-        serializer = self.get_serializer(output)
-        return Response(
-            {"success": True, "data": serializer.data},
-            status=status.HTTP_200_OK,
-        )
-
-    @extend_schema(
-        parameters=[
-            OpenApiParameter(
-                name="organization_id", description="organization_id", required=True, type=str
-            ),
-        ],
-    )
-    @action(
-        methods=['GET'],
-        detail=False,
-        serializer_class=None,
-        url_path='get-organization-id',
-    )
-    def get_organization_by_id(self, request, pk=None):
-        organization_id = request.query_params.get("organization_id")
-
-        if not organization_id:
-            return Response(
-                {"error": "organization_id parameter is required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        user = User.objects.filter(organization_id=organization_id).first()
-        if not user:
-            return Response(
-                {"error": "No users found with the specified organization_id"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-        posts = Post.objects.filter(organization_id=organization_id)
-
-        result = {
-            'organization_id': organization_id,
-            'organization_name': user.organization_name,
-            'groups': [
-                {'group': {'id': post.id, 'title': post.title, "content": post.content}}
-                for post in posts
-            ],
-        }
-
-        return Response(result)
+            if user is not None:
+                if user.is_verified:
+                    tokens = create_jwt_pair_for_user(user)
+                    response = {
+                        "message": "Login Successful",
+                        "tokens": tokens,
+                        "email": email,
+                        "role": user.role_id,
+                        "organization_id": user.organization_id,
+                        "organization_name": user.organization_name,
+                    }
+                    return Response(data=response, status=status.HTTP_200_OK)
+                else:
+                    return Response(
+                        data={"message": "User account not verified"},
+                        status=status.HTTP_401_UNAUTHORIZED,
+                    )
+            else:
+                return Response(
+                    data={"message": "Invalid email or password"},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
