@@ -6,7 +6,7 @@ from django.db import models
 # Create your models here.
 
 """
-class Post:
+class Group:
     id int
     title str(50)
     content text
@@ -16,7 +16,7 @@ class Post:
 User = get_user_model()
 
 
-class Post(models.Model):
+class Group(models.Model):
     title = models.CharField(max_length=50)
     content = models.TextField()
     organization_id = models.CharField(max_length=15, null=True)
