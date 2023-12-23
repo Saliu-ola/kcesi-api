@@ -19,7 +19,10 @@ class BrowserHistory(models.Model):
     end_time = models.TimeField(null=True)
     time_spent = models.IntegerField(null=True)
     date_time = models.DateTimeField(auto_now=True, null=True)
-    
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
+
     def __str__(self) -> str:
         return self.topic
 
