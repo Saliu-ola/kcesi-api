@@ -15,9 +15,9 @@ class ResourcesTypeViewSets(viewsets.ModelViewSet):
     queryset = ResourceType.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [
-        'type',
+        'name',
     ]
-    search_fields = ['type']
+    search_fields = ['name']
     ordering_fields = ['created_at']
 
     def paginate_results(self, queryset):
@@ -35,7 +35,7 @@ class ResourcesViewSets(viewsets.ModelViewSet):
     permission_classes = [IsSuperOrAdminAdmin]
     queryset = Resources.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['type', 'size', 'organization', 'group', 'sender', 'reciever']
+    filterset_fields = ['type__name', 'size', 'organization', 'group', 'sender', 'receiver']
     search_fields = ['title']
     ordering_fields = ['created_at']
 

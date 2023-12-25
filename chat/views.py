@@ -19,8 +19,8 @@ class ChatViewSets(viewsets.ModelViewSet):
     permission_classes = [IsSuperOrAdminAdmin]
     queryset = Chat.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['sender', 'receiver', 'organization_id', 'group']
-    search_fields = ['title', 'content']
+    filterset_fields = ['sender', 'receiver', 'organization', 'group']
+    search_fields = ['content']
     ordering_fields = ['created_at']
 
     def paginate_results(self, queryset):
