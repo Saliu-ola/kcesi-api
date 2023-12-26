@@ -15,7 +15,7 @@ class Chat(models.Model):
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
     def __str__(self) -> str:
-        return f"{self.sender.email} --> {self.receiver.email}"
+        return f"{self.sender__email} --> {self.receiver__email}"
 
     class Meta:
         ordering = ["-created_at"]
