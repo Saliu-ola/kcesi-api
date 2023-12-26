@@ -1,6 +1,6 @@
 from rest_framework.request import Request
 from rest_framework.response import Response
-from .models import Resources, ResourceType
+from .models import Resources, Type
 from .serializers import ResourcesSerializer, ResourcesTypeSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
@@ -12,7 +12,7 @@ class ResourcesTypeViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
     serializer_class = ResourcesTypeSerializer
     permission_classes = [IsSuperOrAdminAdmin]
-    queryset = ResourceType.objects.all()
+    queryset = Type.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [
         'name',
@@ -35,7 +35,7 @@ class ResourcesViewSets(viewsets.ModelViewSet):
     permission_classes = [IsSuperOrAdminAdmin]
     queryset = Resources.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['type__name', 'size', 'organization', 'group', 'sender', 'receiver']
+    filterset_fields = ['type', 'size', 'organization', 'group', 'sender', 'receiver']
     search_fields = ['title']
     ordering_fields = ['created_at']
 

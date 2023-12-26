@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import ResourcesTypeViewSets, ResourcesViewSets
 
-app_name = 'resources'
+app_name = 'resource'
 
 router = DefaultRouter()
 router.register('types', ResourcesTypeViewSets)

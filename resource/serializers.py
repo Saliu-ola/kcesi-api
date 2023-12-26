@@ -1,11 +1,11 @@
 from rest_framework import serializers
 
-from .models import Resources, ResourceType
+from .models import Resources, Type
 
 
 class ResourcesTypeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ResourceType
+        model = Type
         fields = "__all__"
 
 

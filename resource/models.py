@@ -5,7 +5,7 @@ from group.models import Group
 from accounts.models import User
 
 
-class ResourceType(models.Model):
+class Type(models.Model):
     name = models.CharField(max_length=50, null=True)
 
     def __str__(self) -> str:
@@ -15,7 +15,7 @@ class ResourceType(models.Model):
 class Resources(models.Model):
     title = models.CharField(max_length=50, null=True)
     size = models.IntegerField(null=True)
-    type = models.ForeignKey(ResourceType, on_delete=models.CASCADE, related_name="type_resources")
+    type = models.ForeignKey(Type, on_delete=models.CASCADE, related_name="type_resources")
     platform = models.ForeignKey(
         Platform, on_delete=models.CASCADE, related_name="platform_resources"
     )
