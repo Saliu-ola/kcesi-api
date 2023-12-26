@@ -23,7 +23,7 @@ class Resources(models.Model):
         Organization, on_delete=models.DO_NOTHING, related_name="organization_resources"
     )
     group = models.ForeignKey(
-        Organization, on_delete=models.DO_NOTHING, related_name="group_resources"
+        Group, on_delete=models.DO_NOTHING, related_name="group_resources"
     )
 
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sender_resources")
