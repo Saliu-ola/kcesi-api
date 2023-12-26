@@ -7,7 +7,7 @@ from organization.models import Organization
 class Chat(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sender_chats")
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="receiver_chats")
-    content = models.TextField(null=True, verbose_name="Chat Message")  
+    message = models.TextField(null=True, verbose_name="Chat contents")  
     organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="organization_chats"
     )
