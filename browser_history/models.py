@@ -24,7 +24,7 @@ class BrowserHistory(models.Model):
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
     def __str__(self) -> str:
-        return self.topic
+        return f"{self.user}: {self.url}"
 
     class Meta:
         ordering = ["-created_at"]
