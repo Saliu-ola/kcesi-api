@@ -111,7 +111,7 @@ SPECTACULAR_SETTINGS = {
     "CONTACT": {"name": "Oladitan Saliu ", "email": "saliuoladitan@gmail.com"},
 }
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=2),
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=6),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "SIGNING_KEY": SECRET_KEY,
     "AUTH_HEADER_TYPES": ("Bearer",),
