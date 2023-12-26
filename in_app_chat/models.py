@@ -4,7 +4,7 @@ from group.models import Group
 from organization.models import Organization
 
 
-class Chat(models.Model):
+class InAppChat(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sender_chats")
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="receiver_chats")
     message = models.TextField(null=True, verbose_name="Chat contents")  

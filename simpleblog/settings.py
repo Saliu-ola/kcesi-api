@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     "accounts",
     "organization",
     "platforms",
-    "chat",
+    "in_app_chat",
     "resources",
     "blog",
     "forum",
