@@ -7,8 +7,10 @@ from organization.models import Organization
 class Chat(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sender_chats")
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="receiver_chats")
-    content = models.TextField(null=True)
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="organization_chats")
+    content = models.TextField(null=True, verbose_name="Chat Message")  
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="organization_chats"
+    )
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_chats")
 
     created_at = models.DateTimeField(auto_now_add=True, null=True)
