@@ -189,9 +189,9 @@ class UserViewSets(viewsets.ModelViewSet):
         methods=['GET'],
         detail=False,
         serializer_class=None,
-        url_path='get-total-members-by-group',
+        url_path='get-total-members-by-group_id',
     )
-    def get_total_members_by_group(self, request, pk=None):
+    def get_total_members_by_group_id(self, request, pk=None):
         """Get total for an  organization members by groups"""
 
         group_id = request.query_params["group_id"]
