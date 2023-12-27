@@ -8,6 +8,7 @@ from django.dispatch import receiver
 from random import randint
 from django.db.models.signals import post_save
 from django.utils import timezone
+from organization.models import Organization
 
 TOKEN_TYPE = (
     ('ACCOUNT_VERIFICATION', 'ACCOUNT_VERIFICATION'),
@@ -92,6 +93,9 @@ def generate_organization_id(sender, instance, created, **kwargs):
         if not instance.organization_id:
             instance.organization_id = instance.generate_organization_id()
             instance.save()
+            Organization.objects.create(
+                name=instance.organization_name, organization_id=instance.organization_id
+            )
 
 
 class Token(models.Model):
