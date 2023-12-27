@@ -10,6 +10,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
 from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperOrAdminAdmin
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 
 class ForumViewSets(viewsets.ModelViewSet):
@@ -29,3 +31,90 @@ class ForumViewSets(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="organization",
+                description="organization",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+        ],
+        responses={200: None},
+    )
+    @action(
+        methods=['GET'],
+        detail=False,
+        serializer_class=None,
+        url_path='get-total-forums-by-organization',
+    )
+    def get_total_forums_by_organization(self, request, pk=None):
+        """Get total forums for an organization"""
+
+        organization = request.query_params["organization"]
+
+        output = Forum.objects.filter(organization=organization).count()
+        if not output:
+            return Response(
+                {"success": False, "total_forums": 0},
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(
+            {"success": True, "total_forums": output},
+            status=status.HTTP_200_OK,
+        )
+
+    @action(
+        methods=['GET'],
+        detail=False,
+        serializer_class=None,
+        url_path='get-total-forums',
+    )
+    def get_total_forums(self, request, pk=None):
+        """get total forums in the app"""
+        output = Forum.objects.count()
+        if not output:
+            return Response(
+                {"success": False, "total_forums": 0},
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(
+            {"success": True, "total_forums": output},
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="group",
+                description="group",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+        ],
+        responses={200},
+    )
+    @action(
+        methods=['GET'],
+        detail=False,
+        serializer_class=None,
+        url_path='get-total-forums-by-group',
+    )
+    def get_total_forums_by_group(self, request, pk=None):
+        """Get total for an  organization forums by groups"""
+
+        group = request.query_params["group"]
+        output = Forum.objects.filter(group=group).count()
+        if not output:
+            return Response(
+                {"success": False, "total_forums": 0},
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(
+            {"success": True, "total_forums": output},
+            status=status.HTTP_200_OK,
+        )

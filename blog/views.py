@@ -37,8 +37,8 @@ class BlogViewSets(viewsets.ModelViewSet):
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                name="organization_id",
-                description="organization_id",
+                name="organization",
+                description="organization",
                 required=True,
                 type=OpenApiTypes.STR,
             ),
@@ -49,14 +49,20 @@ class BlogViewSets(viewsets.ModelViewSet):
         methods=['GET'],
         detail=False,
         serializer_class=None,
-        url_path='get-total-blogs-by-organization_id',
+        url_path='get-total-blogs-by-organization',
     )
-    def get_total_blogs_by_organization_id(self, request, pk=None):
-        """Get total blogs for an  organization members"""
+    def get_total_blogs_by_organization(self, request, pk=None):
+        """Get total blogs for an organization"""
 
-        organization_id = request.query_params["organization_id"]
-        organization = get_object_or_404(Organization, organization_id=organization_id)
+        organization = request.query_params["organization"]
+
         output = Blog.objects.filter(organization=organization).count()
+        if not output:
+            return Response(
+                {"success": False, "total_blogs": 0},
+                status=status.HTTP_200_OK,
+            )
+
         return Response(
             {"success": True, "total_blogs": output},
             status=status.HTTP_200_OK,
@@ -66,11 +72,17 @@ class BlogViewSets(viewsets.ModelViewSet):
         methods=['GET'],
         detail=False,
         serializer_class=None,
-        url_path='get-total_blogs',
+        url_path='get-total-blogs',
     )
-    def get_total_members(self, request, pk=None):
+    def get_total_blogs(self, request, pk=None):
         """get total blogs in the app"""
         output = Blog.objects.count()
+        if not output:
+            return Response(
+                {"success": False, "total_blogs": 0},
+                status=status.HTTP_200_OK,
+            )
+
         return Response(
             {"success": True, "total_blogs": output},
             status=status.HTTP_200_OK,
@@ -79,8 +91,8 @@ class BlogViewSets(viewsets.ModelViewSet):
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                name="group_id",
-                description="group_id",
+                name="group",
+                description="group",
                 required=True,
                 type=OpenApiTypes.STR,
             ),
@@ -91,14 +103,19 @@ class BlogViewSets(viewsets.ModelViewSet):
         methods=['GET'],
         detail=False,
         serializer_class=None,
-        url_path='get-total-members-by-group',
+        url_path='get-total-blogs-by-group',
     )
-    def get_total_members_by_group(self, request, pk=None):
-        """Get total for an  organization members by groups"""
+    def get_total_blogs_by_group(self, request, pk=None):
+        """Get total for an  organization blogs by groups"""
 
-        group_id = request.query_params["group_id"]
-        group = get_object_or_404(Group, group_id=group_id)
+        group = request.query_params["group"]
         output = Blog.objects.filter(group=group).count()
+        if not output:
+            return Response(
+                {"success": False, "total_blogs": 0},
+                status=status.HTTP_200_OK,
+            )
+
         return Response(
             {"success": True, "total_blogs": output},
             status=status.HTTP_200_OK,
