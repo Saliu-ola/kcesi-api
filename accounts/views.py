@@ -13,6 +13,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.permissions import (
     AllowAny,
 )
+from organization.models import Organization
 from accounts.permissions import IsAdmin, IsSuperAdmin, IsUser, IsSuperOrAdminAdmin
 from .serializers import (
     UserSignUpSerializer,
@@ -136,8 +137,8 @@ class UserViewSets(viewsets.ModelViewSet):
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                name="organization_id",
-                description="organization_id",
+                name="organization",
+                description="organization",
                 required=True,
                 type=OpenApiTypes.STR,
             ),
@@ -148,13 +149,21 @@ class UserViewSets(viewsets.ModelViewSet):
         methods=['GET'],
         detail=False,
         serializer_class=None,
-        url_path='get-total-members-by-organization_id',
+        url_path='get-total-members-by-organization',
     )
-    def get_total_members_by_organization_id(self, request, pk=None):
+    def get_total_members_by_organization(self, request, pk=None):
         """Get total for an  organization members"""
 
-        organization_id = request.query_params["organization_id"]
+        organization = request.query_params["organization"]
+        organization_id = Organization.objects.get(pk=organization).organization_id
         output = User.objects.filter(organization_id=organization_id).count()
+        print(output)
+        if not output:
+            return Response(
+                {"success": False, "total_members": 0},
+                status=status.HTTP_200_OK,
+            )
+
         return Response(
             {"success": True, "total_members": output},
             status=status.HTTP_200_OK,
@@ -164,11 +173,17 @@ class UserViewSets(viewsets.ModelViewSet):
         methods=['GET'],
         detail=False,
         serializer_class=None,
-        url_path='get-total-organization-members',
+        url_path='get-total-members',
     )
     def get_total_members(self, request, pk=None):
         """get total members in the app"""
         output = User.objects.count()
+        if not output:
+            return Response(
+                {"success": False, "total_members": 0},
+                status=status.HTTP_200_OK,
+            )
+
         return Response(
             {"success": True, "total_members": output},
             status=status.HTTP_200_OK,
@@ -177,8 +192,8 @@ class UserViewSets(viewsets.ModelViewSet):
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                name="group_id",
-                description="group_id",
+                name="group",
+                description="group",
                 required=True,
                 type=OpenApiTypes.STR,
             ),
@@ -189,13 +204,19 @@ class UserViewSets(viewsets.ModelViewSet):
         methods=['GET'],
         detail=False,
         serializer_class=None,
-        url_path='get-total-members-by-group_id',
+        url_path='get-total-members-by-group',
     )
-    def get_total_members_by_group_id(self, request, pk=None):
+    def get_total_members_by_group(self, request, pk=None):
         """Get total for an  organization members by groups"""
 
-        group_id = request.query_params["group_id"]
-        output = User.objects.filter(group_id=group_id).count()
+        group = request.query_params["group"]
+        output = User.objects.filter(group_id=group).count()
+        if not output:
+            return Response(
+                {"success": False, "total_members": 0},
+                status=status.HTTP_200_OK,
+            )
+
         return Response(
             {"success": True, "total_members": output},
             status=status.HTTP_200_OK,
