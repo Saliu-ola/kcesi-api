@@ -367,7 +367,10 @@ class LoginView(generics.GenericAPIView):
 
             if user is not None:
                 if user.is_verified:
-                    organization = Organization.objects.get(organization_id=user.organization_id).pk
+                    try:
+                     organization = Organization.objects.get(organization_id=user.organization_id).pk
+                    except Organization.DoesNotExist:
+                           organization = ""
                     tokens = create_jwt_pair_for_user(user)
                     response = {
                         "message": "Login Successful",
