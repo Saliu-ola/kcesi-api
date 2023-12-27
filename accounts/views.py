@@ -363,15 +363,18 @@ class LoginView(generics.GenericAPIView):
             password = serializer.validated_data["password"]
 
             user = authenticate(email=email, password=password)
+           
 
             if user is not None:
                 if user.is_verified:
+                    organization = Organization.objects.get(organization_id=user.organization_id).pk
                     tokens = create_jwt_pair_for_user(user)
                     response = {
                         "message": "Login Successful",
                         "tokens": tokens,
                         "email": email,
                         "role": user.role_id,
+                        "organization":organization,
                         "organization_id": user.organization_id,
                         "organization_name": user.organization_name,
                     }
