@@ -66,6 +66,10 @@ class User(AbstractUser):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
 
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
+
     def generate_organization_id(self):
         if self.is_superuser and self.role_id == 1:
             org_id = f"S-{randint(100000000, 999999999)}{timezone.now().strftime('%y%m')}"

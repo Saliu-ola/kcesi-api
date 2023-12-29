@@ -10,6 +10,9 @@ class ResourcesTypeSerializer(serializers.ModelSerializer):
 
 
 class ResourcesSerializer(serializers.ModelSerializer):
+    sender_full_name = serializers.StringRelatedField(source='sender.full_name')
+    receiver_full_name = serializers.StringRelatedField(source='receiver.full_name')
+
     class Meta:
         model = Resources
         fields = "__all__"
