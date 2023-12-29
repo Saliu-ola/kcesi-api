@@ -96,7 +96,7 @@ class BrowserHistoryViewSets(viewsets.ModelViewSet):
                 type=OpenApiTypes.STR,
             ),
         ],
-        responses={200},
+       
     )
     @action(
         methods=['GET'],
