@@ -38,6 +38,7 @@ from browser_history.models import BrowserHistory
 from forum.models import Forum
 from topics.models import Topic
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils import timezone
 
 # Create your views here.
 
@@ -206,7 +207,6 @@ class UserViewSets(viewsets.ModelViewSet):
                 type=OpenApiTypes.STR,
             ),
         ],
-        responses={200},
     )
     @action(
         methods=['GET'],
@@ -238,76 +238,103 @@ class UserViewSets(viewsets.ModelViewSet):
                 required=True,
                 type=OpenApiTypes.STR,
             ),
+            OpenApiParameter(
+                name="start_date",
+                description="Start date in the format 'YYYY-MM-DD'",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+            OpenApiParameter(
+                name="end_date",
+                description="End date in the format 'YYYY-MM-DD'",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
         ],
-        responses={200},
     )
     @action(
         methods=['GET'],
         detail=False,
         serializer_class=None,
-        url_path='get-seci-details',
+        url_path='get-user-seci-details',
     )
-    def get_seci_details(self, request, pk=None):
+    def get_user_seci_details(self, request, pk=None):
         """Get seci detail"""
 
         user_id = request.query_params["user_id"]
+
+        start_date = timezone.make_aware(
+            timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
+        )
+        end_date = timezone.make_aware(
+            timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
+        )
+
+        date_range = (start_date, end_date)
+
         query_data = get_object_or_404(User, pk=user_id)
         user = query_data.pk
         organization_id = query_data.organization_id
         group_id = query_data.group_id
         try:
-            post_blog = Blog.objects.filter(author=user).count()
+            post_blog = Blog.objects.filter(author=user, created_at__range=date_range).count()
         except ObjectDoesNotExist:
             post_blog = 0
 
         try:
-            send_chat_message = InAppChat.objects.filter(sender=user).count()
+            send_chat_message = InAppChat.objects.filter(
+                sender=user, created_at__range=date_range
+            ).count()
         except ObjectDoesNotExist:
             send_chat_message = 0
 
         try:
-            post_forum = Forum.objects.filter(user=user).count()
+            post_forum = Forum.objects.filter(user=user, created_at__range=date_range).count()
         except ObjectDoesNotExist:
             post_forum = 0
 
         try:
             image_sharing = Resources.objects.filter(
-                type__name__icontains='Image', sender=user
+                type__name__icontains='Image', sender=user, created_at__range=date_range
             ).count()
         except ObjectDoesNotExist:
             image_sharing = 0
 
         try:
             video_sharing = Resources.objects.filter(
-                type__name__icontains='Video', sender=user
+                type__name__icontains='Video', sender=user, created_at__range=date_range
             ).count()
         except ObjectDoesNotExist:
             video_sharing = 0
 
         try:
-            text_resource_Sharing = Resources.objects.filter(
-                type__name__icontains='Text-Based', sender=user
+            text_resource_sharing = Resources.objects.filter(
+                type__name__icontains='Text-Based', sender=user, created_at__range=date_range
             ).count()
         except ObjectDoesNotExist:
-            text_resource_Sharing = 0
+            text_resource_sharing = 0
 
         try:
-            created_topic = Topic.objects.filter(author=user).count()
+            created_topic = Topic.objects.filter(author=user, created_at__range=date_range).count()
         except ObjectDoesNotExist:
             created_topic = 0
 
         try:
-            comment = Comment.objects.filter(user=user).count()
+            comment = Comment.objects.filter(user=user, created_at__range=date_range).count()
         except ObjectDoesNotExist:
             comment = 0
 
         try:
-            used_in_app_browser = BrowserHistory.objects.filter(user=user).count()
+            used_in_app_browser = BrowserHistory.objects.filter(
+                user=user, created_at__range=date_range
+            ).count()
         except ObjectDoesNotExist:
             used_in_app_browser = 0
 
         try:
-            recieve_chat_message = InAppChat.objects.filter(receiver=user).count()
+            recieve_chat_message = InAppChat.objects.filter(
+                receiver=user, created_at__range=date_range
+            ).count()
         except ObjectDoesNotExist:
             recieve_chat_message = 0
 
@@ -319,7 +346,7 @@ class UserViewSets(viewsets.ModelViewSet):
             "post_forum": post_forum,
             "image_sharing": image_sharing,
             "video_sharing": video_sharing,
-            "text_resource_Sharing": text_resource_Sharing,
+            "text_resource_sharing": text_resource_sharing,
             "created_topic": created_topic,
             "comment": comment,
             "used_in_app_browser": used_in_app_browser,
@@ -334,9 +361,288 @@ class UserViewSets(viewsets.ModelViewSet):
         return Response(
             {
                 "success": True,
-                "SECI_DETAILS": output,
+                "seci_details": output,
                 "organization_id": organization_id,
-                "group": group_id,
+                "group_id": group_id,
+                "start_date": start_date,
+                "end_date": end_date,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="organization_id",
+                description="organization_id",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+            OpenApiParameter(
+                name="start_date",
+                description="Start date in the format 'YYYY-MM-DD'",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+            OpenApiParameter(
+                name="end_date",
+                description="End date in the format 'YYYY-MM-DD'",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+        ],
+    )
+    @action(
+        methods=['GET'],
+        detail=False,
+        serializer_class=None,
+        url_path='get-organization-seci-details',
+    )
+    def get_organization_seci_details(self, request, pk=None):
+        """Get seci detail for an organization"""
+
+        organization_id = request.query_params["organization_id"]
+
+        start_date = timezone.make_aware(
+            timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
+        )
+        end_date = timezone.make_aware(
+            timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
+        )
+
+        date_range = (start_date, end_date)
+
+        query_data = get_object_or_404(User, organization_id=organization_id)
+        user = query_data.pk
+        organization_id = query_data.organization_id
+        group_id = query_data.group_id
+        try:
+            post_blog = Blog.objects.filter(author=user, created_at__range=date_range).count()
+        except ObjectDoesNotExist:
+            post_blog = 0
+
+        try:
+            send_chat_message = InAppChat.objects.filter(
+                sender=user, created_at__range=date_range
+            ).count()
+        except ObjectDoesNotExist:
+            send_chat_message = 0
+
+        try:
+            post_forum = Forum.objects.filter(user=user, created_at__range=date_range).count()
+        except ObjectDoesNotExist:
+            post_forum = 0
+
+        try:
+            image_sharing = Resources.objects.filter(
+                type__name__icontains='Image', sender=user, created_at__range=date_range
+            ).count()
+        except ObjectDoesNotExist:
+            image_sharing = 0
+
+        try:
+            video_sharing = Resources.objects.filter(
+                type__name__icontains='Video', sender=user, created_at__range=date_range
+            ).count()
+        except ObjectDoesNotExist:
+            video_sharing = 0
+
+        try:
+            text_resource_sharing = Resources.objects.filter(
+                type__name__icontains='Text-Based', sender=user, created_at__range=date_range
+            ).count()
+        except ObjectDoesNotExist:
+            text_resource_sharing = 0
+
+        try:
+            created_topic = Topic.objects.filter(author=user, created_at__range=date_range).count()
+        except ObjectDoesNotExist:
+            created_topic = 0
+
+        try:
+            comment = Comment.objects.filter(user=user, created_at__range=date_range).count()
+        except ObjectDoesNotExist:
+            comment = 0
+
+        try:
+            used_in_app_browser = BrowserHistory.objects.filter(
+                user=user, created_at__range=date_range
+            ).count()
+        except ObjectDoesNotExist:
+            used_in_app_browser = 0
+
+        try:
+            recieve_chat_message = InAppChat.objects.filter(
+                receiver=user, created_at__range=date_range
+            ).count()
+        except ObjectDoesNotExist:
+            recieve_chat_message = 0
+
+        # Todo download_resource,read_blog,read_forum
+
+        tallies = {
+            "post_blog": post_blog,
+            "send_chat_message": send_chat_message,
+            "post_forum": post_forum,
+            "image_sharing": image_sharing,
+            "video_sharing": video_sharing,
+            "text_resource_sharing": text_resource_sharing,
+            "created_topic": created_topic,
+            "comment": comment,
+            "used_in_app_browser": used_in_app_browser,
+            "read_blog": 0,
+            "read_forum": 0,
+            "recieve_chat_message": recieve_chat_message,
+            "download_resources": 0,
+        }
+
+        output = calculate_engagement_scores(tallies)
+
+        return Response(
+            {
+                "success": True,
+                "seci_details": output,
+                "organization_id": organization_id,
+                "group_id": group_id,
+                "start_date": start_date,
+                "end_date": end_date,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="group_id",
+                description="group_id",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+            OpenApiParameter(
+                name="start_date",
+                description="Start date in the format 'YYYY-MM-DD'",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+            OpenApiParameter(
+                name="end_date",
+                description="End date in the format 'YYYY-MM-DD'",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+        ],
+    )
+    @action(
+        methods=['GET'],
+        detail=False,
+        serializer_class=None,
+        url_path='get-group-seci-details',
+    )
+    def get_group_seci_details(self, request, pk=None):
+        """Get seci detail for a group"""
+
+        group_id = request.query_params["group_id"]
+
+        start_date = timezone.make_aware(
+            timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
+        )
+        end_date = timezone.make_aware(
+            timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
+        )
+
+        date_range = (start_date, end_date)
+
+        group = get_object_or_404(Group, pk=group_id).pk
+
+        try:
+            post_blog = Blog.objects.filter(group=group, created_at__range=date_range).count()
+        except ObjectDoesNotExist:
+            post_blog = 0
+
+        try:
+            send_chat_message = InAppChat.objects.filter(
+                group=group, created_at__range=date_range
+            ).count()
+        except ObjectDoesNotExist:
+            send_chat_message = 0
+
+        try:
+            post_forum = Forum.objects.filter(group=group, created_at__range=date_range).count()
+        except ObjectDoesNotExist:
+            post_forum = 0
+
+        try:
+            image_sharing = Resources.objects.filter(
+                type__name__icontains='Image', group=group, created_at__range=date_range
+            ).count()
+        except ObjectDoesNotExist:
+            image_sharing = 0
+
+        try:
+            video_sharing = Resources.objects.filter(
+                type__name__icontains='Video', group=group, created_at__range=date_range
+            ).count()
+        except ObjectDoesNotExist:
+            video_sharing = 0
+
+        try:
+            text_resource_sharing = Resources.objects.filter(
+                type__name__icontains='Text-Based', group=group, created_at__range=date_range
+            ).count()
+        except ObjectDoesNotExist:
+            text_resource_sharing = 0
+
+        try:
+            created_topic = Topic.objects.filter(group=group, created_at__range=date_range).count()
+        except ObjectDoesNotExist:
+            created_topic = 0
+
+        try:
+            comment = Comment.objects.filter(group=group, created_at__range=date_range).count()
+        except ObjectDoesNotExist:
+            comment = 0
+
+        try:
+            used_in_app_browser = BrowserHistory.objects.filter(
+                group=group, created_at__range=date_range
+            ).count()
+        except ObjectDoesNotExist:
+            used_in_app_browser = 0
+
+        try:
+            recieve_chat_message = InAppChat.objects.filter(
+                group=group, created_at__range=date_range
+            ).count()
+        except ObjectDoesNotExist:
+            recieve_chat_message = 0
+
+        # Todo download_resource,read_blog,read_forum
+
+        tallies = {
+            "post_blog": post_blog,
+            "send_chat_message": send_chat_message,
+            "post_forum": post_forum,
+            "image_sharing": image_sharing,
+            "video_sharing": video_sharing,
+            "text_resource_sharing": text_resource_sharing,
+            "created_topic": created_topic,
+            "comment": comment,
+            "used_in_app_browser": used_in_app_browser,
+            "read_blog": 0,
+            "read_forum": 0,
+            "recieve_chat_message": recieve_chat_message,
+            "download_resources": 0,
+        }
+
+        output = calculate_engagement_scores(tallies)
+
+        return Response(
+            {
+                "success": True,
+                "seci_details": output,
+                "group_id": group_id,
+                "start_date": start_date,
+                "end_date": end_date,
             },
             status=status.HTTP_200_OK,
         )

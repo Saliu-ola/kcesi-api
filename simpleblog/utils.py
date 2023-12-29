@@ -24,7 +24,7 @@ def calculate_engagement_scores(tallies):
         "post_forum": 0.25,
         "image_sharing": 0.002,
         "video_sharing": 0.002,
-        "text_resource_Sharing": 0.002,
+        "text_resource_sharing": 0.002,
         "created_topic": 0.025,
     }
 
@@ -93,7 +93,7 @@ def calculate_engagement_scores(tallies):
 #     "post_forum": 3,
 #     "image_sharing": 4,
 #     "video_sharing": 7,
-#     "text_resource_Sharing": 4,
+#     "text_resource_sharing": 4,
 #     "created_topic": 5,
 #     "comment": 4,
 #     "used_in_app_browser": 1,

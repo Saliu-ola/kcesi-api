@@ -97,7 +97,7 @@ class BlogViewSets(viewsets.ModelViewSet):
                 type=OpenApiTypes.STR,
             ),
         ],
-        responses={200},
+        
     )
     @action(
         methods=['GET'],
