@@ -30,6 +30,14 @@ from .tokens import create_jwt_pair_for_user
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from group.models import Group
+from simpleblog.utils import calculate_engagement_scores
+from blog.models import Blog, Comment
+from in_app_chat.models import InAppChat
+from resource.models import Resources, Type
+from browser_history.models import BrowserHistory
+from forum.models import Forum
+from topics.models import Topic
+from django.core.exceptions import ObjectDoesNotExist
 
 # Create your views here.
 
@@ -219,6 +227,117 @@ class UserViewSets(viewsets.ModelViewSet):
 
         return Response(
             {"success": True, "total_members": output},
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="user_id",
+                description="user_id",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+        ],
+        responses={200},
+    )
+    @action(
+        methods=['GET'],
+        detail=False,
+        serializer_class=None,
+        url_path='get-seci-details',
+    )
+    def get_seci_details(self, request, pk=None):
+        """Get seci detail"""
+
+        user_id = request.query_params["user_id"]
+        query_data = get_object_or_404(User, pk=user_id)
+        user = query_data.pk
+        organization_id = query_data.organization_id
+        group_id = query_data.group_id
+        try:
+            post_blog = Blog.objects.filter(author=user).count()
+        except ObjectDoesNotExist:
+            post_blog = 0
+
+        try:
+            send_chat_message = InAppChat.objects.filter(sender=user).count()
+        except ObjectDoesNotExist:
+            send_chat_message = 0
+
+        try:
+            post_forum = Forum.objects.filter(user=user).count()
+        except ObjectDoesNotExist:
+            post_forum = 0
+
+        try:
+            image_sharing = Resources.objects.filter(
+                type__name__icontains='Image', sender=user
+            ).count()
+        except ObjectDoesNotExist:
+            image_sharing = 0
+
+        try:
+            video_sharing = Resources.objects.filter(
+                type__name__icontains='Video', sender=user
+            ).count()
+        except ObjectDoesNotExist:
+            video_sharing = 0
+
+        try:
+            text_resource_Sharing = Resources.objects.filter(
+                type__name__icontains='Text-Based', sender=user
+            ).count()
+        except ObjectDoesNotExist:
+            text_resource_Sharing = 0
+
+        try:
+            created_topic = Topic.objects.filter(author=user).count()
+        except ObjectDoesNotExist:
+            created_topic = 0
+
+        try:
+            comment = Comment.objects.filter(user=user).count()
+        except ObjectDoesNotExist:
+            comment = 0
+
+        try:
+            used_in_app_browser = BrowserHistory.objects.filter(user=user).count()
+        except ObjectDoesNotExist:
+            used_in_app_browser = 0
+
+        try:
+            recieve_chat_message = InAppChat.objects.filter(receiver=user).count()
+        except ObjectDoesNotExist:
+            recieve_chat_message = 0
+
+        # Todo download_resource,read_blog,read_forum
+
+        tallies = {
+            "post_blog": post_blog,
+            "send_chat_message": send_chat_message,
+            "post_forum": post_forum,
+            "image_sharing": image_sharing,
+            "video_sharing": video_sharing,
+            "text_resource_Sharing": text_resource_Sharing,
+            "created_topic": created_topic,
+            "comment": comment,
+            "used_in_app_browser": used_in_app_browser,
+            "read_blog": 0,
+            "read_forum": 0,
+            "recieve_chat_message": recieve_chat_message,
+            "download_resources": 0,
+        }
+
+        output = calculate_engagement_scores(tallies)
+
+        return Response(
+            {
+                "success": True,
+                "SECI_DETAILS": output,
+                "organization_id": organization_id,
+                "group": group_id,
+            },
             status=status.HTTP_200_OK,
         )
 
