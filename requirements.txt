@@ -28,3 +28,6 @@ pytest-django
 factory-boy
 mock
 faker
+django-cloudinary-storage
+cloudinary
+pillow

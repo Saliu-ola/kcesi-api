@@ -57,8 +57,10 @@ class UserViewSets(viewsets.ModelViewSet):
         'role_id',
         'phone',
         'organization_name',
+        'gender'
+
     ]
-    search_fields = ['email', 'username', 'phone', 'organization_name']
+    search_fields = ['email', 'username', 'phone', 'organization_name','first_name','last_name',]
     ordering_fields = ['created_at', 'last_login', 'email', 'role_id', 'group_id']
 
     def get_permissions(self):
@@ -803,6 +805,7 @@ class LoginView(generics.GenericAPIView):
                         "tokens": tokens,
                         "email": email,
                         "role": user.role_id,
+                        "user":user.pk,
                         "organization": organization,
                         "organization_id": user.organization_id,
                         "organization_name": user.organization_name,
