@@ -1,13 +1,15 @@
 from rest_framework.request import Request
 from rest_framework.response import Response
 from .models import Resources, Type
-from .serializers import ResourcesSerializer, ResourcesTypeSerializer
+from .serializers import ResourcesSerializer, ResourcesTypeSerializer, CreateResourcesSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
 from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperOrAdminAdmin
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
+import cloudinary.uploader
+from rest_framework.parsers import MultiPartParser, FormParser
 
 
 class ResourcesTypeViewSets(viewsets.ModelViewSet):
@@ -40,6 +42,16 @@ class ResourcesViewSets(viewsets.ModelViewSet):
     filterset_fields = ['type', 'size', 'organization', 'group', 'sender', 'receiver']
     search_fields = ['title']
     ordering_fields = ['created_at']
+    parser_classes = [MultiPartParser]
+
+    def perform_destroy(self, instance):
+        # Remove the cloud content using the cloud_id
+        cloudinary.uploader.destroy(instance.cloud_id)
+
+    def get_serializer_class(self):
+        if self.action in ['update', 'create', 'partial_update']:
+            return CreateResourcesSerializer
+        return ResourcesSerializer
 
     def paginate_results(self, queryset):
         page = self.paginate_queryset(queryset)
@@ -138,7 +150,6 @@ class ResourcesViewSets(viewsets.ModelViewSet):
                 type=OpenApiTypes.STR,
             ),
         ],
-        
     )
     @action(
         methods=['GET'],
@@ -150,7 +161,7 @@ class ResourcesViewSets(viewsets.ModelViewSet):
         """Get total for resources by groups"""
         resource_type = request.query_params["type"]
         group = request.query_params["group"]
-        output = Resources.objects.filter(group=group,type=resource_type).count()
+        output = Resources.objects.filter(group=group, type=resource_type).count()
         if not output:
             return Response(
                 {"success": False, "total_resources": 0},

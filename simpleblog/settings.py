@@ -15,6 +15,8 @@ from pathlib import Path
 import dj_database_url
 from decouple import config
 import os
+import cloudinary
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -56,6 +58,8 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "drf_spectacular",
     "debug_toolbar",
+    'cloudinary_storage',
+    'cloudinary',
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -208,3 +212,11 @@ EMAIL_PORT = config("EMAIL_PORT")
 EMAIL_HOST_USER = config("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
 EMAIL_USE_TLS = "EMAIL_USE_TLS"
+
+
+# Add your Cloudinary configuration
+cloudinary.config(
+    cloud_name=config('CLOUD_NAME'),
+    api_key=config("API_KEY"),
+    api_secret=config("API_SECRET"),
+)

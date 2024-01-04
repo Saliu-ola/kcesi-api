@@ -3,6 +3,7 @@ from platforms.models import Platform
 from organization.models import Organization
 from group.models import Group
 from accounts.models import User
+from cloudinary.models import CloudinaryField
 
 
 class Type(models.Model):
@@ -22,13 +23,12 @@ class Resources(models.Model):
     organization = models.ForeignKey(
         Organization, on_delete=models.DO_NOTHING, related_name="organization_resources"
     )
-    group = models.ForeignKey(
-        Group, on_delete=models.DO_NOTHING, related_name="group_resources"
-    )
+    group = models.ForeignKey(Group, on_delete=models.DO_NOTHING, related_name="group_resources")
 
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sender_resources")
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="receiver_resources")
-
+    media_url = models.CharField(max_length=255, blank=True, null=True)
+    cloud_id = models.CharField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 

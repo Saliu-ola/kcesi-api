@@ -15,6 +15,8 @@ TOKEN_TYPE = (
     ('PASSWORD_RESET', 'PASSWORD_RESET'),
 )
 
+GENDER = (('MALE', 'MALE'), ('FEMALE', 'FEMALE'))
+
 
 # Create a new user
 class CustomUserManager(BaseUserManager):
@@ -58,6 +60,7 @@ class User(AbstractUser):
     )
     organization_name = models.CharField(max_length=50, null=True)
     phone = models.CharField(max_length=17, blank=True, null=True)
+    gender = models.CharField(choices=GENDER, null=True, max_length=20)
     is_verified = models.BooleanField(default=False, null=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
