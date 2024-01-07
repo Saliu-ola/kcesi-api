@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework.authtoken",
     "drf_spectacular",
+    'drf_spectacular_sidecar',
     "debug_toolbar",
     'cloudinary_storage',
     'cloudinary',
@@ -114,6 +115,14 @@ SPECTACULAR_SETTINGS = {
     "LICENCE": {"name": "BSD License"},
     "CONTACT": {"name": "Oladitan Saliu ", "email": "saliuoladitan@gmail.com"},
 }
+
+SPECTACULAR_SETTINGS = {
+    'SWAGGER_UI_DIST': 'SIDECAR',  # shorthand to use the sidecar instead
+    'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
+    'REDOC_DIST': 'SIDECAR',
+    # OTHER SETTINGS
+}
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=6),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
