@@ -101,9 +101,10 @@ SPECTACULAR_SETTINGS = {
     "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],
     "COMPONENT_SPLIT_PATCH": True,
     "COMPONENT_SPLIT_REQUEST": True,
+    "CACHE": False,
     "SWAGGER_UI_SETTINGS": {
         "deepLinking": True,
-        "persistAuthorization": True,
+        "persistAuthorization": False,
         "displayOperationId": True,
         "displayRequestDuration": True,
     },
@@ -113,7 +114,6 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "LICENCE": {"name": "BSD License"},
     "CONTACT": {"name": "Oladitan Saliu ", "email": "saliuoladitan@gmail.com"},
-    
 }
 
 
