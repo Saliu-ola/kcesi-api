@@ -39,12 +39,17 @@ from forum.models import Forum
 from topics.models import Topic
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
+from rest_framework import mixins
 
 # Create your views here.
 
 
-class UserViewSets(viewsets.ModelViewSet):
-    http_method_names = ["get", "patch", "put", "delete"]
+class UserViewSets(mixins.ListModelMixin,
+                   mixins.RetrieveModelMixin,
+                   mixins.DestroyModelMixin,
+                   mixins.UpdateModelMixin,
+                   viewsets.GenericViewSet):
+    
     serializer_class = ListUserSerializer
     permission_classes = [AllowAny]
     queryset = User.objects.all()
