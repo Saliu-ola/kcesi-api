@@ -31,4 +31,4 @@ faker
 django-cloudinary-storage
 cloudinary
 pillow
-drf-spectacular[sidecar]
+
