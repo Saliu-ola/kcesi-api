@@ -101,7 +101,6 @@ SPECTACULAR_SETTINGS = {
     "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],
     "COMPONENT_SPLIT_PATCH": True,
     "COMPONENT_SPLIT_REQUEST": True,
-    "CACHE": False,
     "SWAGGER_UI_SETTINGS": {
         "deepLinking": True,
         "persistAuthorization": False,

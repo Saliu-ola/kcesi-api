@@ -5,7 +5,7 @@ from .serializers import ResourcesSerializer, ResourcesTypeSerializer, CreateRes
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
-from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperOrAdminAdmin
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 import cloudinary.uploader
@@ -15,7 +15,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 class ResourcesTypeViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
     serializer_class = ResourcesTypeSerializer
-    permission_classes = [IsSuperOrAdminAdmin]
+    permission_classes = [IsAuthenticated]
     queryset = Type.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [
@@ -36,7 +36,7 @@ class ResourcesTypeViewSets(viewsets.ModelViewSet):
 class ResourcesViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
     serializer_class = ResourcesSerializer
-    permission_classes = [IsSuperOrAdminAdmin]
+    permission_classes = [IsAuthenticated]
     queryset = Resources.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['type', 'size', 'organization', 'group', 'sender', 'receiver']

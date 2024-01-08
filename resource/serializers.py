@@ -6,6 +6,8 @@ from organization.models import Organization
 from group.models import Group
 from platforms.models import Platform
 from accounts.models import User
+from organization.models import Organization
+from group.models import Group
 
 
 class ResourcesTypeSerializer(serializers.ModelSerializer):
@@ -23,58 +25,6 @@ class ResourcesSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-# class CreateResourcesSerializer(serializers.Serializer):
-#     file = serializers.FileField(required=True,write_only=True)
-#     title = serializers.CharField(required=True)
-#     type = serializers.PrimaryKeyRelatedField(queryset=Type.objects.all())
-#     platform = serializers.PrimaryKeyRelatedField(queryset=Platform.objects.all())
-#     organization = serializers.PrimaryKeyRelatedField(queryset=Organization.objects.all())
-#     group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
-#     sender = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-#     receiver = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-
-
-#     def create(self, validated_data):
-#         file = validated_data.pop('file')  # Extract 'file' from validated_data
-
-#         # Upload the file to Cloudinary or your desired storage
-#         upload_result = cloudinary.uploader.upload(file)
-#         print(validated_data)
-#         # Create a new Resources instance with the other fields
-#         instance = Resources.objects.create(
-#             media_url=upload_result["url"], cloud_id=upload_result["public_id"], **validated_data
-#         )
-#         print(instance)
-
-#         return instance
-
-#     def update(self, instance, validated_data):
-#         file = validated_data.pop('file', None)  # Extract 'file' from validated_data
-
-#         if file:
-#             # Delete the old file in Cloudinary
-#             cloudinary.uploader.destroy(instance.cloud_id)
-
-#             # Upload the new file to Cloudinary or your desired storage
-#             upload_result = cloudinary.uploader.upload(file)
-
-#             # Update the media_url and cloud_id with the new values
-#             instance.media_url = upload_result["url"]
-#             instance.cloud_id = upload_result["public_id"]
-
-#         # Update other fields as needed
-#         instance.title = validated_data.get('title', instance.title)
-#         instance.type = validated_data.get('type', instance.type)
-#         instance.platform = validated_data.get('platform', instance.platform)
-#         instance.organization = validated_data.get('organization', instance.organization)
-#         instance.group = validated_data.get('group', instance.group)
-#         instance.sender = validated_data.get('sender', instance.sender)
-#         instance.receiver = validated_data.get('receiver', instance.receiver)
-
-#         instance.save()
-#         return instance
-
-
 class CreateResourcesSerializer(serializers.ModelSerializer):
     file = serializers.FileField(required=True, write_only=True)
     title = serializers.CharField(required=True)
@@ -86,8 +36,6 @@ class CreateResourcesSerializer(serializers.ModelSerializer):
             "file",
             "type",
             "platform",
-            "organization",
-            "group",
             "sender",
             "receiver",
             "size",
@@ -101,13 +49,17 @@ class CreateResourcesSerializer(serializers.ModelSerializer):
 
         # Upload the file to Cloudinary or your desired storage
         upload_result = cloudinary.uploader.upload(file)
-
+        organization_id = self.context["request"].user.organization_id
+        organization = Organization.objects.get(organization_id=organization_id) or None
+        group = Group.objects.get(pk=self.context["request"].user.group_id) or None
         # Create a new Resources instance with the other fields
         instance = Resources.objects.create(
             media_url=upload_result["url"],
             cloud_id=upload_result["public_id"],
             size=upload_result["bytes"],
-            **validated_data
+            organization=organization,
+            group=group,
+            **validated_data,
         )
 
         return instance
