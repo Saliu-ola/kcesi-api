@@ -56,7 +56,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "rest_framework.authtoken",
-    "drf_spectacular",
+    'drf_spectacular',
     "debug_toolbar",
     'cloudinary_storage',
     'cloudinary',
@@ -84,16 +84,18 @@ ROOT_URLCONF = "simpleblog.urls"
 CORS_ALLOW_ALL_ORIGINS = True
 REST_FRAMEWORK = {
     "NON_FIELD_ERRORS_KEY": "errors",
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework.authentication.SessionAuthentication",
-        "rest_framework.authentication.TokenAuthentication",
+        # "rest_framework.authentication.SessionAuthentication",
+        # "rest_framework.authentication.TokenAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated"),
     "DEFAULT_PAGINATION_CLASS": "simpleblog.pagination.CustomPagination",
     "PAGE_SIZE": 10,
 }
+
+
 
 SPECTACULAR_SETTINGS = {
     "SCHEMA_PATH_PREFIX": r"/api/v1",
@@ -103,9 +105,8 @@ SPECTACULAR_SETTINGS = {
     "COMPONENT_SPLIT_REQUEST": True,
     "SWAGGER_UI_SETTINGS": {
         "deepLinking": True,
-        "persistAuthorization": False,
+        "persistAuthorization": True,
         "displayOperationId": True,
-        "displayRequestDuration": True,
     },
     "UPLOADED_FILES_USE_URL": True,
     "TITLE": "KCESI-API",

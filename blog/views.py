@@ -112,7 +112,7 @@ class BlogViewSets(viewsets.ModelViewSet):
     )
     def get_total_blogs_by_group(self, request, pk=None):
         """Get total for an  organization blogs by groups"""
- 
+
         group = request.query_params["group"]
         output = Blog.objects.filter(group=group).count()
         if not output:
@@ -130,7 +130,7 @@ class BlogViewSets(viewsets.ModelViewSet):
 class CommentViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
     serializer_class = CommentSerializer
-    permission_classes = [IsSuperOrAdminAdmin]
+    permission_classes = [IsAuthenticated]
     queryset = Comment.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['user', 'organization', 'blog', 'Platform', 'group']
