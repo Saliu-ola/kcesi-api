@@ -3,7 +3,7 @@ from rest_framework import serializers
 from .models import Blog, Comment
 
 
-class BlogCreateSerializer(serializers.ModelSerializer):
+class BlogListSerializer(serializers.ModelSerializer):
     author_name = serializers.StringRelatedField(
         source='author.full_name',
     )
@@ -12,6 +12,12 @@ class BlogCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Blog
         fields = "__all__"
+
+
+class BlogCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Blog
+        fields = ["topic", "category", "content", "organization", "group", "resources"]
 
 
 class CommentSerializer(serializers.ModelSerializer):
