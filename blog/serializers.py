@@ -17,7 +17,8 @@ class BlogListSerializer(serializers.ModelSerializer):
 class BlogCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Blog
-        fields = ["topic", "category", "content", "organization", "group", "resources"]
+        fields = ["id","topic", "category", "content", "organization", "group", "resources"]
+        read_only_fields = ["id"]
 
 
 class CommentSerializer(serializers.ModelSerializer):

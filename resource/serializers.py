@@ -32,6 +32,7 @@ class CreateResourcesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Resources
         fields = [
+            "id",
             "title",
             "file",
             "type",
@@ -42,7 +43,7 @@ class CreateResourcesSerializer(serializers.ModelSerializer):
             "media_url",
             "cloud_id",
         ]
-        read_only_fields = ["media_url", "cloud_id", "size"]
+        read_only_fields = ["id", "media_url", "cloud_id", "size"]
 
     def create(self, validated_data):
         file = validated_data.pop('file')  # Extract 'file' from validated_data
