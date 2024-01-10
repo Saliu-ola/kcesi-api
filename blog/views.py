@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from .models import Blog, Comment
 from organization.models import Organization
 from group.models import Group
-from .serializers import BlogCreateSerializer, CommentSerializer
+from .serializers import BlogCreateSerializer, CommentSerializer, BlogListSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
@@ -18,7 +18,7 @@ from drf_spectacular.types import OpenApiTypes
 
 class BlogViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
-    serializer_class = BlogCreateSerializer
+    serializer_class = BlogListSerializer
     queryset = Blog.objects.all().prefetch_related('resources')
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -26,11 +26,23 @@ class BlogViewSets(viewsets.ModelViewSet):
     search_fields = ['topic']
     ordering_fields = ['created_at']
 
+
+
     def get_queryset(self):
         organization_id = self.request.user.organization_id
         organization = Organization.objects.filter(organization_id=organization_id).first()
 
         return self.queryset.filter(organization=organization)
+    
+    def perform_create(self, serializer):
+      author = self.request.user
+      serializer.save(author=author)
+      
+
+    def get_serializer_class(self):
+        if self.action in ["retrieve", "list"]:
+            return BlogListSerializer
+        return BlogCreateSerializer
 
     def paginate_results(self, queryset):
         page = self.paginate_queryset(queryset)
