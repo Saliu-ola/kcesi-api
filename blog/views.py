@@ -14,30 +14,41 @@ from rest_framework.decorators import action
 from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperOrAdminAdmin
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
+from django.db.models import F, Value, CharField
+from django.db.models.functions import Concat
 
 
 class BlogViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
     serializer_class = BlogListSerializer
-    queryset = Blog.objects.all().prefetch_related('resources')
+    queryset = (
+        Blog.objects.all()
+        .prefetch_related('resources')
+        .select_related('author', 'organization', 'group')
+    
+    )
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category', 'author', 'organization', 'group']
+    filterset_fields = [
+        'category',
+        'author',
+        'organization',
+        'organization__name',
+        'group',
+        'group__title',
+    ]
     search_fields = ['topic']
     ordering_fields = ['created_at']
-
-
 
     def get_queryset(self):
         organization_id = self.request.user.organization_id
         organization = Organization.objects.filter(organization_id=organization_id).first()
 
         return self.queryset.filter(organization=organization)
-    
+
     def perform_create(self, serializer):
-      author = self.request.user
-      serializer.save(author=author)
-      
+        author = self.request.user
+        serializer.save(author=author)
 
     def get_serializer_class(self):
         if self.action in ["retrieve", "list"]:
