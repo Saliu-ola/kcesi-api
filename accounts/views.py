@@ -44,12 +44,13 @@ from rest_framework import mixins
 # Create your views here.
 
 
-class UserViewSets(mixins.ListModelMixin,
-                   mixins.RetrieveModelMixin,
-                   mixins.DestroyModelMixin,
-                   mixins.UpdateModelMixin,
-                   viewsets.GenericViewSet):
-    
+class UserViewSets(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
     serializer_class = ListUserSerializer
     permission_classes = [AllowAny]
     queryset = User.objects.all()
@@ -62,10 +63,16 @@ class UserViewSets(mixins.ListModelMixin,
         'role_id',
         'phone',
         'organization_name',
-        'gender'
-
+        'gender',
     ]
-    search_fields = ['email', 'username', 'phone', 'organization_name','first_name','last_name',]
+    search_fields = [
+        'email',
+        'username',
+        'phone',
+        'organization_name',
+        'first_name',
+        'last_name',
+    ]
     ordering_fields = ['created_at', 'last_login', 'email', 'role_id', 'group_id']
 
     def get_permissions(self):
@@ -173,7 +180,7 @@ class UserViewSets(mixins.ListModelMixin,
         organization = request.query_params["organization"]
         organization_id = Organization.objects.get(pk=organization).organization_id
         output = User.objects.filter(organization_id=organization_id).count()
-        print(output)
+      
         if not output:
             return Response(
                 {"success": False, "total_members": 0},
@@ -419,68 +426,82 @@ class UserViewSets(mixins.ListModelMixin,
 
         date_range = (start_date, end_date)
 
-        query_data = get_object_or_404(User, organization_id=organization_id)
-        user = query_data.pk
-        organization_id = query_data.organization_id
-        group_id = query_data.group_id
+        organization = get_object_or_404(Organization, organization_id=organization_id).pk
+        group_ids = Group.objects.filter(organization_id=organization_id).values_list(
+            'id', flat=True
+        )
+
+
         try:
-            post_blog = Blog.objects.filter(author=user, created_at__range=date_range).count()
+            post_blog = Blog.objects.filter(
+                organization=organization, created_at__range=date_range
+            ).count()
         except ObjectDoesNotExist:
             post_blog = 0
 
         try:
             send_chat_message = InAppChat.objects.filter(
-                sender=user, created_at__range=date_range
+                organization=organization, created_at__range=date_range
             ).count()
         except ObjectDoesNotExist:
             send_chat_message = 0
 
         try:
-            post_forum = Forum.objects.filter(user=user, created_at__range=date_range).count()
+            post_forum = Forum.objects.filter(
+                organization=organization, created_at__range=date_range
+            ).count()
         except ObjectDoesNotExist:
             post_forum = 0
 
         try:
             image_sharing = Resources.objects.filter(
-                type__name__icontains='Image', sender=user, created_at__range=date_range
+                type__name__icontains='Image', sender=organization, created_at__range=date_range
             ).count()
         except ObjectDoesNotExist:
             image_sharing = 0
 
         try:
             video_sharing = Resources.objects.filter(
-                type__name__icontains='Video', sender=user, created_at__range=date_range
+                type__name__icontains='Video',
+                organization=organization,
+                created_at__range=date_range,
             ).count()
         except ObjectDoesNotExist:
             video_sharing = 0
 
         try:
             text_resource_sharing = Resources.objects.filter(
-                type__name__icontains='Text-Based', sender=user, created_at__range=date_range
+                type__name__icontains='Text-Based',
+                organization=organization,
+                created_at__range=date_range,
             ).count()
         except ObjectDoesNotExist:
             text_resource_sharing = 0
 
         try:
-            created_topic = Topic.objects.filter(author=user, created_at__range=date_range).count()
+            created_topic = Topic.objects.filter(
+                organization=organization, created_at__range=date_range
+            ).count()
         except ObjectDoesNotExist:
             created_topic = 0
 
         try:
-            comment = Comment.objects.filter(user=user, created_at__range=date_range).count()
+            comment = Comment.objects.filter(
+                organization=organization, created_at__range=date_range
+            ).count()
         except ObjectDoesNotExist:
             comment = 0
 
         try:
             used_in_app_browser = BrowserHistory.objects.filter(
-                user=user, created_at__range=date_range
+                organization=organization, created_at__range=date_range
             ).count()
         except ObjectDoesNotExist:
             used_in_app_browser = 0
 
         try:
             recieve_chat_message = InAppChat.objects.filter(
-                receiver=user, created_at__range=date_range
+                organization=organization, created_at__range=date_range
             ).count()
         except ObjectDoesNotExist:
             recieve_chat_message = 0
@@ -510,7 +531,7 @@ class UserViewSets(mixins.ListModelMixin,
                 "success": True,
                 "seci_details": output,
                 "organization_id": organization_id,
-                "group_id": group_id,
+                "group_ids": group_ids,
                 "start_date": start_date,
                 "end_date": end_date,
             },
@@ -810,7 +831,7 @@ class LoginView(generics.GenericAPIView):
                         "tokens": tokens,
                         "email": email,
                         "role": user.role_id,
-                        "user":user.pk,
+                        "user": user.pk,
                         "organization": organization,
                         "organization_id": user.organization_id,
                         "organization_name": user.organization_name,
