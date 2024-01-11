@@ -16,7 +16,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
 class GroupViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
     serializer_class = GroupSerializer
-    permission_classes = [IsSuperOrAdminAdmin]
+    permission_classes = [AllowAny]
     queryset = Group.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [
