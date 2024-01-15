@@ -3,6 +3,7 @@ from accounts.models import User
 from group.models import Group
 from organization.models import Organization
 from platforms.models import Platform
+from category.models import Category
 
 
 class Forum(models.Model):
@@ -11,6 +12,9 @@ class Forum(models.Model):
     content = models.TextField(null=True)
     organization = models.ForeignKey(
         Organization, on_delete=models.DO_NOTHING, related_name="organization_forums"
+    )
+    temp_category = models.ForeignKey(
+        Category, on_delete=models.DO_NOTHING, related_name="cat_forums", null=True
     )
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_forums")
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_forums")
