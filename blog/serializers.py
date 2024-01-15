@@ -13,6 +13,9 @@ class BlogListSerializer(serializers.ModelSerializer):
     organization_name = serializers.StringRelatedField(
         source='organization.name',
     )
+    category_name = serializers.StringRelatedField(
+        source='category.name',
+    )
     resources = serializers.SlugRelatedField(many=True, read_only=True, slug_field='media_url')
 
     class Meta:
