@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "forum",
     "topics",
     "browser_history",
+    "category",
     # third-party-apps
     "rest_framework",
     "corsheaders",
