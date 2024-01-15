@@ -9,13 +9,12 @@ from category.models import Category
 
 class Blog(models.Model):
     topic = models.CharField(max_length=225, null=True)
-    category = models.CharField(max_length=225, null=True)
     content = models.TextField(null=True)
     organization = models.ForeignKey(
         Organization, on_delete=models.DO_NOTHING, related_name="organization_blogs"
     )
-    temp_category = models.ForeignKey(
-        Category, on_delete=models.DO_NOTHING, related_name="cat_blogs",null=True
+    category = models.ForeignKey(
+        Category, on_delete=models.DO_NOTHING, null=True
     )
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_blogs")
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_blogs")

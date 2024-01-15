@@ -24,13 +24,13 @@ class BlogViewSets(viewsets.ModelViewSet):
     queryset = (
         Blog.objects.all()
         .prefetch_related('resources')
-        .select_related('author', 'organization', 'group')
-    
+        .select_related('author', 'organization', 'group', 'category')
     )
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [
         'category',
+        'category__name',
         'author',
         'organization',
         'organization__name',

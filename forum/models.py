@@ -8,12 +8,11 @@ from category.models import Category
 
 class Forum(models.Model):
     topic = models.CharField(max_length=225, null=True)
-    category = models.CharField(max_length=225, null=True)
     content = models.TextField(null=True)
     organization = models.ForeignKey(
         Organization, on_delete=models.DO_NOTHING, related_name="organization_forums"
     )
-    temp_category = models.ForeignKey(
+    category = models.ForeignKey(
         Category, on_delete=models.DO_NOTHING, related_name="cat_forums", null=True
     )
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_forums")
