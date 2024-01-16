@@ -820,11 +820,14 @@ class LoginView(generics.GenericAPIView):
             if user is not None:
                 if user.is_verified:
                     tokens = create_jwt_pair_for_user(user)
+                      
                     response = {
                         "message": "Login Successful",
                         "tokens": tokens,
-                        "user": ListUserSerializer(instance=user).data,
+                        **ListUserSerializer(instance=user).data
+                        
                     }
+                    
 
                     return Response(data=response, status=status.HTTP_200_OK)
                 else:
