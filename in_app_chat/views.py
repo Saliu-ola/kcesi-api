@@ -9,7 +9,7 @@ from .serializers import InAppChatSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
-from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperOrAdminAdmin
+from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
 from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
@@ -18,7 +18,7 @@ from drf_spectacular.types import OpenApiTypes
 class InAppChatViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
     serializer_class = InAppChatSerializer
-    permission_classes = [IsSuperOrAdminAdmin]
+    permission_classes = [IsSuperAdminOrAdmin]
     queryset = InAppChat.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['sender', 'receiver', 'organization', 'group']
@@ -150,7 +150,6 @@ class InAppChatViewSets(viewsets.ModelViewSet):
                 type=OpenApiTypes.STR,
             ),
         ],
-       
     )
     @action(
         methods=['GET'],
@@ -183,7 +182,6 @@ class InAppChatViewSets(viewsets.ModelViewSet):
                 type=OpenApiTypes.STR,
             ),
         ],
-        
     )
     @action(
         methods=['GET'],

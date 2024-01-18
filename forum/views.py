@@ -9,7 +9,7 @@ from .serializers import ForumSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
-from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperOrAdminAdmin
+from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
@@ -17,7 +17,7 @@ from drf_spectacular.types import OpenApiTypes
 class ForumViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
     serializer_class = ForumSerializer
-    permission_classes = [IsSuperOrAdminAdmin]
+    permission_classes = [IsSuperAdminOrAdmin]
     queryset = Forum.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['category', 'user', 'organization', 'group']
@@ -95,7 +95,6 @@ class ForumViewSets(viewsets.ModelViewSet):
                 type=OpenApiTypes.STR,
             ),
         ],
-       
     )
     @action(
         methods=['GET'],

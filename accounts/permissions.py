@@ -32,7 +32,7 @@ class IsUser(permissions.BasePermission):
         return bool(request.user.is_authenticated and request.user.role_id == USER_ROLE_ID)
 
 
-class IsSuperOrAdminAdmin(permissions.BasePermission):
+class IsSuperAdminOrAdmin(permissions.BasePermission):
 
     """Allows access only to  super_admin users."""
 
