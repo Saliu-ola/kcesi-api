@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "topics",
     "browser_history",
     "category",
+    "leader",
     # third-party-apps
     "rest_framework",
     "corsheaders",
@@ -95,7 +96,6 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "simpleblog.pagination.CustomPagination",
     "PAGE_SIZE": 10,
 }
-
 
 
 SPECTACULAR_SETTINGS = {
