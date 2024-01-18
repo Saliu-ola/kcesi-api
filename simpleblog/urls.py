@@ -6,7 +6,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("groups/", include("group.urls")),
     path("categories/", include("category.urls")),
-    path("leaders/", include("leader.urls")),
+    path("seci-activity-score/", include("leader.urls")),
     path("organizations/", include("organization.urls")),
     path("resources/", include("resource.urls")),
     path("forums/", include("forum.urls")),

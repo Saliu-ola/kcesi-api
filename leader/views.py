@@ -30,9 +30,17 @@ class SocializationViewSets(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
-            return [IsSuperOrAdminAdmin()]
+            return [IsSuperOrAdminAdmin]
 
         return super().get_permissions()
+
+    def get_queryset(self):
+        if IsAdmin().has_permission(self.request, self):
+            organization = Organization.objects.filter.get(
+                organization_id=self.request.user.organization_id
+            ).pk
+            return self.queryset.filter(organization=organization)
+        return super().get_queryset()
 
     def paginate_results(self, queryset):
         page = self.paginate_queryset(queryset)
@@ -52,9 +60,17 @@ class ExternalizationViewSets(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
-            return [IsSuperOrAdminAdmin()]
+            return [IsSuperOrAdminAdmin]
 
         return super().get_permissions()
+
+    def get_queryset(self):
+        if IsAdmin().has_permission(self.request, self):
+            organization = Organization.objects.filter.get(
+                organization_id=self.request.user.organization_id
+            ).pk
+            return self.queryset.filter(organization=organization)
+        return super().get_queryset()
 
     def paginate_results(self, queryset):
         page = self.paginate_queryset(queryset)
@@ -74,9 +90,17 @@ class InternalizationViewSets(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
-            return [IsSuperOrAdminAdmin()]
+            return [IsSuperOrAdminAdmin]
 
         return super().get_permissions()
+
+    def get_queryset(self):
+        if IsAdmin().has_permission(self.request, self):
+            organization = Organization.objects.filter.get(
+                organization_id=self.request.user.organization_id
+            ).pk
+            return self.queryset.filter(organization=organization)
+        return super().get_queryset()
 
     def paginate_results(self, queryset):
         page = self.paginate_queryset(queryset)
@@ -96,9 +120,17 @@ class CombinationViewSets(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
-            return [IsSuperOrAdminAdmin()]
+            return [IsSuperOrAdminAdmin]
 
         return super().get_permissions()
+
+    def get_queryset(self):
+        if IsAdmin().has_permission(self.request, self):
+            organization = Organization.objects.filter.get(
+                organization_id=self.request.user.organization_id
+            ).pk
+            return self.queryset.filter(organization=organization)
+        return super().get_queryset()
 
     def paginate_results(self, queryset):
         page = self.paginate_queryset(queryset)

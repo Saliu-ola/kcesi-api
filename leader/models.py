@@ -1,16 +1,17 @@
 from django.db import models
 from group.models import Group
 from organization.models import Organization
+from django.core.validators import MinValueValidator
 
 
 class Socialization(models.Model):
-    post_blog = models.IntegerField(default=0)
-    send_chat_message = models.IntegerField(default=0)
-    post_forum = models.IntegerField(default=0)
-    image_sharing = models.IntegerField(default=0)
-    video_sharing = models.IntegerField(default=0)
-    text_resource_sharing = models.IntegerField(default=0)
-    created_topic = models.IntegerField(default=0)
+    post_blog = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    send_chat_message = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    post_forum = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    image_sharing = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    video_sharing = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    text_resource_sharing = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    created_topic = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     organization = models.ForeignKey(
         Organization, on_delete=models.DO_NOTHING, related_name="organization_socs"
     )
@@ -33,11 +34,11 @@ class Socialization(models.Model):
 
 
 class Externalization(models.Model):
-    post_blog = models.IntegerField(default=0)
-    send_chat_message = models.IntegerField(default=0)
-    post_forum = models.IntegerField(default=0)
-    created_topic = models.IntegerField(default=0)
-    comment = models.IntegerField(default=0)
+    post_blog = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    send_chat_message = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    post_forum = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    created_topic = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    comment = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     organization = models.ForeignKey(
         Organization, on_delete=models.DO_NOTHING, related_name="organization_exts"
     )
@@ -58,8 +59,8 @@ class Externalization(models.Model):
 
 
 class Combination(models.Model):
-    created_topic = models.IntegerField(default=0)
-    post_blog = models.IntegerField(default=0)
+    created_topic = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    post_blog = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     organization = models.ForeignKey(
         Organization, on_delete=models.DO_NOTHING, related_name="organization_combs"
     )
@@ -74,11 +75,11 @@ class Combination(models.Model):
 
 
 class Internalization(models.Model):
-    used_in_app_browser = models.IntegerField(default=0)
-    read_blog = models.IntegerField(default=0)
-    read_forum = models.IntegerField(default=0)
-    recieve_chat_message = models.IntegerField(default=0)
-    download_resources = models.IntegerField(default=0)
+    used_in_app_browser = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    read_blog = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    read_forum = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    recieve_chat_message = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    download_resources = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     organization = models.ForeignKey(
         Organization, on_delete=models.DO_NOTHING, related_name="organization_inters"
     )
