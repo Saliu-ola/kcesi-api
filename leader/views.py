@@ -14,7 +14,7 @@ from .serializer import (
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
-from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperOrAdminAdmin
+from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from organization.models import Organization
@@ -28,15 +28,9 @@ class SocializationViewSets(viewsets.ModelViewSet):
     queryset = Socialization.objects.all()
     ordering_fields = ['created_at']
 
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return [IsSuperOrAdminAdmin]
-
-        return super().get_permissions()
-
     def get_queryset(self):
         if IsAdmin().has_permission(self.request, self):
-            organization = Organization.objects.filter.get(
+            organization = Organization.objects.get(
                 organization_id=self.request.user.organization_id
             ).pk
             return self.queryset.filter(organization=organization)
@@ -58,15 +52,9 @@ class ExternalizationViewSets(viewsets.ModelViewSet):
     queryset = Externalization.objects.all()
     ordering_fields = ['created_at']
 
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return [IsSuperOrAdminAdmin]
-
-        return super().get_permissions()
-
     def get_queryset(self):
         if IsAdmin().has_permission(self.request, self):
-            organization = Organization.objects.filter.get(
+            organization = Organization.objects.get(
                 organization_id=self.request.user.organization_id
             ).pk
             return self.queryset.filter(organization=organization)
@@ -88,15 +76,9 @@ class InternalizationViewSets(viewsets.ModelViewSet):
     queryset = Internalization.objects.all()
     ordering_fields = ['created_at']
 
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return [IsSuperOrAdminAdmin]
-
-        return super().get_permissions()
-
     def get_queryset(self):
         if IsAdmin().has_permission(self.request, self):
-            organization = Organization.objects.filter.get(
+            organization = Organization.objects.get(
                 organization_id=self.request.user.organization_id
             ).pk
             return self.queryset.filter(organization=organization)
@@ -114,19 +96,13 @@ class InternalizationViewSets(viewsets.ModelViewSet):
 class CombinationViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
     serializer_class = CombinationSerializer
-    permission_classes = [IsAdmin]
+    permission_classes = [IsSuperAdminOrAdmin]
     queryset = Combination.objects.all()
     ordering_fields = ['created_at']
 
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return [IsSuperOrAdminAdmin]
-
-        return super().get_permissions()
-
     def get_queryset(self):
         if IsAdmin().has_permission(self.request, self):
-            organization = Organization.objects.filter.get(
+            organization = Organization.objects.get(
                 organization_id=self.request.user.organization_id
             ).pk
             return self.queryset.filter(organization=organization)

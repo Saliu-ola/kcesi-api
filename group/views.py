@@ -9,7 +9,7 @@ from .serializers import GroupSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
-from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperOrAdminAdmin
+from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
 from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
 
 

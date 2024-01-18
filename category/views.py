@@ -9,7 +9,7 @@ from .serializers import CategorySerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
-from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperOrAdminAdmin
+from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from organization.models import Organization
@@ -19,7 +19,7 @@ from group.models import Group
 class CategoryViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
     serializer_class = CategorySerializer
-    permission_classes = [IsSuperOrAdminAdmin]
+    permission_classes = [IsSuperAdminOrAdmin]
     queryset = Category.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['name', 'creator', 'organization', 'group']

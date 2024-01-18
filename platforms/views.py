@@ -5,13 +5,13 @@ from .serializers import PlatformSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
-from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperOrAdminAdmin
+from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
 
 
 class PlatformViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
     serializer_class = PlatformSerializer
-    permission_classes = [IsSuperOrAdminAdmin]
+    permission_classes = [IsSuperAdminOrAdmin]
     queryset = Platform.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [

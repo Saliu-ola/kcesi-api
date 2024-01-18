@@ -14,7 +14,7 @@ from rest_framework.permissions import (
     AllowAny,
 )
 from organization.models import Organization
-from accounts.permissions import IsAdmin, IsSuperAdmin, IsUser, IsSuperOrAdminAdmin
+from accounts.permissions import IsAdmin, IsSuperAdmin, IsUser, IsSuperAdminOrAdmin
 from .serializers import (
     UserSignUpSerializer,
     LoginUserSerializer,
@@ -77,7 +77,7 @@ class UserViewSets(
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', 'create', 'update', 'partial_update', 'destroy']:
-            return [IsSuperOrAdminAdmin()]
+            return [IsSuperAdminOrAdmin()]
 
         return super().get_permissions()
 
@@ -180,7 +180,7 @@ class UserViewSets(
         organization = request.query_params["organization"]
         organization_id = Organization.objects.get(pk=organization).organization_id
         output = User.objects.filter(organization_id=organization_id).count()
-      
+
         if not output:
             return Response(
                 {"success": False, "total_members": 0},
@@ -430,7 +430,6 @@ class UserViewSets(
         group_ids = Group.objects.filter(organization_id=organization_id).values_list(
             'id', flat=True
         )
-
 
         try:
             post_blog = Blog.objects.filter(
@@ -820,14 +819,12 @@ class LoginView(generics.GenericAPIView):
             if user is not None:
                 if user.is_verified:
                     tokens = create_jwt_pair_for_user(user)
-                      
+
                     response = {
                         "message": "Login Successful",
                         "tokens": tokens,
-                        **ListUserSerializer(instance=user).data
-                        
+                        **ListUserSerializer(instance=user).data,
                     }
-                    
 
                     return Response(data=response, status=status.HTTP_200_OK)
                 else:
