@@ -10,9 +10,7 @@ from django.core.mail import send_mail
 from django.urls import reverse
 from django.conf import settings
 from django.shortcuts import get_object_or_404
-from rest_framework.permissions import (
-    AllowAny,
-)
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from organization.models import Organization
 from accounts.permissions import IsAdmin, IsSuperAdmin, IsUser, IsSuperAdminOrAdmin
 from .serializers import (
@@ -24,6 +22,7 @@ from .serializers import (
     ListUserSerializer,
     OrganizationByNameInputSerializer,
     OrganizationByIDInputSerializer,
+    UpdateUserImage,
 )
 from rest_framework.decorators import action
 from .tokens import create_jwt_pair_for_user
@@ -40,6 +39,8 @@ from topics.models import Topic
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from rest_framework import mixins
+import cloudinary.uploader
+from rest_framework.parsers import MultiPartParser, FormParser
 
 # Create your views here.
 
@@ -81,6 +82,11 @@ class UserViewSets(
 
         return super().get_permissions()
 
+    def perform_destroy(self, instance):
+        # Remove user image  from cloud after deleting
+        if instance.cloud_id is not None:
+            cloudinary.uploader.destroy(instance.cloud_id)
+
     def paginate_results(self, queryset):
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -88,6 +94,41 @@ class UserViewSets(
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+    @action(
+        methods=['POST'],
+        detail=True,
+        permission_classes=[IsAuthenticated],
+        serializer_class=UpdateUserImage,
+        url_path='update-user-image',
+        parser_classes=[MultiPartParser],
+    )
+    def update_user_image(self, request, pk=None):
+        user = self.get_object()
+        serializer = self.get_serializer(data={"image": request.data["image"]})
+
+        if serializer.is_valid():
+            image = serializer.validated_data["image"]
+
+            upload_result = cloudinary.uploader.upload(image, public_id=user.full_name)
+            if "public_id" not in upload_result or "url" not in upload_result:
+                return Response(
+                    {"error": "Failed to upload image to Cloudinary"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
+            if user.cloud_id and user.image_url:
+                cloudinary.uploader.destroy(user.cloud_id)
+
+            user.cloud_id = upload_result["public_id"]
+            user.image_url = upload_result["url"]
+            user.save()
+
+            return Response(
+                {"success": True, "data": "User profle image udated successfully"},
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
         parameters=[
@@ -375,7 +416,7 @@ class UserViewSets(
         return Response(
             {
                 "success": True,
-                "seci_details": output,
+                "seci_details": round(output, 2),
                 "organization_id": organization_id,
                 "group_id": group_id,
                 "start_date": start_date,
@@ -528,7 +569,7 @@ class UserViewSets(
         return Response(
             {
                 "success": True,
-                "seci_details": output,
+                "seci_details": round(output, 2),
                 "organization_id": organization_id,
                 "group_ids": group_ids,
                 "start_date": start_date,
@@ -666,7 +707,7 @@ class UserViewSets(
         return Response(
             {
                 "success": True,
-                "seci_details": output,
+                "seci_details": round(output, 2),
                 "group_id": group_id,
                 "start_date": start_date,
                 "end_date": end_date,
