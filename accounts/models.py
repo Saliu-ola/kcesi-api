@@ -59,9 +59,11 @@ class User(AbstractUser):
         null=True,
     )
     organization_name = models.CharField(max_length=50, null=True)
-    phone = models.CharField(max_length=17, blank=True, null=True)
+    phone = models.CharField(max_length=17,null=True)
     gender = models.CharField(choices=GENDER, null=True, max_length=20)
     is_verified = models.BooleanField(default=False, null=True)
+    image_url = models.CharField(max_length=255, null=True)
+    cloud_id = models.CharField(max_length=255, null=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 

@@ -208,7 +208,7 @@ class SocializationViewSets(BaseViewSet):
         return Response(
             {
                 "success": True,
-                "socialization_percentage": output,
+                "socialization_percentage":  round(output, 2),
                 "organization_id": organization_id,
                 "group": group,
                 "start_date": start_date,
@@ -286,7 +286,7 @@ class ExternalizationViewSets(BaseViewSet):
         return Response(
             {
                 "success": True,
-                "externalization_percentage": output,
+                "externalization_percentage":  round(output, 2),
                 "organization_id": organization_id,
                 "group": group,
                 "start_date": start_date,
@@ -363,7 +363,7 @@ class InternalizationViewSets(BaseViewSet):
         return Response(
             {
                 "success": True,
-                "internalization_percentage": output,
+                "internalization_percentage":  round(output, 2),
                 "organization_id": organization_id,
                 "group": group,
                 "start_date": start_date,
@@ -441,7 +441,7 @@ class CombinationViewSets(BaseViewSet):
         return Response(
             {
                 "success": True,
-                "combination_percentage": output,
+                "combination_percentage": round(output, 2),
                 "organization_id": organization_id,
                 "group": group,
                 "start_date": start_date,

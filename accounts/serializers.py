@@ -21,6 +21,7 @@ class ListUserSerializer(serializers.ModelSerializer):
             "phone",
             "date_of_birth",
             "first_name",
+            "gender",
             "last_name",
             "group_id",
             "role_id",
@@ -28,6 +29,8 @@ class ListUserSerializer(serializers.ModelSerializer):
             "is_staff",
             "organization_id",
             "organization_name",
+            "image_url",
+            "cloud_id",
             "created_at",
             "updated_at",
             "is_verified",
@@ -68,11 +71,14 @@ class UserSignUpSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "group_id",
+            "gender",
             "role_id",
             "is_superuser",
             "is_staff",
             "organization_id",
             "organization_name",
+            "image_url",
+            "cloud_id",
             "created_at",
             "updated_at",
             "is_verified",
@@ -80,6 +86,8 @@ class UserSignUpSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "id",
             "is_staff",
+            "image_url",
+            "cloud_id",
             "created_at",
             "updated_at",
             "is_verified",
@@ -105,6 +113,10 @@ class UserSignUpSerializer(serializers.ModelSerializer):
         Token.objects.create(user=user)
 
         return user
+
+
+class UpdateUserImage(serializers.Serializer):
+    image = serializers.ImageField(required=True)
 
 
 class LoginUserSerializer(serializers.Serializer):
@@ -158,5 +170,3 @@ class OrganizationByIDInputSerializer(serializers.Serializer):
                 for group in instance["groups"]
             ],
         }
-
-
