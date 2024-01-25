@@ -168,8 +168,5 @@ class OrganizationByIDInputSerializer(serializers.Serializer):
         return {
             "organization_id": instance["organization_id"],
             "organization_name": instance["organization_name"],
-            "groups": [
-                {"group": {"id": group.id, "title": group.title, "content": group.content}}
-                for group in instance["groups"]
-            ],
+            "groups": [instance["groups"]],
         }

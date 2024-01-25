@@ -74,3 +74,33 @@ class UserGroupCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Cannot create more than one UserGroup for a user")
 
         return super().create(validated_data)
+
+
+class UpdateUserGroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserGroup
+        fields = ["groups", "user"]
+
+    def validate(self, data):
+        user = data["user"]
+        groups = data['groups']
+
+        user_organization_id = user.organization_id
+
+        if user_organization_id is None:
+            raise serializers.ValidationError("User has no organization")
+
+        invalid_groups = [
+            group.title for group in groups if group.organization_id != user_organization_id
+        ]
+
+        if invalid_groups:
+            raise serializers.ValidationError(
+                f"The following groups do not belong to {user.organization_name}: {', '.join(invalid_groups)}"
+            )
+
+        return data
+    
+    
+    
+    
