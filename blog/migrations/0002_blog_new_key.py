@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("category", "0001_initial"),
         ("blog", "0001_initial"),
@@ -17,7 +16,7 @@ class Migration(migrations.Migration):
             name="new_key",
             field=models.ForeignKey(
                 null=True,
-                on_delete=django.db.models.deletion.DO_NOTHING,
+                on_delete=django.db.models.deletion.CASCADE,
                 to="category.category",
             ),
         ),

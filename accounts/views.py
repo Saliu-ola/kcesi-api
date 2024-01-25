@@ -41,6 +41,8 @@ from django.utils import timezone
 from rest_framework import mixins
 import cloudinary.uploader
 from rest_framework.parsers import MultiPartParser, FormParser
+from group.models import UserGroup
+from group.serializers import GroupSerializer
 
 # Create your views here.
 
@@ -60,7 +62,7 @@ class UserViewSets(
         'is_verified',
         'email',
         'organization_id',
-        'group_id',
+        'first_group_id',
         'role_id',
         'phone',
         'organization_name',
@@ -74,7 +76,7 @@ class UserViewSets(
         'first_name',
         'last_name',
     ]
-    ordering_fields = ['created_at', 'last_login', 'email', 'role_id', 'group_id']
+    ordering_fields = ['created_at', 'last_login', 'email', 'role_id', 'first_group_id']
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', 'create', 'update', 'partial_update', 'destroy']:
@@ -185,7 +187,12 @@ class UserViewSets(
         serializer.is_valid(raise_exception=True)
         organization_id = serializer.validated_data["organization_id"]
         user = User.objects.filter(organization_id=organization_id).first()
-        groups = Group.objects.filter(organization_id=organization_id)
+
+        try:
+            qs = UserGroup.objects.get(user=user).groups
+            groups = GroupSerializer(instance=qs, many=True).data
+        except ObjectDoesNotExist:
+            groups = None
 
         context_data = {
             "organization_id": user.organization_id,
@@ -273,7 +280,9 @@ class UserViewSets(
         """Get total for an  organization members by groups"""
 
         group = request.query_params["group"]
-        output = User.objects.filter(group_id=group).count()
+
+        output = UserGroup.objects.filter(groups=group).count()
+
         if not output:
             return Response(
                 {"success": False, "total_members": 0},
@@ -327,10 +336,14 @@ class UserViewSets(
 
         date_range = (start_date, end_date)
 
-        query_data = get_object_or_404(User, pk=user_id)
-        user = query_data.pk
-        organization_id = query_data.organization_id
-        group_id = query_data.group_id
+        user = get_object_or_404(User, pk=user_id)
+
+        try:
+            qs = UserGroup.objects.get(user=user).groups
+            user_groups = GroupSerializer(instance=qs, many=True).data
+        except ObjectDoesNotExist:
+            user_groups = None
+
         try:
             post_blog = Blog.objects.filter(author=user, created_at__range=date_range).count()
         except ObjectDoesNotExist:
@@ -416,168 +429,15 @@ class UserViewSets(
         return Response(
             {
                 "success": True,
-                "seci_details": round(output, 2),
-                "organization_id": organization_id,
-                "group_id": group_id,
+                "seci_details": output,
+                "user_groups": user_groups,
                 "start_date": start_date,
                 "end_date": end_date,
             },
             status=status.HTTP_200_OK,
         )
 
-    @extend_schema(
-        parameters=[
-            OpenApiParameter(
-                name="organization_id",
-                description="organization_id",
-                required=True,
-                type=OpenApiTypes.STR,
-            ),
-            OpenApiParameter(
-                name="start_date",
-                description="Start date in the format 'YYYY-MM-DD'",
-                required=True,
-                type=OpenApiTypes.STR,
-            ),
-            OpenApiParameter(
-                name="end_date",
-                description="End date in the format 'YYYY-MM-DD'",
-                required=True,
-                type=OpenApiTypes.STR,
-            ),
-        ],
-    )
-    @action(
-        methods=['GET'],
-        detail=False,
-        serializer_class=None,
-        url_path='get-organization-seci-details',
-    )
-    def get_organization_seci_details(self, request, pk=None):
-        """Get seci detail for an organization"""
-
-        organization_id = request.query_params["organization_id"]
-
-        start_date = timezone.make_aware(
-            timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
-        )
-        end_date = timezone.make_aware(
-            timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
-        )
-
-        date_range = (start_date, end_date)
-
-        organization = get_object_or_404(Organization, organization_id=organization_id).pk
-        group_ids = Group.objects.filter(organization_id=organization_id).values_list(
-            'id', flat=True
-        )
-
-        try:
-            post_blog = Blog.objects.filter(
-                organization=organization, created_at__range=date_range
-            ).count()
-        except ObjectDoesNotExist:
-            post_blog = 0
-
-        try:
-            send_chat_message = InAppChat.objects.filter(
-                organization=organization, created_at__range=date_range
-            ).count()
-        except ObjectDoesNotExist:
-            send_chat_message = 0
-
-        try:
-            post_forum = Forum.objects.filter(
-                organization=organization, created_at__range=date_range
-            ).count()
-        except ObjectDoesNotExist:
-            post_forum = 0
-
-        try:
-            image_sharing = Resources.objects.filter(
-                type__name__icontains='Image', sender=organization, created_at__range=date_range
-            ).count()
-        except ObjectDoesNotExist:
-            image_sharing = 0
-
-        try:
-            video_sharing = Resources.objects.filter(
-                type__name__icontains='Video',
-                organization=organization,
-                created_at__range=date_range,
-            ).count()
-        except ObjectDoesNotExist:
-            video_sharing = 0
-
-        try:
-            text_resource_sharing = Resources.objects.filter(
-                type__name__icontains='Text-Based',
-                organization=organization,
-                created_at__range=date_range,
-            ).count()
-        except ObjectDoesNotExist:
-            text_resource_sharing = 0
-
-        try:
-            created_topic = Topic.objects.filter(
-                organization=organization, created_at__range=date_range
-            ).count()
-        except ObjectDoesNotExist:
-            created_topic = 0
-
-        try:
-            comment = Comment.objects.filter(
-                organization=organization, created_at__range=date_range
-            ).count()
-        except ObjectDoesNotExist:
-            comment = 0
-
-        try:
-            used_in_app_browser = BrowserHistory.objects.filter(
-                organization=organization, created_at__range=date_range
-            ).count()
-        except ObjectDoesNotExist:
-            used_in_app_browser = 0
-
-        try:
-            recieve_chat_message = InAppChat.objects.filter(
-                organization=organization, created_at__range=date_range
-            ).count()
-        except ObjectDoesNotExist:
-            recieve_chat_message = 0
-
-        # Todo download_resource,read_blog,read_forum
-
-        tallies = {
-            "post_blog": post_blog,
-            "send_chat_message": send_chat_message,
-            "post_forum": post_forum,
-            "image_sharing": image_sharing,
-            "video_sharing": video_sharing,
-            "text_resource_sharing": text_resource_sharing,
-            "created_topic": created_topic,
-            "comment": comment,
-            "used_in_app_browser": used_in_app_browser,
-            "read_blog": 0,
-            "read_forum": 0,
-            "recieve_chat_message": recieve_chat_message,
-            "download_resources": 0,
-        }
-
-        output = calculate_engagement_scores(tallies)
-
-        return Response(
-            {
-                "success": True,
-                "seci_details": round(output, 2),
-                "organization_id": organization_id,
-                "group_ids": group_ids,
-                "start_date": start_date,
-                "end_date": end_date,
-            },
-            status=status.HTTP_200_OK,
-        )
-
+    
     @extend_schema(
         parameters=[
             OpenApiParameter(

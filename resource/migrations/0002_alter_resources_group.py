@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("group", "0001_initial"),
         ("resource", "0001_initial"),
@@ -16,7 +15,7 @@ class Migration(migrations.Migration):
             model_name="resources",
             name="group",
             field=models.ForeignKey(
-                on_delete=django.db.models.deletion.DO_NOTHING,
+                on_delete=django.db.models.deletion.CASCADE,
                 related_name="group_resources",
                 to="group.group",
             ),

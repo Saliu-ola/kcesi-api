@@ -6,7 +6,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -57,7 +56,7 @@ class Migration(migrations.Migration):
                 (
                     "organization",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        on_delete=django.db.models.deletion.CASCADE,
                         related_name="organization_blogs",
                         to="organization.organization",
                     ),
@@ -107,7 +106,7 @@ class Migration(migrations.Migration):
                 (
                     "group",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        on_delete=django.db.models.deletion.CASCADE,
                         related_name="group_comments",
                         to="group.group",
                     ),
@@ -115,7 +114,7 @@ class Migration(migrations.Migration):
                 (
                     "organization",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        on_delete=django.db.models.deletion.CASCADE,
                         related_name="organization_comments",
                         to="organization.organization",
                     ),

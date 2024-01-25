@@ -32,7 +32,7 @@ class Socialization(models.Model):
     )
     organization = models.ForeignKey(
         Organization,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         related_name="organization_socs",
     )
 
@@ -79,7 +79,7 @@ class Externalization(models.Model):
     )
     organization = models.ForeignKey(
         Organization,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         related_name="organization_exts",
     )
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_exts")
@@ -114,7 +114,7 @@ class Combination(models.Model):
     )
     organization = models.ForeignKey(
         Organization,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         related_name="organization_combs",
     )
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_combs")
@@ -155,7 +155,7 @@ class Internalization(models.Model):
     )
     organization = models.ForeignKey(
         Organization,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         related_name="organization_inters",
     )
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_inters")

@@ -11,7 +11,7 @@ class BrowserHistory(models.Model):
         Group, on_delete=models.CASCADE, related_name="group_browser_histories"
     )
     organization = models.ForeignKey(
-        Organization, on_delete=models.DO_NOTHING, related_name="organization_browser_histories"
+        Organization, on_delete=models.CASCADE, related_name="organization_browser_histories"
     )
 
     url = models.CharField(max_length=225, null=True)

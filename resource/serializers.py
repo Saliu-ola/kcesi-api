@@ -28,7 +28,7 @@ class ResourcesSerializer(serializers.ModelSerializer):
 class CreateResourcesSerializer(serializers.ModelSerializer):
     file = serializers.FileField(required=True, write_only=True)
     title = serializers.CharField(required=True)
-
+    
     class Meta:
         model = Resources
         fields = [
@@ -36,6 +36,8 @@ class CreateResourcesSerializer(serializers.ModelSerializer):
             "title",
             "file",
             "type",
+            "group",
+            "organization",
             "platform",
             "sender",
             "receiver",
@@ -50,16 +52,12 @@ class CreateResourcesSerializer(serializers.ModelSerializer):
 
         # Upload the file to Cloudinary or your desired storage
         upload_result = cloudinary.uploader.upload(file)
-        organization_id = self.context["request"].user.organization_id
-        organization = Organization.objects.get(organization_id=organization_id) or None
-        group = Group.objects.get(pk=self.context["request"].user.group_id) or None
+
         # Create a new Resources instance with the other fields
         instance = Resources.objects.create(
             media_url=upload_result["url"],
             cloud_id=upload_result["public_id"],
             size=upload_result["bytes"],
-            organization=organization,
-            group=group,
             **validated_data,
         )
 

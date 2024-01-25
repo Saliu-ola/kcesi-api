@@ -33,9 +33,3 @@ class CategoryViewSets(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-
-    def perform_create(self, serializer):
-        user = self.request.user
-        organization = Organization.objects.get(organization_id=user.organization_id)
-        group = Group.objects.filter(pk=user.group_id).first()
-        return serializer.save(creator=user, organization=organization, group=group)
