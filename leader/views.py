@@ -18,7 +18,7 @@ from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from organization.models import Organization
-from group.models import Group
+from group.models import Group, UserGroup
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from blog.models import Blog, Comment
@@ -33,10 +33,10 @@ from simpleblog.utils import calculate_total_engagement_score
 from accounts.models import User
 
 
-def get_count_model_instances(model, organization, group, date_range, additional_filters=None):
+def get_count_model_instances(model, organization, group, date_range, kwargs):
     filters = {'organization': organization, 'group': group, 'created_at__range': date_range}
-    if additional_filters:
-        filters.update(additional_filters)
+    if kwargs:
+        filters.update(**kwargs)
 
     try:
         return model.objects.filter(**filters).count()
@@ -80,30 +80,68 @@ class BaseViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-    def get_organization_activity_scores(self, organization_id, group_pk, date_range, pk=None):
+    def get_organization_activity_scores(
+        self, organization_id, group_pk, user, date_range, pk=None
+    ):
         """Get activity score"""
 
         organization = get_object_or_404(Organization, organization_id=organization_id).pk
         group = get_object_or_404(Group, pk=group_pk).pk
 
-        post_blog = get_count_model_instances(Blog, organization, group, date_range)
-        send_chat_message = get_count_model_instances(InAppChat, organization, group, date_range)
-        post_forum = get_count_model_instances(Forum, organization, group, date_range)
+        post_blog = get_count_model_instances(
+            Blog, organization, group, date_range, {'author': user}
+        )
+        send_chat_message = get_count_model_instances(
+            InAppChat, organization, group, date_range, {'sender': user}
+        )
+        post_forum = get_count_model_instances(
+            Forum, organization, group, date_range, {'user': user}
+        )
         image_sharing = get_count_model_instances(
-            Resources, organization, group, date_range, {'type__name__icontains': 'Image'}
+            Resources,
+            organization,
+            group,
+            date_range,
+            {'type__name__icontains': 'Image', 'sender': user},
         )
         video_sharing = get_count_model_instances(
-            Resources, organization, group, date_range, {'type__name__icontains': 'Video'}
+            Resources,
+            organization,
+            group,
+            date_range,
+            {'type__name__icontains': 'Video', 'sender': user},
         )
         text_resource_sharing = get_count_model_instances(
-            Resources, organization, group, date_range, {'type__name__icontains': 'Text-Based'}
+            Resources,
+            organization,
+            group,
+            date_range,
+            {'type__name__icontains': 'Text-Based', 'sender': user},
         )
-        created_topic = get_count_model_instances(Topic, organization, group, date_range)
-        comment = get_count_model_instances(Comment, organization, group, date_range)
+        created_topic = get_count_model_instances(
+            Topic, organization, group, date_range, {'author': user}
+        )
+        comment = get_count_model_instances(
+            Comment,
+            organization,
+            group,
+            date_range,
+            {'user': user},
+        )
         used_in_app_browser = get_count_model_instances(
-            BrowserHistory, organization, group, date_range
+            BrowserHistory,
+            organization,
+            group,
+            date_range,
+            {'user': user},
         )
-        recieve_chat_message = get_count_model_instances(InAppChat, organization, group, date_range)
+        recieve_chat_message = get_count_model_instances(
+            InAppChat,
+            organization,
+            group,
+            date_range,
+            {'receiver': user},
+        )
 
         tallies = {
             "post_blog": post_blog,
@@ -181,7 +219,8 @@ class SocializationViewSets(BaseViewSet):
         serializer_class=None,
     )
     def get_organization_socialization_activity_scores(self, request, pk=None):
-        """Get socialization activity score"""
+        """Get organization activity leaders for socialization"""
+
         organization_id = request.query_params["organization_id"]
         group_pk = request.query_params["group_pk"]
 
@@ -196,20 +235,42 @@ class SocializationViewSets(BaseViewSet):
 
         organization = get_object_or_404(Organization, organization_id=organization_id).pk
         group = get_object_or_404(Group, pk=group_pk).pk
-        organization_activity_scores = self.get_organization_activity_scores(
-            organization_id, group, date_range
-        )
-        sec = organization_activity_scores["sec"]
-        tes = organization_activity_scores["tes"]
+        try:
+            users_in_group = UserGroup.objects.filter(groups=group).values_list("user", flat=True)
 
-        socialization_instance = receive_model_instance(
-            Socialization, organization_id, group, organization, "Socialization"
-        )
-        output = socialization_instance.calculate_socialization_percentage(sec, tes)
+        except ObjectDoesNotExist:
+            return Response(
+                {
+                    'success': True,
+                    'message': f"{group.title} group has no user(s) attached",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        leaders = []
+        for user in users_in_group:
+            organization_activity_scores = self.get_organization_activity_scores(
+                organization_id, group, user, date_range
+            )
+            sec = organization_activity_scores["sec"]
+            tes = organization_activity_scores["tes"]
+
+            socialization_instance = receive_model_instance(
+                Socialization, organization_id, group, organization, "Socialization"
+            )
+            socialization_percentage = round(
+                socialization_instance.calculate_socialization_percentage(sec, tes), 2
+            )
+
+            user, percentage = user, socialization_percentage
+
+            leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
+
+        leaders_sorted = sorted(leaders, key=lambda leader: leader['percentage'], reverse=True)
+
         return Response(
             {
                 "success": True,
-                "socialization_percentage": round(output, 2),
+                "leaders": leaders_sorted[:10],
                 "organization_id": organization_id,
                 "group": group,
                 "start_date": start_date,
@@ -257,12 +318,10 @@ class ExternalizationViewSets(BaseViewSet):
         serializer_class=None,
     )
     def get_organization_externalization_activity_scores(self, request, pk=None):
-        """Get organization externalization activity score"""
+        """Get organization activity leaders for externalization"""
 
         organization_id = request.query_params["organization_id"]
         group_pk = request.query_params["group_pk"]
-
-       
 
         start_date = timezone.make_aware(
             timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
@@ -275,21 +334,44 @@ class ExternalizationViewSets(BaseViewSet):
 
         organization = get_object_or_404(Organization, organization_id=organization_id).pk
         group = get_object_or_404(Group, pk=group_pk).pk
+        try:
+            users_in_group = UserGroup.objects.filter(
+                groups=group
+            ).values_list("user", flat=True)
 
-        organization_activity_scores = self.get_organization_activity_scores(
-            organization_id, group, date_range
-        )
-        eec = organization_activity_scores["eec"]
-        tes = organization_activity_scores["tes"]
-        externalization_instance = receive_model_instance(
-            Externalization, organization_id, group, organization, "Externalization"
-        )
-        output = externalization_instance.calculate_externalization_percentage(eec, tes)
+        except ObjectDoesNotExist:
+            return Response(
+                {
+                    'success': True,
+                    'message': f"{group.title} group has no user(s) attached",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        leaders = []
+        for user in users_in_group:
+            organization_activity_scores = self.get_organization_activity_scores(
+                organization_id, group, user, date_range
+            )
+            eec = organization_activity_scores["eec"]
+            tes = organization_activity_scores["tes"]
+
+            externalization_instance = receive_model_instance(
+                Externalization, organization_id, group, organization, "Externalization"
+            )
+            externalization_percentage = round(
+                externalization_instance.calculate_externalization_percentage(eec, tes), 2
+            )
+
+            user, percentage = user, externalization_percentage
+
+            leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
+
+        leaders_sorted = sorted(leaders, key=lambda leader: leader['percentage'], reverse=True)
 
         return Response(
             {
                 "success": True,
-                "externalization_percentage": round(output, 2),
+                "leaders": leaders_sorted[:10],
                 "organization_id": organization_id,
                 "group": group,
                 "start_date": start_date,
@@ -337,7 +419,7 @@ class InternalizationViewSets(BaseViewSet):
         serializer_class=None,
     )
     def get_organization_internalization_activity_scores(self, request, pk=None):
-        """Get organization activity score"""
+        """Get organization activity leaders for internalization"""
 
         organization_id = request.query_params["organization_id"]
         group_pk = request.query_params["group_pk"]
@@ -353,20 +435,42 @@ class InternalizationViewSets(BaseViewSet):
 
         organization = get_object_or_404(Organization, organization_id=organization_id).pk
         group = get_object_or_404(Group, pk=group_pk).pk
-        organization_activity_scores = self.get_organization_activity_scores(
-            organization_id, group, date_range
-        )
-        iec = organization_activity_scores["iec"]
-        tes = organization_activity_scores["tes"]
-        internalization_instance = receive_model_instance(
-            Internalization, organization_id, group, organization, "Internalization"
-        )
-        output = internalization_instance.calculate_internalization_percentage(iec, tes)
+        try:
+            users_in_group = UserGroup.objects.filter(groups=group).values_list("user", flat=True)
+
+        except ObjectDoesNotExist:
+            return Response(
+                {
+                    'success': True,
+                    'message': f"{group.title} group has no user(s) attached",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        leaders = []
+        for user in users_in_group:
+            organization_activity_scores = self.get_organization_activity_scores(
+                organization_id, group, user, date_range
+            )
+            iec = organization_activity_scores["iec"]
+            tes = organization_activity_scores["tes"]
+
+            internalization_instance = receive_model_instance(
+                Internalization, organization_id, group, organization, "Internalization"
+            )
+            internalization_percentage = round(
+                internalization_instance.calculate_internalization_percentage(iec, tes), 2
+            )
+
+            user, percentage = user, internalization_percentage
+
+            leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
+
+        leaders_sorted = sorted(leaders, key=lambda leader: leader['percentage'], reverse=True)
 
         return Response(
             {
                 "success": True,
-                "internalization_percentage": round(output, 2),
+                "leaders": leaders_sorted[:10],
                 "organization_id": organization_id,
                 "group": group,
                 "start_date": start_date,
@@ -414,7 +518,7 @@ class CombinationViewSets(BaseViewSet):
         serializer_class=None,
     )
     def get_organization_combination_activity_scores(self, request, pk=None):
-        """Get organization  combination activity percentage details"""
+        """Get organization activity leaders for combination"""
 
         organization_id = request.query_params["organization_id"]
         group_pk = request.query_params["group_pk"]
@@ -430,21 +534,42 @@ class CombinationViewSets(BaseViewSet):
 
         organization = get_object_or_404(Organization, organization_id=organization_id).pk
         group = get_object_or_404(Group, pk=group_pk).pk
+        try:
+            users_in_group = UserGroup.objects.filter(groups=group).values_list("user", flat=True)
 
-        organization_activity_scores = self.get_organization_activity_scores(
-            organization_id, group, date_range
-        )
-        cec = organization_activity_scores["cec"]
-        tes = organization_activity_scores["tes"]
-        combination_instance = receive_model_instance(
-            Combination, organization_id, group, organization, "Externalization"
-        )
-        output = combination_instance.calculate_combination_percentage(cec, tes)
+        except ObjectDoesNotExist:
+            return Response(
+                {
+                    'success': True,
+                    'message': f"{group.title} group has no user(s) attached",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        leaders = []
+        for user in users_in_group:
+            organization_activity_scores = self.get_organization_activity_scores(
+                organization_id, group, user, date_range
+            )
+            cec = organization_activity_scores["cec"]
+            tes = organization_activity_scores["tes"]
+
+            combination_instance = receive_model_instance(
+                Combination, organization_id, group, organization, "Combination"
+            )
+            combination_percentage = round(
+                combination_instance.calculate_combination_percentage(cec, tes), 2
+            )
+
+            user, percentage = user, combination_percentage
+
+            leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
+
+        leaders_sorted = sorted(leaders, key=lambda leader: leader['percentage'], reverse=True)
 
         return Response(
             {
                 "success": True,
-                "combination_percentage": round(output, 2),
+                "leaders": leaders_sorted[:10],
                 "organization_id": organization_id,
                 "group": group,
                 "start_date": start_date,

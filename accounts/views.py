@@ -43,6 +43,8 @@ import cloudinary.uploader
 from rest_framework.parsers import MultiPartParser, FormParser
 from group.models import UserGroup
 from group.serializers import GroupSerializer
+from leader.models import Socialization, Externalization, Combination, Internalization
+from simpleblog.utils import calculate_total_engagement_score
 
 # Create your views here.
 
@@ -303,6 +305,12 @@ class UserViewSets(
                 type=OpenApiTypes.STR,
             ),
             OpenApiParameter(
+                name="group_id",
+                description="group_id",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+            OpenApiParameter(
                 name="start_date",
                 description="Start date in the format 'YYYY-MM-DD'",
                 required=True,
@@ -326,6 +334,7 @@ class UserViewSets(
         """Get seci detail"""
 
         user_id = request.query_params["user_id"]
+        group_id = request.query_params["group_id"]
 
         start_date = timezone.make_aware(
             timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
@@ -337,6 +346,27 @@ class UserViewSets(
         date_range = (start_date, end_date)
 
         user = get_object_or_404(User, pk=user_id)
+        group = get_object_or_404(Group, pk=group_id)
+        organization = Organization.objects.filter(organization_id=user.organization_id).first()
+
+        if not UserGroup.objects.filter(user=user, groups=group).exists():
+            return Response(
+                {'success': True, 'message': f"user does not belong to {group.title} group "},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        socialization_instance = Socialization.objects.filter(
+            organization=organization, group=group
+        ).first()
+        externalization_instance = Externalization.objects.filter(
+            organization=organization, group=group
+        ).first()
+        combination_instance = Combination.objects.filter(
+            organization=organization, group=group
+        ).first()
+        internalization_instance = Internalization.objects.filter(
+            organization=organization, group=group
+        ).first()
 
         try:
             qs = UserGroup.objects.get(user=user).groups
@@ -424,157 +454,42 @@ class UserViewSets(
             "download_resources": 0,
         }
 
-        output = calculate_engagement_scores(tallies)
+        sec = socialization_instance.calculate_socialization_score(tallies)
+        eec = externalization_instance.calculate_externalization_score(tallies)
+        cec = combination_instance.calculate_combination_score(tallies)
+        iec = internalization_instance.calculate_internalization_score(tallies)
+        tes = calculate_total_engagement_score(sec, eec, cec, iec)
+
+        socialization_percentage = round(socialization_instance.calculate_socialization_percentage(sec,tes),2)
+
+        externalization_percentage = round(externalization_instance.calculate_externalization_percentage(eec,tes),2)
+
+        combination_percentage = round(combination_instance.calculate_combination_percentage(cec,tes),2)
+
+        internalization_percentage = round(internalization_instance.calculate_internalization_percentage(iec,tes),2)
+
+        seci_details =  {
+        "socialization_engagement_score": sec,
+        "externalization_engagement_score": eec,
+        "combination_engagement_score": cec,
+        "internalization_engagement_score": iec,
+        "total_engagement_score": tes,
+        "socialization_engagement_percentage": socialization_percentage,
+        "externalization_engagement_percentage": externalization_percentage,
+        "combination_engagement_percentage": combination_percentage,
+        "internalization_engagement_percentage": internalization_percentage,
+    }
 
         return Response(
             {
                 "success": True,
-                "seci_details": output,
+                "seci_details": seci_details,
                 "user_groups": user_groups,
                 "start_date": start_date,
                 "end_date": end_date,
             },
             status=status.HTTP_200_OK,
         )
-
-    
-    @extend_schema(
-        parameters=[
-            OpenApiParameter(
-                name="group_id",
-                description="group_id",
-                required=True,
-                type=OpenApiTypes.STR,
-            ),
-            OpenApiParameter(
-                name="start_date",
-                description="Start date in the format 'YYYY-MM-DD'",
-                required=True,
-                type=OpenApiTypes.STR,
-            ),
-            OpenApiParameter(
-                name="end_date",
-                description="End date in the format 'YYYY-MM-DD'",
-                required=True,
-                type=OpenApiTypes.STR,
-            ),
-        ],
-    )
-    @action(
-        methods=['GET'],
-        detail=False,
-        serializer_class=None,
-        url_path='get-group-seci-details',
-    )
-    def get_group_seci_details(self, request, pk=None):
-        """Get seci detail for a group"""
-
-        group_id = request.query_params["group_id"]
-
-        start_date = timezone.make_aware(
-            timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
-        )
-        end_date = timezone.make_aware(
-            timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
-        )
-
-        date_range = (start_date, end_date)
-
-        group = get_object_or_404(Group, pk=group_id).pk
-
-        try:
-            post_blog = Blog.objects.filter(group=group, created_at__range=date_range).count()
-        except ObjectDoesNotExist:
-            post_blog = 0
-
-        try:
-            send_chat_message = InAppChat.objects.filter(
-                group=group, created_at__range=date_range
-            ).count()
-        except ObjectDoesNotExist:
-            send_chat_message = 0
-
-        try:
-            post_forum = Forum.objects.filter(group=group, created_at__range=date_range).count()
-        except ObjectDoesNotExist:
-            post_forum = 0
-
-        try:
-            image_sharing = Resources.objects.filter(
-                type__name__icontains='Image', group=group, created_at__range=date_range
-            ).count()
-        except ObjectDoesNotExist:
-            image_sharing = 0
-
-        try:
-            video_sharing = Resources.objects.filter(
-                type__name__icontains='Video', group=group, created_at__range=date_range
-            ).count()
-        except ObjectDoesNotExist:
-            video_sharing = 0
-
-        try:
-            text_resource_sharing = Resources.objects.filter(
-                type__name__icontains='Text-Based', group=group, created_at__range=date_range
-            ).count()
-        except ObjectDoesNotExist:
-            text_resource_sharing = 0
-
-        try:
-            created_topic = Topic.objects.filter(group=group, created_at__range=date_range).count()
-        except ObjectDoesNotExist:
-            created_topic = 0
-
-        try:
-            comment = Comment.objects.filter(group=group, created_at__range=date_range).count()
-        except ObjectDoesNotExist:
-            comment = 0
-
-        try:
-            used_in_app_browser = BrowserHistory.objects.filter(
-                group=group, created_at__range=date_range
-            ).count()
-        except ObjectDoesNotExist:
-            used_in_app_browser = 0
-
-        try:
-            recieve_chat_message = InAppChat.objects.filter(
-                group=group, created_at__range=date_range
-            ).count()
-        except ObjectDoesNotExist:
-            recieve_chat_message = 0
-
-        # Todo download_resource,read_blog,read_forum
-
-        tallies = {
-            "post_blog": post_blog,
-            "send_chat_message": send_chat_message,
-            "post_forum": post_forum,
-            "image_sharing": image_sharing,
-            "video_sharing": video_sharing,
-            "text_resource_sharing": text_resource_sharing,
-            "created_topic": created_topic,
-            "comment": comment,
-            "used_in_app_browser": used_in_app_browser,
-            "read_blog": 0,
-            "read_forum": 0,
-            "recieve_chat_message": recieve_chat_message,
-            "download_resources": 0,
-        }
-
-        output = calculate_engagement_scores(tallies)
-
-        return Response(
-            {
-                "success": True,
-                "seci_details": round(output, 2),
-                "group_id": group_id,
-                "start_date": start_date,
-                "end_date": end_date,
-            },
-            status=status.HTTP_200_OK,
-        )
-
 
 class UserSignUpView(generics.GenericAPIView):
     """Sign up endpoint"""
