@@ -4,8 +4,8 @@ from rest_framework.decorators import APIView, api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
-from .models import Group
-from .serializers import GroupSerializer
+from .models import Group, UserGroup
+from .serializers import GroupSerializer, UserGroupListSerializer,UserGroupCreateSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
@@ -25,6 +25,29 @@ class GroupViewSets(viewsets.ModelViewSet):
     ]
     search_fields = ['title', 'content']
     ordering_fields = ['created_at']
+
+    def paginate_results(self, queryset):
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class UserGroupsViewSets(viewsets.ModelViewSet):
+    http_method_names = ["get", "patch", "post", "put", "delete"]
+    serializer_class = UserGroupCreateSerializer
+    permission_classes = [AllowAny]
+    queryset = UserGroup.objects.all()
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['user', 'user__organization_name', 'groups']
+    ordering_fields = ['created_at']
+
+    def get_serializer_class(self):
+        if self.action in ["retrieve", "list"]:
+            return UserGroupListSerializer
+        return UserGroupCreateSerializer
 
     def paginate_results(self, queryset):
         page = self.paginate_queryset(queryset)

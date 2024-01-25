@@ -1,56 +1,58 @@
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 from rest_framework.validators import ValidationError
-from group.serializers import GroupSerializer
-
+from group.serializers import UserGroupCreateSerializer
 
 from .models import User
-from group.models import Group
+from group.models import Group, UserGroup
+from django.core.exceptions import ObjectDoesNotExist
+from organization.models import Organization
 
 EXISITING_EMAIL_ERROR = "Email has already been used"
 
 
 class ListUserSerializer(serializers.ModelSerializer):
+    user_groups = serializers.SerializerMethodField(method_name='get_user_groups')
+    organization = serializers.SerializerMethodField(method_name="get_user_organization")
+
     class Meta:
         model = User
         fields = [
             "id",
             "email",
             "username",
-            "password",
             "phone",
             "date_of_birth",
             "first_name",
             "gender",
             "last_name",
-            "group_id",
+            "first_group_id",
             "role_id",
             "is_superuser",
             "is_staff",
+            "organization",
             "organization_id",
             "organization_name",
             "image_url",
             "cloud_id",
+            "user_groups",
             "created_at",
             "updated_at",
             "is_verified",
         ]
 
-    def to_representation(self, instance):
-        group_id = instance.group_id
-        if group_id is not None:
-            group_identifier = Group.objects.filter(pk=group_id).first()
+    def get_user_groups(self, instance):
+        try:
+            return UserGroupCreateSerializer(UserGroup.objects.get(user=instance)).data
+        except ObjectDoesNotExist:
+            return None
 
-            if group_identifier:
-                instance_data = super().to_representation(instance)
-                instance_data["group_detail"] = {
-                    "id": group_identifier.pk,
-                    "title": group_identifier.title,
-                    "content": group_identifier.content,
-                }
-                return instance_data
-
-        return super().to_representation(instance)
+    def get_user_organization(self, instance):
+        try:
+            if instance.organization_id:
+                return Organization.objects.get(organization_id=instance.organization_id).pk
+        except ObjectDoesNotExist:
+            return None
 
 
 class UserSignUpSerializer(serializers.ModelSerializer):
@@ -58,6 +60,7 @@ class UserSignUpSerializer(serializers.ModelSerializer):
     password = serializers.CharField(min_length=8, write_only=True, required=True)
     role_id = serializers.IntegerField(default=0)
     is_superuser = serializers.BooleanField(default=False)
+    first_group_id = serializers.IntegerField(default=0)
 
     class Meta:
         model = User
@@ -70,7 +73,7 @@ class UserSignUpSerializer(serializers.ModelSerializer):
             "date_of_birth",
             "first_name",
             "last_name",
-            "group_id",
+            "first_group_id",
             "gender",
             "role_id",
             "is_superuser",

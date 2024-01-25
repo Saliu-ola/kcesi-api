@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("category", "0001_initial"),
         ("forum", "0001_initial"),
@@ -17,7 +16,7 @@ class Migration(migrations.Migration):
             name="temp_category",
             field=models.ForeignKey(
                 null=True,
-                on_delete=django.db.models.deletion.DO_NOTHING,
+                on_delete=django.db.models.deletion.CASCADE,
                 related_name="cat_forums",
                 to="category.category",
             ),

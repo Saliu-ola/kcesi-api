@@ -53,13 +53,13 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=45, null=True)
     date_of_birth = models.DateField(null=True)
     role_id = models.IntegerField(null=True)
-    group_id = models.IntegerField(null=True)
+    first_group_id = models.IntegerField(null=True)
     organization_id = models.CharField(
         max_length=15,
         null=True,
     )
     organization_name = models.CharField(max_length=50, null=True)
-    phone = models.CharField(max_length=17,null=True)
+    phone = models.CharField(max_length=17, null=True)
     gender = models.CharField(choices=GENDER, null=True, max_length=20)
     is_verified = models.BooleanField(default=False, null=True)
     image_url = models.CharField(max_length=255, null=True)
@@ -98,6 +98,8 @@ class User(AbstractUser):
 
 @receiver(post_save, sender=User)
 def generate_organization_id(sender, instance, created, **kwargs):
+    from group.models import UserGroup
+    #decided to import UserGroup to avoid cyclic import
     if created and instance.role_id in [1, 2]:
         if not instance.organization_id:
             instance.organization_id = instance.generate_organization_id()
@@ -105,7 +107,10 @@ def generate_organization_id(sender, instance, created, **kwargs):
             Organization.objects.create(
                 name=instance.organization_name, organization_id=instance.organization_id
             )
-
+            UserGroup.objects.create(
+                user=instance,groups=[instance.first_group_id]
+            )
+            
 
 class Token(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -127,3 +132,5 @@ class Token(models.Model):
     def reset_user_password(self, password):
         self.user.set_password(password)
         self.user.save()
+
+

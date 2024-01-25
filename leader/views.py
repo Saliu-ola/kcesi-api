@@ -30,6 +30,7 @@ from topics.models import Topic
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from simpleblog.utils import calculate_total_engagement_score
+from accounts.models import User
 
 
 def get_count_model_instances(model, organization, group, date_range, additional_filters=None):
@@ -208,7 +209,7 @@ class SocializationViewSets(BaseViewSet):
         return Response(
             {
                 "success": True,
-                "socialization_percentage":  round(output, 2),
+                "socialization_percentage": round(output, 2),
                 "organization_id": organization_id,
                 "group": group,
                 "start_date": start_date,
@@ -261,6 +262,8 @@ class ExternalizationViewSets(BaseViewSet):
         organization_id = request.query_params["organization_id"]
         group_pk = request.query_params["group_pk"]
 
+       
+
         start_date = timezone.make_aware(
             timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
         )
@@ -286,7 +289,7 @@ class ExternalizationViewSets(BaseViewSet):
         return Response(
             {
                 "success": True,
-                "externalization_percentage":  round(output, 2),
+                "externalization_percentage": round(output, 2),
                 "organization_id": organization_id,
                 "group": group,
                 "start_date": start_date,
@@ -363,7 +366,7 @@ class InternalizationViewSets(BaseViewSet):
         return Response(
             {
                 "success": True,
-                "internalization_percentage":  round(output, 2),
+                "internalization_percentage": round(output, 2),
                 "organization_id": organization_id,
                 "group": group,
                 "start_date": start_date,

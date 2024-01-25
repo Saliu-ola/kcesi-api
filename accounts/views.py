@@ -41,6 +41,8 @@ from django.utils import timezone
 from rest_framework import mixins
 import cloudinary.uploader
 from rest_framework.parsers import MultiPartParser, FormParser
+from group.models import UserGroup
+from group.serializers import UserGroupListSerializer
 
 # Create your views here.
 
@@ -60,7 +62,7 @@ class UserViewSets(
         'is_verified',
         'email',
         'organization_id',
-        'group_id',
+        'first_group_id',
         'role_id',
         'phone',
         'organization_name',
@@ -74,7 +76,7 @@ class UserViewSets(
         'first_name',
         'last_name',
     ]
-    ordering_fields = ['created_at', 'last_login', 'email', 'role_id', 'group_id']
+    ordering_fields = ['created_at', 'last_login', 'email', 'role_id', 'first_group_id']
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', 'create', 'update', 'partial_update', 'destroy']:
@@ -185,7 +187,11 @@ class UserViewSets(
         serializer.is_valid(raise_exception=True)
         organization_id = serializer.validated_data["organization_id"]
         user = User.objects.filter(organization_id=organization_id).first()
-        groups = Group.objects.filter(organization_id=organization_id)
+
+        try:
+            groups = UserGroupListSerializer(UserGroup.objects.filter(user=user)).data
+        except ObjectDoesNotExist:
+            groups = None
 
         context_data = {
             "organization_id": user.organization_id,
@@ -273,7 +279,9 @@ class UserViewSets(
         """Get total for an  organization members by groups"""
 
         group = request.query_params["group"]
-        output = User.objects.filter(group_id=group).count()
+
+        output = UserGroup.objects.filter(groups=group).count()
+
         if not output:
             return Response(
                 {"success": False, "total_members": 0},
