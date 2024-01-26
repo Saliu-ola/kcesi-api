@@ -299,12 +299,6 @@ class UserViewSets(
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                name="user_id",
-                description="user_id",
-                required=True,
-                type=OpenApiTypes.STR,
-            ),
-            OpenApiParameter(
                 name="group_id",
                 description="group_id",
                 required=True,
@@ -328,12 +322,11 @@ class UserViewSets(
         methods=['GET'],
         detail=False,
         serializer_class=None,
-        url_path='get-user-seci-details',
+        url_path='get-group-seci-details',
     )
-    def get_user_seci_details(self, request, pk=None):
+    def get_group_seci_details(self, request, pk=None):
         """Get seci detail"""
 
-        user_id = request.query_params["user_id"]
         group_id = request.query_params["group_id"]
 
         start_date = timezone.make_aware(
@@ -344,16 +337,9 @@ class UserViewSets(
         )
 
         date_range = (start_date, end_date)
-
-        user = get_object_or_404(User, pk=user_id)
         group = get_object_or_404(Group, pk=group_id)
-        organization = Organization.objects.filter(organization_id=user.organization_id).first()
-
-        if not UserGroup.objects.filter(user=user, groups=group).exists():
-            return Response(
-                {'success': True, 'message': f"user does not belong to {group.title} group "},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        organization_id = group.organization_id
+        organization = get_object_or_404(Organization, organization_id=organization_id)
 
         socialization_instance = Socialization.objects.filter(
             organization=organization, group=group
@@ -369,69 +355,80 @@ class UserViewSets(
         ).first()
 
         try:
-            qs = UserGroup.objects.get(user=user).groups
-            user_groups = GroupSerializer(instance=qs, many=True).data
-        except ObjectDoesNotExist:
-            user_groups = None
-
-        try:
-            post_blog = Blog.objects.filter(author=user, created_at__range=date_range).count()
+            post_blog = Blog.objects.filter(
+                organization=organization, group=group, created_at__range=date_range
+            ).count()
         except ObjectDoesNotExist:
             post_blog = 0
 
         try:
             send_chat_message = InAppChat.objects.filter(
-                sender=user, created_at__range=date_range
+                organization=organization, group=group, created_at__range=date_range
             ).count()
         except ObjectDoesNotExist:
             send_chat_message = 0
 
         try:
-            post_forum = Forum.objects.filter(user=user, created_at__range=date_range).count()
+            post_forum = Forum.objects.filter(
+                organization=organization, group=group, created_at__range=date_range
+            ).count()
         except ObjectDoesNotExist:
             post_forum = 0
 
         try:
             image_sharing = Resources.objects.filter(
-                type__name__icontains='Image', sender=user, created_at__range=date_range
+                type__name__icontains='Image',
+                organization=organization,
+                group=group,
+                created_at__range=date_range,
             ).count()
         except ObjectDoesNotExist:
             image_sharing = 0
 
         try:
             video_sharing = Resources.objects.filter(
-                type__name__icontains='Video', sender=user, created_at__range=date_range
+                type__name__icontains='Video',
+                organization=organization,
+                group=group,
+                created_at__range=date_range,
             ).count()
         except ObjectDoesNotExist:
             video_sharing = 0
 
         try:
             text_resource_sharing = Resources.objects.filter(
-                type__name__icontains='Text-Based', sender=user, created_at__range=date_range
+                type__name__icontains='Text-Based',
+                organization=organization,
+                group=group,
+                created_at__range=date_range,
             ).count()
         except ObjectDoesNotExist:
             text_resource_sharing = 0
 
         try:
-            created_topic = Topic.objects.filter(author=user, created_at__range=date_range).count()
+            created_topic = Topic.objects.filter(
+                organization=organization, group=group, created_at__range=date_range
+            ).count()
         except ObjectDoesNotExist:
             created_topic = 0
 
         try:
-            comment = Comment.objects.filter(user=user, created_at__range=date_range).count()
+            comment = Comment.objects.filter(
+                organization=organization, group=group, created_at__range=date_range
+            ).count()
         except ObjectDoesNotExist:
             comment = 0
 
         try:
             used_in_app_browser = BrowserHistory.objects.filter(
-                user=user, created_at__range=date_range
+                organization=organization, group=group, created_at__range=date_range
             ).count()
         except ObjectDoesNotExist:
             used_in_app_browser = 0
 
         try:
             recieve_chat_message = InAppChat.objects.filter(
-                receiver=user, created_at__range=date_range
+                organization=organization, group=group, created_at__range=date_range
             ).count()
         except ObjectDoesNotExist:
             recieve_chat_message = 0
@@ -460,25 +457,252 @@ class UserViewSets(
         iec = internalization_instance.calculate_internalization_score(tallies)
         tes = calculate_total_engagement_score(sec, eec, cec, iec)
 
-        socialization_percentage = round(socialization_instance.calculate_socialization_percentage(sec,tes),2)
+        socialization_percentage = round(
+            socialization_instance.calculate_socialization_percentage(sec, tes), 2
+        )
 
-        externalization_percentage = round(externalization_instance.calculate_externalization_percentage(eec,tes),2)
+        externalization_percentage = round(
+            externalization_instance.calculate_externalization_percentage(eec, tes), 2
+        )
 
-        combination_percentage = round(combination_instance.calculate_combination_percentage(cec,tes),2)
+        combination_percentage = round(
+            combination_instance.calculate_combination_percentage(cec, tes), 2
+        )
 
-        internalization_percentage = round(internalization_instance.calculate_internalization_percentage(iec,tes),2)
+        internalization_percentage = round(
+            internalization_instance.calculate_internalization_percentage(iec, tes), 2
+        )
 
-        seci_details =  {
-        "socialization_engagement_score": sec,
-        "externalization_engagement_score": eec,
-        "combination_engagement_score": cec,
-        "internalization_engagement_score": iec,
-        "total_engagement_score": tes,
-        "socialization_engagement_percentage": socialization_percentage,
-        "externalization_engagement_percentage": externalization_percentage,
-        "combination_engagement_percentage": combination_percentage,
-        "internalization_engagement_percentage": internalization_percentage,
-    }
+        seci_details = {
+            "socialization_engagement_score": sec,
+            "externalization_engagement_score": eec,
+            "combination_engagement_score": cec,
+            "internalization_engagement_score": iec,
+            "total_engagement_score": tes,
+            "socialization_engagement_percentage": socialization_percentage,
+            "externalization_engagement_percentage": externalization_percentage,
+            "combination_engagement_percentage": combination_percentage,
+            "internalization_engagement_percentage": internalization_percentage,
+        }
+        try:
+            users_in_group = UserGroup.objects.filter(groups=group).values_list("user", flat=True)
+        except ObjectDoesNotExist:
+            users_in_group = []
+
+        return Response(
+            {
+                "success": True,
+                "group": group_id,
+                "seci_details": seci_details,
+                "users_in_group": users_in_group,
+                "start_date": start_date,
+                "end_date": end_date,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="user_id",
+                description="user_id",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+            OpenApiParameter(
+                name="start_date",
+                description="Start date in the format 'YYYY-MM-DD'",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+            OpenApiParameter(
+                name="end_date",
+                description="End date in the format 'YYYY-MM-DD'",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+        ],
+    )
+    @action(
+        methods=['GET'],
+        detail=False,
+        serializer_class=None,
+        url_path='get-user-seci-details',
+    )
+    def get_user_seci_details(self, request, pk=None):
+        """Get seci detail"""
+
+        user_id = request.query_params["user_id"]
+
+        user = get_object_or_404(User, pk=user_id)
+
+        start_date = timezone.make_aware(
+            timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
+        )
+        end_date = timezone.make_aware(
+            timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
+        )
+
+        date_range = (start_date, end_date)
+
+        
+        user_groups = UserGroup.objects.filter(user=user).values_list("groups", flat=True)
+        
+        if not user_groups:
+                return Response(
+                {
+                    "success": False,
+                    "message": f"User {user.full_name}  with  id {user_id} does not belong to a group",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        
+            
+        sec_list = []
+        eec_list = []
+        cec_list = []
+        iec_list = []
+
+        for group in user_groups:
+            socialization_instance = Socialization.objects.filter(group=group).first()
+
+            externalization_instance = Externalization.objects.filter(group=group).first()
+            combination_instance = Combination.objects.filter(group=group).first()
+            internalization_instance = Internalization.objects.filter(group=group).first()
+
+            try:
+                post_blog = Blog.objects.filter(author=user, created_at__range=date_range).count()
+            except ObjectDoesNotExist:
+                post_blog = 0
+
+            try:
+                send_chat_message = InAppChat.objects.filter(
+                    sender=user, created_at__range=date_range
+                ).count()
+            except ObjectDoesNotExist:
+                send_chat_message = 0
+
+            try:
+                post_forum = Forum.objects.filter(user=user, created_at__range=date_range).count()
+            except ObjectDoesNotExist:
+                post_forum = 0
+
+            try:
+                image_sharing = Resources.objects.filter(
+                    type__name__icontains='Image',
+                    sender=user,
+                    created_at__range=date_range,
+                ).count()
+            except ObjectDoesNotExist:
+                image_sharing = 0
+
+            try:
+                video_sharing = Resources.objects.filter(
+                    type__name__icontains='Video',
+                    sender=user,
+                    created_at__range=date_range,
+                ).count()
+            except ObjectDoesNotExist:
+                video_sharing = 0
+
+            try:
+                text_resource_sharing = Resources.objects.filter(
+                    type__name__icontains='Text-Based',
+                    sender=user,
+                    created_at__range=date_range,
+                ).count()
+            except ObjectDoesNotExist:
+                text_resource_sharing = 0
+
+            try:
+                created_topic = Topic.objects.filter(
+                    author=user, created_at__range=date_range
+                ).count()
+            except ObjectDoesNotExist:
+                created_topic = 0
+
+            try:
+                comment = Comment.objects.filter(user=user, created_at__range=date_range).count()
+            except ObjectDoesNotExist:
+                comment = 0
+
+            try:
+                used_in_app_browser = BrowserHistory.objects.filter(
+                    user=user, created_at__range=date_range
+                ).count()
+            except ObjectDoesNotExist:
+                used_in_app_browser = 0
+
+            try:
+                recieve_chat_message = InAppChat.objects.filter(
+                    receiver=user, created_at__range=date_range
+                ).count()
+            except ObjectDoesNotExist:
+                recieve_chat_message = 0
+
+            # # Todo download_resource,read_blog,read_forum
+
+            tallies = {
+                "post_blog": post_blog,
+                "send_chat_message": send_chat_message,
+                "post_forum": post_forum,
+                "image_sharing": image_sharing,
+                "video_sharing": video_sharing,
+                "text_resource_sharing": text_resource_sharing,
+                "created_topic": created_topic,
+                "comment": comment,
+                "used_in_app_browser": used_in_app_browser,
+                "read_blog": 0,
+                "read_forum": 0,
+                "recieve_chat_message": recieve_chat_message,
+                "download_resources": 0,
+            }
+
+            sec = socialization_instance.calculate_socialization_score(tallies)
+            eec = externalization_instance.calculate_externalization_score(tallies)
+            cec = combination_instance.calculate_combination_score(tallies)
+            iec = internalization_instance.calculate_internalization_score(tallies)
+
+            sec_list.append(sec)
+            eec_list.append(eec)
+            cec_list.append(cec)
+            iec_list.append(iec)
+
+        sec_total = sum(sec_list)
+        eec_total = sum(eec_list)
+        cec_total = sum(cec_list)
+        iec_total = sum(iec_list)
+
+        tes = calculate_total_engagement_score(sec_total, eec_total, cec_total, iec_total)
+
+        socialization_percentage = round(
+            socialization_instance.calculate_socialization_percentage(sec_total, tes), 2
+        )
+
+        externalization_percentage = round(
+            externalization_instance.calculate_externalization_percentage(eec_total, tes), 2
+        )
+
+        combination_percentage = round(
+            combination_instance.calculate_combination_percentage(cec_total, tes), 2
+        )
+
+        internalization_percentage = round(
+            internalization_instance.calculate_internalization_percentage(iec_total, tes), 2
+        )
+
+        seci_details = {
+            "socialization_engagement_score": sec_total,
+            "externalization_engagement_score": eec_total,
+            "combination_engagement_score": cec_total,
+            "internalization_engagement_score": iec_total,
+            "total_engagement_score": tes,
+            "socialization_engagement_percentage": socialization_percentage,
+            "externalization_engagement_percentage": externalization_percentage,
+            "combination_engagement_percentage": combination_percentage,
+            "internalization_engagement_percentage": internalization_percentage,
+        }
 
         return Response(
             {
@@ -490,6 +714,7 @@ class UserViewSets(
             },
             status=status.HTTP_200_OK,
         )
+
 
 class UserSignUpView(generics.GenericAPIView):
     """Sign up endpoint"""

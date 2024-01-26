@@ -239,10 +239,10 @@ class SocializationViewSets(BaseViewSet):
 
         organization = get_object_or_404(Organization, organization_id=organization_id).pk
         group = get_object_or_404(Group, pk=group_pk).pk
-        try:
-            users_in_group = UserGroup.objects.filter(groups=group).values_list("user", flat=True)
+        
+        users_in_group = UserGroup.objects.filter(groups=group).values_list("user", flat=True)
 
-        except ObjectDoesNotExist:
+        if not users_in_group:
             return Response(
                 {
                     'success': True,
@@ -371,10 +371,10 @@ class ExternalizationViewSets(BaseViewSet):
 
         organization = get_object_or_404(Organization, organization_id=organization_id).pk
         group = get_object_or_404(Group, pk=group_pk).pk
-        try:
-            users_in_group = UserGroup.objects.filter(groups=group).values_list("user", flat=True)
+        
+        users_in_group = UserGroup.objects.filter(groups=group).values_list("user", flat=True)
 
-        except ObjectDoesNotExist:
+        if not users_in_group:
             return Response(
                 {
                     'success': True,
@@ -503,10 +503,10 @@ class CombinationViewSets(BaseViewSet):
 
         organization = get_object_or_404(Organization, organization_id=organization_id).pk
         group = get_object_or_404(Group, pk=group_pk).pk
-        try:
-            users_in_group = UserGroup.objects.filter(groups=group).values_list("user", flat=True)
 
-        except ObjectDoesNotExist:
+        users_in_group = UserGroup.objects.filter(groups=group).values_list("user", flat=True)
+
+        if not users_in_group:
             return Response(
                 {
                     'success': True,
@@ -635,10 +635,10 @@ class InternalizationViewSets(BaseViewSet):
 
         organization = get_object_or_404(Organization, organization_id=organization_id).pk
         group = get_object_or_404(Group, pk=group_pk).pk
-        try:
-            users_in_group = UserGroup.objects.filter(groups=group).values_list("user", flat=True)
 
-        except ObjectDoesNotExist:
+        users_in_group = UserGroup.objects.filter(groups=group).values_list("user", flat=True)
+
+        if not users_in_group:
             return Response(
                 {
                     'success': True,
