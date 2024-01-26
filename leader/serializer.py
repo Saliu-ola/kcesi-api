@@ -19,6 +19,50 @@ class SocializationSerializer(serializers.ModelSerializer):
         ]
 
 
+class SocializationUpdaterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Socialization
+        fields = [
+            "post_blog",
+            "send_chat_message",
+            "post_forum",
+            "image_sharing",
+            "video_sharing",
+            "text_resource_sharing",
+            "created_topic",
+        ]
+
+
+class ExternalizationUpdaterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Externalization
+        fields = [
+            "post_blog",
+            "send_chat_message",
+            "post_forum",
+            "created_topic",
+            "comment",
+        ]
+
+
+class CombinationUpdaterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Combination
+        fields = ["created_topic", "post_blog"]
+
+
+class InternalizationUpdaterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Internalization
+        fields = [
+            "used_in_app_browser",
+            "read_blog",
+            "read_forum",
+            "recieve_chat_message",
+            "download_resources",
+        ]
+
+
 class ExternalizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Externalization

@@ -10,6 +10,10 @@ from .serializer import (
     InternalizationSerializer,
     SocializationSerializer,
     ExternalizationSerializer,
+    SocializationUpdaterSerializer,
+    ExternalizationUpdaterSerializer,
+    CombinationUpdaterSerializer,
+    InternalizationUpdaterSerializer,
 )
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
@@ -279,6 +283,39 @@ class SocializationViewSets(BaseViewSet):
             status=status.HTTP_200_OK,
         )
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="organization_id",
+                description="organization_id",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+        ],
+    )
+    @action(
+        methods=['POST'],
+        detail=False,
+        serializer_class=SocializationUpdaterSerializer,
+        url_path="set-general-socialization-activities-score",
+    )
+    def set_general_activities_score_for_organization_socialization(self, request, pk=None):
+        organization_id = request.query_params["organization_id"]
+        organization = get_object_or_404(Organization, organization_id=organization_id)
+        serializer = SocializationUpdaterSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            socialization_instances = Socialization.objects.filter(organization=organization)
+            socialization_instances.update(**serializer.validated_data)
+
+            return Response(
+                {
+                    "success": True,
+                    "data": SocializationSerializer(socialization_instances, many=True).data,
+                },
+                status=status.HTTP_200_OK,
+            )
+        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ExternalizationViewSets(BaseViewSet):
     serializer_class = ExternalizationSerializer
@@ -335,9 +372,7 @@ class ExternalizationViewSets(BaseViewSet):
         organization = get_object_or_404(Organization, organization_id=organization_id).pk
         group = get_object_or_404(Group, pk=group_pk).pk
         try:
-            users_in_group = UserGroup.objects.filter(
-                groups=group
-            ).values_list("user", flat=True)
+            users_in_group = UserGroup.objects.filter(groups=group).values_list("user", flat=True)
 
         except ObjectDoesNotExist:
             return Response(
@@ -379,6 +414,171 @@ class ExternalizationViewSets(BaseViewSet):
             },
             status=status.HTTP_200_OK,
         )
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="organization_id",
+                description="organization_id",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+        ],
+    )
+    @action(
+        methods=['POST'],
+        detail=False,
+        serializer_class=ExternalizationUpdaterSerializer,
+        url_path="set-general-externalization-activities-score",
+    )
+    def set_general_activities_score_for_organization_externalization(self, request, pk=None):
+        organization_id = request.query_params["organization_id"]
+        organization = get_object_or_404(Organization, organization_id=organization_id)
+        serializer = ExternalizationUpdaterSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            externalization_instance = Externalization.objects.filter(organization=organization)
+            externalization_instance.update(**serializer.validated_data)
+
+            return Response(
+                {
+                    "success": True,
+                    "data": ExternalizationSerializer(externalization_instance, many=True).data,
+                },
+                status=status.HTTP_200_OK,
+            )
+        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CombinationViewSets(BaseViewSet):
+    serializer_class = CombinationSerializer
+    queryset = Combination.objects.all()
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="organization_id",
+                description="organization_id",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+            OpenApiParameter(
+                name="group_pk",
+                description="group_pk",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+            OpenApiParameter(
+                name="start_date",
+                description="Start date in the format 'YYYY-MM-DD'",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+            OpenApiParameter(
+                name="end_date",
+                description="End date in the format 'YYYY-MM-DD'",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+        ],
+    )
+    @action(
+        methods=['GET'],
+        detail=False,
+        serializer_class=None,
+    )
+    def get_organization_combination_activity_scores(self, request, pk=None):
+        """Get organization activity leaders for combination"""
+
+        organization_id = request.query_params["organization_id"]
+        group_pk = request.query_params["group_pk"]
+
+        start_date = timezone.make_aware(
+            timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
+        )
+        end_date = timezone.make_aware(
+            timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
+        )
+
+        date_range = (start_date, end_date)
+
+        organization = get_object_or_404(Organization, organization_id=organization_id).pk
+        group = get_object_or_404(Group, pk=group_pk).pk
+        try:
+            users_in_group = UserGroup.objects.filter(groups=group).values_list("user", flat=True)
+
+        except ObjectDoesNotExist:
+            return Response(
+                {
+                    'success': True,
+                    'message': f"{group.title} group has no user(s) attached",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        leaders = []
+        for user in users_in_group:
+            organization_activity_scores = self.get_organization_activity_scores(
+                organization_id, group, user, date_range
+            )
+            cec = organization_activity_scores["cec"]
+            tes = organization_activity_scores["tes"]
+
+            combination_instance = receive_model_instance(
+                Combination, organization_id, group, organization, "Combination"
+            )
+            combination_percentage = round(
+                combination_instance.calculate_combination_percentage(cec, tes), 2
+            )
+
+            user, percentage = user, combination_percentage
+
+            leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
+
+        leaders_sorted = sorted(leaders, key=lambda leader: leader['percentage'], reverse=True)
+
+        return Response(
+            {
+                "success": True,
+                "leaders": leaders_sorted[:10],
+                "organization_id": organization_id,
+                "group": group,
+                "start_date": start_date,
+                "end_date": end_date,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="organization_id",
+                description="organization_id",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+        ],
+    )
+    @action(
+        methods=['POST'],
+        detail=False,
+        serializer_class=CombinationUpdaterSerializer,
+        url_path="set-general-combination-activities-score",
+    )
+    def set_general_activities_score_for_organization_combination(self, request, pk=None):
+        organization_id = request.query_params["organization_id"]
+        organization = get_object_or_404(Organization, organization_id=organization_id)
+        serializer = CombinationUpdaterSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            combination_instances = Combination.objects.filter(organization=organization)
+            combination_instances.update(**serializer.validated_data)
+
+            return Response(
+                {
+                    "success": True,
+                    "data": CombinationSerializer(combination_instances, many=True).data,
+                },
+                status=status.HTTP_200_OK,
+            )
+        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class InternalizationViewSets(BaseViewSet):
@@ -479,11 +679,6 @@ class InternalizationViewSets(BaseViewSet):
             status=status.HTTP_200_OK,
         )
 
-
-class CombinationViewSets(BaseViewSet):
-    serializer_class = CombinationSerializer
-    queryset = Combination.objects.all()
-
     @extend_schema(
         parameters=[
             OpenApiParameter(
@@ -492,88 +687,27 @@ class CombinationViewSets(BaseViewSet):
                 required=True,
                 type=OpenApiTypes.STR,
             ),
-            OpenApiParameter(
-                name="group_pk",
-                description="group_pk",
-                required=True,
-                type=OpenApiTypes.STR,
-            ),
-            OpenApiParameter(
-                name="start_date",
-                description="Start date in the format 'YYYY-MM-DD'",
-                required=True,
-                type=OpenApiTypes.STR,
-            ),
-            OpenApiParameter(
-                name="end_date",
-                description="End date in the format 'YYYY-MM-DD'",
-                required=True,
-                type=OpenApiTypes.STR,
-            ),
         ],
     )
     @action(
-        methods=['GET'],
+        methods=['POST'],
         detail=False,
-        serializer_class=None,
+        serializer_class=InternalizationUpdaterSerializer,
+        url_path="set-general-internalization-activities-score",
     )
-    def get_organization_combination_activity_scores(self, request, pk=None):
-        """Get organization activity leaders for combination"""
-
+    def set_general_activities_score_for_organization_externalization(self, request, pk=None):
         organization_id = request.query_params["organization_id"]
-        group_pk = request.query_params["group_pk"]
+        organization = get_object_or_404(Organization, organization_id=organization_id)
+        serializer = InternalizationUpdaterSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            internalization_instances = Internalization.objects.filter(organization=organization)
+            internalization_instances.update(**serializer.validated_data)
 
-        start_date = timezone.make_aware(
-            timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
-        )
-        end_date = timezone.make_aware(
-            timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
-        )
-
-        date_range = (start_date, end_date)
-
-        organization = get_object_or_404(Organization, organization_id=organization_id).pk
-        group = get_object_or_404(Group, pk=group_pk).pk
-        try:
-            users_in_group = UserGroup.objects.filter(groups=group).values_list("user", flat=True)
-
-        except ObjectDoesNotExist:
             return Response(
                 {
-                    'success': True,
-                    'message': f"{group.title} group has no user(s) attached",
+                    "success": True,
+                    "data": InternalizationSerializer(internalization_instances, many=True).data,
                 },
-                status=status.HTTP_404_NOT_FOUND,
+                status=status.HTTP_200_OK,
             )
-        leaders = []
-        for user in users_in_group:
-            organization_activity_scores = self.get_organization_activity_scores(
-                organization_id, group, user, date_range
-            )
-            cec = organization_activity_scores["cec"]
-            tes = organization_activity_scores["tes"]
-
-            combination_instance = receive_model_instance(
-                Combination, organization_id, group, organization, "Combination"
-            )
-            combination_percentage = round(
-                combination_instance.calculate_combination_percentage(cec, tes), 2
-            )
-
-            user, percentage = user, combination_percentage
-
-            leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
-
-        leaders_sorted = sorted(leaders, key=lambda leader: leader['percentage'], reverse=True)
-
-        return Response(
-            {
-                "success": True,
-                "leaders": leaders_sorted[:10],
-                "organization_id": organization_id,
-                "group": group,
-                "start_date": start_date,
-                "end_date": end_date,
-            },
-            status=status.HTTP_200_OK,
-        )
+        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)

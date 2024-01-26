@@ -107,9 +107,7 @@ def generate_organization_id(sender, instance, created, **kwargs):
             Organization.objects.create(
                 name=instance.organization_name, organization_id=instance.organization_id
             )
-            UserGroup.objects.create(
-                user=instance,groups=[instance.first_group_id]
-            )
+            
             
 
 class Token(models.Model):
