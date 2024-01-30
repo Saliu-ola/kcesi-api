@@ -30,7 +30,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         name = validated_data["name"]
-        organization = (validated_data["organization"],)
+        organization = (validated_data["organization"])
         group = validated_data["group"]
 
         if Category.objects.filter(
