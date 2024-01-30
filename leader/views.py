@@ -18,7 +18,7 @@ from .serializer import (
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
-from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
+from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin, IsAdminOrUser
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from organization.models import Organization
@@ -220,6 +220,7 @@ class SocializationViewSets(BaseViewSet):
     @action(
         methods=['GET'],
         detail=False,
+        permission_classes=[IsAdminOrUser],
         serializer_class=None,
     )
     def get_organization_socialization_activity_scores(self, request, pk=None):
@@ -239,7 +240,7 @@ class SocializationViewSets(BaseViewSet):
 
         organization = get_object_or_404(Organization, organization_id=organization_id).pk
         group = get_object_or_404(Group, pk=group_pk).pk
-        
+
         users_in_group = UserGroup.objects.filter(groups=group).values_list("user", flat=True)
 
         if not users_in_group:
@@ -296,6 +297,7 @@ class SocializationViewSets(BaseViewSet):
     @action(
         methods=['POST'],
         detail=False,
+        permission_classes=[IsAdminOrUser],
         serializer_class=SocializationUpdaterSerializer,
         url_path="set-general-socialization-activities-score",
     )
@@ -352,6 +354,7 @@ class ExternalizationViewSets(BaseViewSet):
     @action(
         methods=['GET'],
         detail=False,
+        permission_classes=[IsAdminOrUser],
         serializer_class=None,
     )
     def get_organization_externalization_activity_scores(self, request, pk=None):
@@ -371,7 +374,7 @@ class ExternalizationViewSets(BaseViewSet):
 
         organization = get_object_or_404(Organization, organization_id=organization_id).pk
         group = get_object_or_404(Group, pk=group_pk).pk
-        
+
         users_in_group = UserGroup.objects.filter(groups=group).values_list("user", flat=True)
 
         if not users_in_group:
@@ -428,6 +431,7 @@ class ExternalizationViewSets(BaseViewSet):
     @action(
         methods=['POST'],
         detail=False,
+        permission_classes=[IsAdminOrUser],
         serializer_class=ExternalizationUpdaterSerializer,
         url_path="set-general-externalization-activities-score",
     )
@@ -484,6 +488,7 @@ class CombinationViewSets(BaseViewSet):
     @action(
         methods=['GET'],
         detail=False,
+        permission_classes=[IsAdminOrUser],
         serializer_class=None,
     )
     def get_organization_combination_activity_scores(self, request, pk=None):
@@ -560,6 +565,7 @@ class CombinationViewSets(BaseViewSet):
     @action(
         methods=['POST'],
         detail=False,
+        permission_classes=[IsAdminOrUser],
         serializer_class=CombinationUpdaterSerializer,
         url_path="set-general-combination-activities-score",
     )
@@ -616,6 +622,7 @@ class InternalizationViewSets(BaseViewSet):
     @action(
         methods=['GET'],
         detail=False,
+        permission_classes=[IsAdminOrUser],
         serializer_class=None,
     )
     def get_organization_internalization_activity_scores(self, request, pk=None):
@@ -692,6 +699,7 @@ class InternalizationViewSets(BaseViewSet):
     @action(
         methods=['POST'],
         detail=False,
+        permission_classes=[IsAdminOrUser],
         serializer_class=InternalizationUpdaterSerializer,
         url_path="set-general-internalization-activities-score",
     )

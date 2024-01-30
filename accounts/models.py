@@ -9,6 +9,8 @@ from random import randint
 from django.db.models.signals import post_save
 from django.utils import timezone
 from organization.models import Organization
+from django.db import transaction
+
 
 TOKEN_TYPE = (
     ('ACCOUNT_VERIFICATION', 'ACCOUNT_VERIFICATION'),
@@ -98,8 +100,6 @@ class User(AbstractUser):
 
 @receiver(post_save, sender=User)
 def generate_organization_id(sender, instance, created, **kwargs):
-    from group.models import UserGroup
-    #decided to import UserGroup to avoid cyclic import
     if created and instance.role_id in [1, 2]:
         if not instance.organization_id:
             instance.organization_id = instance.generate_organization_id()
@@ -108,7 +108,7 @@ def generate_organization_id(sender, instance, created, **kwargs):
                 name=instance.organization_name, organization_id=instance.organization_id
             )
             
-            
+
 
 class Token(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -130,5 +130,3 @@ class Token(models.Model):
     def reset_user_password(self, password):
         self.user.set_password(password)
         self.user.save()
-
-
