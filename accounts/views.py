@@ -12,7 +12,7 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from organization.models import Organization
-from accounts.permissions import IsAdmin, IsSuperAdmin, IsUser, IsSuperAdminOrAdmin
+from accounts.permissions import IsAdmin, IsSuperAdmin, IsUser, IsSuperAdminOrAdmin, IsAdminOrUser
 from .serializers import (
     UserSignUpSerializer,
     LoginUserSerializer,
@@ -323,6 +323,7 @@ class UserViewSets(
         detail=False,
         serializer_class=None,
         url_path='get-group-seci-details',
+        permission_classes=[IsAdminOrUser],
     )
     def get_group_seci_details(self, request, pk=None):
         """Get seci detail"""
@@ -528,6 +529,7 @@ class UserViewSets(
         detail=False,
         serializer_class=None,
         url_path='get-user-seci-details',
+        permission_classes=[IsAdminOrUser],
     )
     def get_user_seci_details(self, request, pk=None):
         """Get seci detail"""
@@ -545,20 +547,17 @@ class UserViewSets(
 
         date_range = (start_date, end_date)
 
-        
         user_groups = UserGroup.objects.filter(user=user).values_list("groups", flat=True)
-        
+
         if not user_groups:
-                return Response(
+            return Response(
                 {
                     "success": False,
-                    "message": f"User {user.full_name}  with  id {user_id} does not belong to a group",
+                    "message": f"User {user.full_name}  with  id:- {user_id} does not belong to a group",
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        
-            
         sec_list = []
         eec_list = []
         cec_list = []
