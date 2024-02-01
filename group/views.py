@@ -67,16 +67,17 @@ class UserGroupsViewSets(viewsets.ModelViewSet):
 
     @action(
         methods=['POST'],
-        detail=True,
+        detail=False,
         permission_classes=[AllowAny],
         serializer_class=UpdateUserGroupSerializer,
         url_path='add-group',
     )
     def add(self, request, pk=None):
-        user_group_instance = self.get_object()
-        initial_groups = user_group_instance.groups.all()
         serializer = UpdateUserGroupSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
+            user = serializer.validated_data["user"]
+            user_group_instance = get_object_or_404(UserGroup, user=user)
+            initial_groups = user_group_instance.groups.all()
             new_groups = serializer.validated_data["groups"]
             user_group_instance.groups.set(list(initial_groups) + list(new_groups))
 
@@ -85,15 +86,16 @@ class UserGroupsViewSets(viewsets.ModelViewSet):
 
     @action(
         methods=['POST'],
-        detail=True,
+        detail=False,
         permission_classes=[AllowAny],
         serializer_class=UpdateUserGroupSerializer,
         url_path='remove-group',
     )
     def remove(self, request, pk=None):
-        user_group_instance = self.get_object()
         serializer = UpdateUserGroupSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
+            user = serializer.validated_data["user"]
+            user_group_instance = get_object_or_404(UserGroup, user=user)
             groups_to_remove = serializer.validated_data["groups"]
             user_group_instance.groups.remove(*groups_to_remove)
         else:
