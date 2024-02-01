@@ -338,22 +338,57 @@ class UserViewSets(
         )
 
         date_range = (start_date, end_date)
-        group = get_object_or_404(Group, pk=group_id)
-        organization_id = group.organization_id
-        organization = get_object_or_404(Organization, organization_id=organization_id)
 
-        socialization_instance = Socialization.objects.filter(
-            organization=organization, group=group
-        ).first()
-        externalization_instance = Externalization.objects.filter(
-            organization=organization, group=group
-        ).first()
-        combination_instance = Combination.objects.filter(
-            organization=organization, group=group
-        ).first()
-        internalization_instance = Internalization.objects.filter(
-            organization=organization, group=group
-        ).first()
+        try:
+            group = Group.objects.get(pk=group_id)
+        except ObjectDoesNotExist:
+            return Response(
+                {"message": f"Group {group_id} not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        organization_id = group.organization_id
+        try:
+            organization = Organization.objects.get(organization_id=organization_id)
+        except ObjectDoesNotExist:
+            return Response(
+                {"message": f"Organization for {group} not found or no longer exist"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            socialization_instance = Socialization.objects.get(
+                organization=organization, group=group
+            )
+        except ObjectDoesNotExist:
+            return Response(
+                {"message": f"Group {group.pk} have no socialization activities constants"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        try:
+            externalization_instance = Externalization.objects.get(
+                organization=organization, group=group
+            )
+        except ObjectDoesNotExist:
+            return Response(
+                {"message": f"Group {group.pk} have no externalization activities constants"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        try:
+            combination_instance = Combination.objects.get(organization=organization, group=group)
+        except ObjectDoesNotExist:
+            return Response(
+                {"message": f"Group {group.pk} have no combination activities constants"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        try:
+            internalization_instance = Internalization.objects.get(
+                organization=organization, group=group
+            )
+        except ObjectDoesNotExist:
+            return Response(
+                {"message": f"Group {group.pk} have no internalization activities constants"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         try:
             post_blog = Blog.objects.filter(
@@ -536,7 +571,13 @@ class UserViewSets(
 
         user_id = request.query_params["user_id"]
 
-        user = get_object_or_404(User, pk=user_id)
+        try:
+            user = User.objects.get(pk=user_id)
+        except ObjectDoesNotExist:
+            return Response(
+                {"message": f"User {user_id} not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         start_date = timezone.make_aware(
             timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
@@ -564,12 +605,43 @@ class UserViewSets(
         iec_list = []
 
         for group in user_groups:
-            socialization_instance = Socialization.objects.filter(group=group).first()
-
-            externalization_instance = Externalization.objects.filter(group=group).first()
-            combination_instance = Combination.objects.filter(group=group).first()
-            internalization_instance = Internalization.objects.filter(group=group).first()
-
+            try:
+                socialization_instance = Socialization.objects.get(group=group)
+            except ObjectDoesNotExist:
+                return Response(
+                    {
+                        "message": f"User belongs to Group {group} which  have no socialization activities constants"
+                    },
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            try:
+                externalization_instance = Externalization.objects.get(group=group)
+            except ObjectDoesNotExist:
+                return Response(
+                    {
+                        "message": f"User belongs to Group {group} which  have no externalization activities constants"
+                    },
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            try:
+                combination_instance = Combination.objects.get(group=group)
+            except ObjectDoesNotExist:
+                return Response(
+                    {
+                        "message": f"User belongs to Group {group} which  have no combination activities constants"
+                    },
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            try:
+                internalization_instance = Internalization.objects.get(group=group)
+            except ObjectDoesNotExist:
+                return Response(
+                    {
+                        "message": f"User belongs to Group {group} which  have no internalization activities constants"
+                    },
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            
             try:
                 post_blog = Blog.objects.filter(author=user, created_at__range=date_range).count()
             except ObjectDoesNotExist:
