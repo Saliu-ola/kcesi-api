@@ -50,12 +50,12 @@ def get_count_model_instances(model, organization, group, date_range, kwargs):
 
 def receive_model_instance(model, organization_id, group, organization, model_name):
     try:
-        model_instance = model.objects.filter(organization=organization, group=group).first()
+        model_instance = model.objects.get(organization=organization, group=group)
         return model_instance
     except ObjectDoesNotExist:
         return Response(
             {
-                "error": f"organization- {organization_id} belonging to group- {group} have no {model_name} activity score ".title()
+                "error": f"group- {group}  belonging to organization- {organization_id}  have no {model_name} activity score ".title()
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
