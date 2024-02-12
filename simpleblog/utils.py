@@ -1,3 +1,6 @@
+
+
+
 def calculate_category_score(constants, tallies):
     score = sum(constants[key] * tallies[key] for key in constants)
 
@@ -105,3 +108,4 @@ def calculate_engagement_scores(tallies):
 
 # result = calculate_engagement_scores(tallies_example)
 # print(result)
+
