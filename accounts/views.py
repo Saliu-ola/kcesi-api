@@ -25,6 +25,7 @@ from .serializers import (
     UpdateUserImage,
 )
 from rest_framework.decorators import action
+from django.db import transaction
 from .tokens import create_jwt_pair_for_user
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
@@ -45,6 +46,7 @@ from group.models import UserGroup
 from group.serializers import GroupSerializer
 from leader.models import Socialization, Externalization, Combination, Internalization
 from simpleblog.utils import calculate_total_engagement_score
+from .task import send_account_verification_mail, send_password_reset_mail
 
 # Create your views here.
 
@@ -641,7 +643,7 @@ class UserViewSets(
                     },
                     status=status.HTTP_404_NOT_FOUND,
                 )
-            
+
             try:
                 post_blog = Blog.objects.filter(author=user, created_at__range=date_range).count()
             except ObjectDoesNotExist:
@@ -793,6 +795,7 @@ class UserSignUpView(generics.GenericAPIView):
     serializer_class = UserSignUpSerializer
     permission_classes = [AllowAny]
 
+    @transaction.atomic
     def post(self, request: Request):
         data = request.data
         serializer = self.serializer_class(data=data)
@@ -808,17 +811,20 @@ class UserSignUpView(generics.GenericAPIView):
 
             verification_url = f"{settings.CLIENT_URL}/auth/verify_account/?token={token.token}"
 
-            # user_data = {'id': user.id, 'email': user.email, 'username': f"{user.username}",
-            #          'url': verification_url} will be done with celery and proper email content
+            email_data = {
+                "email": user.email,
+                "full_name": user.full_name,
+                "link": verification_url,
+            }
 
-            # Send email with verification link
-            send_mail(
-                'Verify Your Account',
-                f'Click the following link to verify your account: {verification_url}',
-                settings.EMAIL_HOST_USER,
-                [user.email],
-                fail_silently=False,
-            )
+           
+
+            try:
+                send_account_verification_mail(email_data)
+            except Exception as e:
+                # If an error occurs during email sending, rollback the transaction
+                user.delete()
+                return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
 
             response = {"message": "User Created Successfully", "data": serializer.data}
             return Response(data=response, status=status.HTTP_201_CREATED)
@@ -879,14 +885,13 @@ class PasswordResetRequestView(APIView):
             token.generate_random_token()
             reset_url = f"{settings.CLIENT_URL}/auth/password-reset/?token={token.token}"
 
-            # Send email with password reset link
-            send_mail(
-                'Password Reset',
-                f'Click the following link to reset your password: {reset_url}',
-                settings.EMAIL_HOST_USER,
-                [user.email],
-                fail_silently=False,
-            )
+            email_data = {
+                "email": user.email,
+                "full_name": user.full_name,
+                "reset_link": reset_url,
+            }
+            
+            send_password_reset_mail(email_data)
 
             return Response(
                 {"message": "Password reset link sent successfully"}, status=status.HTTP_200_OK
