@@ -8,11 +8,16 @@ from django.dispatch import receiver
 from random import randint
 from django.db.models.signals import post_save
 from django.utils import timezone
+from organization.models import Organization
+from django.db import transaction
+
 
 TOKEN_TYPE = (
     ('ACCOUNT_VERIFICATION', 'ACCOUNT_VERIFICATION'),
     ('PASSWORD_RESET', 'PASSWORD_RESET'),
 )
+
+GENDER = (('MALE', 'MALE'), ('FEMALE', 'FEMALE'))
 
 
 # Create a new user
@@ -50,20 +55,27 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=45, null=True)
     date_of_birth = models.DateField(null=True)
     role_id = models.IntegerField(null=True)
-    group_id = models.IntegerField(null=True)
+    first_group_id = models.IntegerField(null=True)
     organization_id = models.CharField(
         max_length=15,
         null=True,
     )
     organization_name = models.CharField(max_length=50, null=True)
-    phone = models.CharField(max_length=17, blank=True, null=True)
+    phone = models.CharField(max_length=17, null=True)
+    gender = models.CharField(choices=GENDER, null=True, max_length=20)
     is_verified = models.BooleanField(default=False, null=True)
+    image_url = models.CharField(max_length=255, null=True)
+    cloud_id = models.CharField(max_length=255, null=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
     objects = CustomUserManager()
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
+
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
 
     def generate_organization_id(self):
         if self.is_superuser and self.role_id == 1:
@@ -92,6 +104,10 @@ def generate_organization_id(sender, instance, created, **kwargs):
         if not instance.organization_id:
             instance.organization_id = instance.generate_organization_id()
             instance.save()
+            Organization.objects.create(
+                name=instance.organization_name, organization_id=instance.organization_id
+            )
+            
 
 
 class Token(models.Model):

@@ -32,14 +32,26 @@ class IsUser(permissions.BasePermission):
         return bool(request.user.is_authenticated and request.user.role_id == USER_ROLE_ID)
 
 
-class IsSuperOrAdminAdmin(permissions.BasePermission):
+class IsSuperAdminOrAdmin(permissions.BasePermission):
 
     """Allows access only to  super_admin users."""
 
-    message = "Only SuperAdmins or Regular Admin are authorized to perform this action."
+    message = "Only SuperAdmins and Regular Admin are authorized to perform this action."
+
+    def has_permission(self, request, view):
+        return bool(
+            request.user.is_authenticated and request.user.role_id == SUPER_ADMIN_ROLE_ID
+        ) or bool(request.user.is_authenticated and request.user.role_id == ADMIN_ROLE_ID)
+
+
+class IsAdminOrUser(permissions.BasePermission):
+
+    """Allows access only to  super_admin users."""
+
+    message = "Only Admins and  Regular User are authorized to perform this action."
 
     def has_permission(self, request, view):
         """There is a need to use admin for backward compatibility on Mobile app"""
         return bool(
-            request.user.is_authenticated and request.user.role_id == SUPER_ADMIN_ROLE_ID
+            request.user.is_authenticated and request.user.role_id == USER_ROLE_ID
         ) or bool(request.user.is_authenticated and request.user.role_id == ADMIN_ROLE_ID)
