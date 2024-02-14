@@ -10,7 +10,7 @@ class Topic(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_topics")
     platform = models.ForeignKey(Platform, on_delete=models.CASCADE, related_name="platform_topics")
     organization = models.ForeignKey(
-        Organization, on_delete=models.DO_NOTHING, related_name="organization_topics"
+        Organization, on_delete=models.CASCADE, related_name="organization_topics"
     )
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_topics")
 

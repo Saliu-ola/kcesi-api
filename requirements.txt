@@ -19,7 +19,6 @@ psycopg2-binary
 dj-database-url
 python-decouple
 django-cors-headers
-drf-spectacular
 django-debug-toolbar
 whitenoise
 django-filter
@@ -28,3 +27,12 @@ pytest-django
 factory-boy
 mock
 faker
+django-cloudinary-storage
+cloudinary
+pillow
+drf-spectacular
+channels
+channels_redis
+daphne
+django-channels
+redis

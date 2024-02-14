@@ -1,13 +1,8 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import ChatViewSets
+from django.urls import path
 
-app_name = 'chat'
-
-router = DefaultRouter()
-router.register('', ChatViewSets)
-
+from . import views
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('', views.index, name='index'),
+    path('<str:room_name>/', views.room, name='room'),
 ]

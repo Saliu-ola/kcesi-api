@@ -1,10 +1,7 @@
 from django.contrib import admin
 
-from .models import Group
+from .models import Group,UserGroup
 
+admin.site.register(Group)
+admin.site.register(UserGroup)
 
-# Register your models here.
-@admin.register(Group)
-class PostAdmin(admin.ModelAdmin):
-    list_display = ["title", "created_at"]
-    list_filter = ["created_at"]
