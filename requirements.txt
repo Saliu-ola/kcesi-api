@@ -31,4 +31,8 @@ django-cloudinary-storage
 cloudinary
 pillow
 drf-spectacular
-
+channels
+channels_redis
+daphne
+django-channels
+redis

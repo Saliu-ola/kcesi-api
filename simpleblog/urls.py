@@ -13,7 +13,7 @@ urlpatterns = [
     path("browser-histories/", include("browser_history.urls")),
     path("topics/", include("topics.urls")),
     path("platforms/", include("platforms.urls")),
-    path("chats/", include("in_app_chat.urls")),
+    path("chats/", include("chat.urls")),
     path("blogs/", include("blog.urls")),
     path("auth/", include("accounts.urls")),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
