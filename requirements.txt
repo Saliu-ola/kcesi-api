@@ -31,8 +31,8 @@ django-cloudinary-storage
 cloudinary
 pillow
 drf-spectacular
-channels
-channels_redis
+channels==4.0.0
+channels-redis==4.0.0
+django-channels==0.7.0
 daphne
-django-channels
 redis
