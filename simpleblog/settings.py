@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "browser_history",
     "category",
     "leader",
+    "feedback",
     # third-party-apps
     "rest_framework",
     "corsheaders",
