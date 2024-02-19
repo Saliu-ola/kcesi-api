@@ -1,5 +1,11 @@
-import json
 from channels.generic.websocket import AsyncWebsocketConsumer
+from accounts.models import User
+from in_app_chat.models import InAppChat
+import json
+from organization.models import Organization
+from group.models import Group
+
+from asgiref.sync import sync_to_async
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -30,20 +36,35 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if text_data:
             try:
                 text_data_json = json.loads(text_data)
-                message = text_data_json.get('message')  # Use .get() to avoid KeyError
+                message = text_data_json.get('message')
+                sender_id = text_data_json.get('sender_id')
+                receiver_id = text_data_json.get('receiver_id')
+                organization = text_data_json.get('organization')
+                group = text_data_json.get('group')
             except json.JSONDecodeError as e:
-                # Handle invalid JSON format error
                 print(f"Invalid JSON format: {e}")
                 return
-        else:
-            # Handle empty message
-            print("Received empty message")
-            return
 
-        # Proceed with sending message to room group
-        await self.channel_layer.group_send(
-            self.room_group_name, {'type': 'chat_message', 'message': message}
-        )
+            # Use sync_to_async to run synchronous ORM operations
+            sender = await sync_to_async(User.objects.get)(pk=sender_id)
+            receiver = await sync_to_async(User.objects.get)(pk=receiver_id)
+            organization = await sync_to_async(Organization.objects.get)(pk=organization)
+            group = await sync_to_async(Group.objects.get)(pk=group)
+
+            # Create and save the InAppChat instance
+            chat_message = InAppChat(
+                sender=sender,
+                receiver=receiver,
+                message=message,
+                organization=organization,
+                group=group,
+            )
+            await sync_to_async(chat_message.save)()
+
+            # Proceed with sending message to room group
+            await self.channel_layer.group_send(
+                self.room_group_name, {'type': 'chat_message', 'message': message}
+            )
 
     # Receive message from room group
     async def chat_message(self, event):
