@@ -22,12 +22,12 @@ class InAppChatViewSets(
     mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
- 
+
     serializer_class = InAppChatSerializer
     permission_classes = [IsAuthenticated]
     queryset = InAppChat.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['sender', 'receiver', 'organization', 'group']
+    filterset_fields = ['sender', 'receiver', 'organization', 'group', "unique_identifier"]
     search_fields = ['message']
     ordering_fields = ['created_at']
 
