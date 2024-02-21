@@ -15,17 +15,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Accept the WebSocket connection
         await self.accept()
 
-        # Send a connected message to the client
-        await self.send(text_data=json.dumps({'message': 'You are now connected to the chat.'}))
 
     async def disconnect(self, close_code):
         # Leave room group
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
-
-        # Send a disconnected message to the client
-        await self.send(
-            text_data=json.dumps({'message': 'You have been disconnected from the chat.'})
-        )
 
     # Receive message from WebSocket
     async def receive(self, text_data):
@@ -38,8 +31,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             try:
                 text_data_json = json.loads(text_data)
                 message = text_data_json.get('message')
-                sender_id = text_data_json.get('sender_id')
-                receiver_id = text_data_json.get('receiver_id')
+                sender = text_data_json.get('sender')
+                receiver = text_data_json.get('receiver')
                 organization_id = text_data_json.get('organization')
                 group_id = text_data_json.get('group')
                 unique_identifier = text_data_json.get('unique_identifier')
@@ -48,11 +41,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 return
 
             # Use sync_to_async to run synchronous ORM operations
-            sender = await sync_to_async(User.objects.get)(pk=sender_id)
-            receiver = await sync_to_async(User.objects.get)(pk=receiver_id)
+            sender = await sync_to_async(User.objects.get)(pk=sender)
+            receiver = await sync_to_async(User.objects.get)(pk=receiver)
             organization = await sync_to_async(Organization.objects.get)(pk=organization_id)
             group = await sync_to_async(Group.objects.get)(pk=group_id)
-            timestamp = int(time.time())  
+            created_at = int(time.time())  
 
             # Create and save the InAppChat instance
             chat_message = InAppChat(
@@ -71,36 +64,36 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 {
                     'type': 'chat_message',
                     'message': message,
-                    'sender_id': sender.pk,
-                    'receiver_id': receiver.pk,
+                    'sender': sender.pk,
+                    'receiver': receiver.pk,
                     'organization': organization.pk, 
                     'group': group.pk, 
                     "unique_identifier":unique_identifier,
-                    'timestamp': timestamp,  
+                    'created_at': created_at,  
                 },
             )
 
     # Receive message from room group
     async def chat_message(self, event):
         message = event['message']
-        sender_id = event['sender_id']
-        receiver_id = event['receiver_id']
+        sender = event['sender']
+        receiver = event['receiver']
         organization = event['organization']
         group = event['group']
         unique_identifier= event["unique_identifier"]
-        timestamp = event['timestamp']
+        created_at = event['created_at']
 
         # Send the received message back to the client
         await self.send(
             text_data=json.dumps(
                 {
                     'message': message,
-                    "sender_id": sender_id,
-                    "receiver_id": receiver_id,
+                    "sender": sender,
+                    "receiver": receiver,
                     "organization": organization,
                     "group": group,
                     "unique_identifier":unique_identifier,
-                    "timestamp": timestamp,
+                    "created_at": created_at,
                 }
             )
         )
