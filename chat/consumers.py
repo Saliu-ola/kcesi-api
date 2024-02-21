@@ -1,11 +1,7 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 import json
-from organization.models import Organization
-from group.models import Group
 
-from accounts.models import User
-from in_app_chat.models import InAppChat
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -32,6 +28,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     # Receive message from WebSocket
     async def receive(self, text_data):
+        from organization.models import Organization
+        from group.models import Group
+        from accounts.models import User
+        from in_app_chat.models import InAppChat
+        #decided to import the apps in the function to avoid app registry
+        
         if text_data:
             try:
                 text_data_json = json.loads(text_data)
@@ -43,8 +45,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             except json.JSONDecodeError as e:
                 print(f"Invalid JSON format: {e}")
                 return
-
+            
             # Use sync_to_async to run synchronous ORM operations
+        
+            
             sender = await sync_to_async(User.objects.get)(pk=sender_id)
             receiver = await sync_to_async(User.objects.get)(pk=receiver_id)
             organization = await sync_to_async(Organization.objects.get)(pk=organization)
