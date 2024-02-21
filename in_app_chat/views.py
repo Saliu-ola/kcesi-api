@@ -10,15 +10,21 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
 from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
-from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
 
-class InAppChatViewSets(viewsets.ModelViewSet):
-    http_method_names = ["get", "patch", "post", "put", "delete"]
+class InAppChatViewSets(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+ 
     serializer_class = InAppChatSerializer
-    permission_classes = [IsSuperAdminOrAdmin]
+    permission_classes = [IsAuthenticated]
     queryset = InAppChat.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['sender', 'receiver', 'organization', 'group']

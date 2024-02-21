@@ -788,6 +788,60 @@ class UserViewSets(
             status=status.HTTP_200_OK,
         )
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'group', description='group', type=OpenApiTypes.STR, location=OpenApiParameter.QUERY
+            ),
+            OpenApiParameter(
+                'organization_id',
+                description='organization_id',
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+            ),
+        ]
+    )
+    @action(
+        methods=['GET'],
+        detail=False,
+        permission_classes=[IsAuthenticated],
+        serializer_class=ListUserSerializer,
+        url_path='list-users-to-chat-with',
+    )
+    def get_list_of_users_to_chat_with(self, request, pk=None):
+        group = request.query_params.get("group")
+        organization_id = request.query_params.get("organization_id")
+
+        if self.request.user.role_id == 1 and self.request.user.is_superuser:
+            queryset = self.get_queryset()
+            return Response(
+                {
+                    "success": True,
+                    "count": queryset.count(),
+                    "data": self.get_serializer(queryset, many=True).data,
+                },
+                status=status.HTTP_200_OK,
+            )
+        else:
+            users_in_organization = self.get_queryset().filter(organization_id=organization_id)
+            qs = users_in_organization
+
+            if group is not None and group != '':
+                users_in_group = UserGroup.objects.filter(
+                    user__in=users_in_organization, groups=group
+                ).values("user__pk")
+                qs = self.get_queryset().filter(pk__in=users_in_group)
+                
+
+            return Response(
+                {
+                    "success": True,
+                    "count": qs.count(),
+                    "data": self.get_serializer(qs, many=True).data,
+                },
+                status=status.HTTP_200_OK,
+            )
+
 
 class UserSignUpView(generics.GenericAPIView):
     """Sign up endpoint"""
@@ -816,8 +870,6 @@ class UserSignUpView(generics.GenericAPIView):
                 "full_name": user.full_name,
                 "link": verification_url,
             }
-
-           
 
             try:
                 send_account_verification_mail(email_data)
@@ -890,7 +942,7 @@ class PasswordResetRequestView(APIView):
                 "full_name": user.full_name,
                 "reset_link": reset_url,
             }
-            
+
             send_password_reset_mail(email_data)
 
             return Response(
