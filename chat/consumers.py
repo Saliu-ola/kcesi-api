@@ -1,12 +1,11 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
-from accounts.models import User
-from in_app_chat.models import InAppChat
+from asgiref.sync import sync_to_async
 import json
 from organization.models import Organization
 from group.models import Group
 
-from asgiref.sync import sync_to_async
-
+from accounts.models import User
+from in_app_chat.models import InAppChat
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
