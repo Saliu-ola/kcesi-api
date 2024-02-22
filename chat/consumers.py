@@ -15,7 +15,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Accept the WebSocket connection
         await self.accept()
 
-
     async def disconnect(self, close_code):
         # Leave room group
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
@@ -30,12 +29,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if text_data:
             try:
                 text_data_json = json.loads(text_data)
-                message = text_data_json.get('message')
-                sender = text_data_json.get('sender')
-                receiver = text_data_json.get('receiver')
-                organization_id = text_data_json.get('organization')
-                group_id = text_data_json.get('group')
-                unique_identifier = text_data_json.get('unique_identifier')
+                message = text_data_json.get("message")
+                sender = text_data_json.get("sender")
+                receiver = text_data_json.get("receiver")
+                organization_id = text_data_json.get("organization")
+                group_id = text_data_json.get("group")
+                unique_identifier = text_data_json.get("unique_identifier")
             except json.JSONDecodeError as e:
                 print(f"Invalid JSON format: {e}")
                 return
@@ -44,18 +43,24 @@ class ChatConsumer(AsyncWebsocketConsumer):
             sender = await sync_to_async(User.objects.get)(pk=sender)
             receiver = await sync_to_async(User.objects.get)(pk=receiver)
             organization = await sync_to_async(Organization.objects.get)(pk=organization_id)
-            group = await sync_to_async(Group.objects.get)(pk=group_id)
-            created_at = int(time.time())  
+
+            # Check if group_id is provided, if not, set group to None
+            if group_id:
+                group = await sync_to_async(Group.objects.get)(pk=group_id)
+            else:
+                group = None
+
+            created_at = int(time.time())
 
             # Create and save the InAppChat instance
             chat_message = InAppChat(
-            sender=sender,
-            receiver=receiver,
-            message=message,
-            organization=organization,
-            group=group,
-            unique_identifier=unique_identifier,
-        )
+                sender=sender,
+                receiver=receiver,
+                message=message,
+                organization=organization,
+                group=group,  
+                unique_identifier=unique_identifier,
+            )
             await sync_to_async(chat_message.save)()
 
             # Proceed with sending message to room group
@@ -63,36 +68,36 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 self.room_group_name,
                 {
                     'type': 'chat_message',
-                    'message': message,
-                    'sender': sender.pk,
-                    'receiver': receiver.pk,
-                    'organization': organization.pk, 
-                    'group': group.pk, 
-                    "unique_identifier":unique_identifier,
-                    'created_at': created_at,  
+                    "message": message,
+                    "sender": sender.pk,
+                    "receiver": receiver.pk,
+                    "organization": organization.pk,
+                    "group": group.pk if group else None,  # Send None if group is None
+                    "unique_identifier": unique_identifier,
+                    "created_at": created_at,
                 },
             )
 
     # Receive message from room group
     async def chat_message(self, event):
-        message = event['message']
-        sender = event['sender']
-        receiver = event['receiver']
-        organization = event['organization']
-        group = event['group']
-        unique_identifier= event["unique_identifier"]
-        created_at = event['created_at']
+        message = event["message"]
+        sender = event["sender"]
+        receiver = event["receiver"]
+        organization = event["organization"]
+        group = event["group"]  # This will be None if group was not provided
+        unique_identifier = event["unique_identifier"]
+        created_at = event["created_at"]
 
         # Send the received message back to the client
         await self.send(
             text_data=json.dumps(
                 {
-                    'message': message,
+                    "message": message,
                     "sender": sender,
                     "receiver": receiver,
                     "organization": organization,
                     "group": group,
-                    "unique_identifier":unique_identifier,
+                    "unique_identifier": unique_identifier,
                     "created_at": created_at,
                 }
             )
