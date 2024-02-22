@@ -11,7 +11,9 @@ class InAppChat(models.Model):
     organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="organization_chats"
     )
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_chats")
+    group = models.ForeignKey(
+        Group, on_delete=models.CASCADE, null=True, related_name="group_chats"
+    )
     unique_identifier = models.CharField(max_length=255, null=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
