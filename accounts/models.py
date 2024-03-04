@@ -37,6 +37,8 @@ class CustomUserManager(BaseUserManager):
     def create_superuser(self, email, password, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("is_verified",True)
+        extra_fields.setdefault("role_id",1)
 
         if extra_fields.get("is_staff") is not True:
             raise ValueError("Superuser has to have is_staff being True")
@@ -107,7 +109,6 @@ def generate_organization_id(sender, instance, created, **kwargs):
             Organization.objects.create(
                 name=instance.organization_name, organization_id=instance.organization_id
             )
-            
 
 
 class Token(models.Model):
