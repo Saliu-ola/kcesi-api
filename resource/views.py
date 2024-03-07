@@ -1,7 +1,7 @@
 from rest_framework.request import Request
 from rest_framework.response import Response
-from .models import Resources, Type
-from .serializers import ResourcesSerializer, ResourcesTypeSerializer, CreateResourcesSerializer
+from .models import Resources
+from .serializers import ResourcesSerializer, CreateResourcesSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
@@ -9,28 +9,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 import cloudinary.uploader
-from rest_framework.parsers import MultiPartParser, FormParser
-
-
-class ResourcesTypeViewSets(viewsets.ModelViewSet):
-    http_method_names = ["get", "patch", "post", "put", "delete"]
-    serializer_class = ResourcesTypeSerializer
-    permission_classes = [IsAuthenticated]
-    queryset = Type.objects.all()
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = [
-        'name',
-    ]
-    search_fields = ['name']
-    ordering_fields = ['created_at']
-
-    def paginate_results(self, queryset):
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+from rest_framework.parsers import MultiPartParser
 
 
 class ResourcesViewSets(viewsets.ModelViewSet):
