@@ -27,7 +27,14 @@ class InAppChatViewSets(
     permission_classes = [IsAuthenticated]
     queryset = InAppChat.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['sender', 'receiver', 'organization', 'group', "unique_identifier"]
+    filterset_fields = [
+        'sender',
+        'receiver',
+        'content_type',
+        'organization',
+        'group',
+        "unique_identifier",
+    ]
     search_fields = ['message']
     ordering_fields = ['created_at']
 

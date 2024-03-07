@@ -27,7 +27,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from blog.models import Blog, Comment
 from in_app_chat.models import InAppChat
-from resource.models import Resources, Type
+from resource.models import Resources
 from browser_history.models import BrowserHistory
 from forum.models import Forum
 from topics.models import Topic

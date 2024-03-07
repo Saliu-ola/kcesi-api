@@ -31,6 +31,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 text_data_json = json.loads(text_data)
                 message = text_data_json.get("message")
                 sender = text_data_json.get("sender")
+                content_type = text_data_json.get("content_type")
                 receiver = text_data_json.get("receiver")
                 organization_id = text_data_json.get("organization")
                 group_id = text_data_json.get("group")
@@ -55,10 +56,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
             # Create and save the InAppChat instance
             chat_message = InAppChat(
                 sender=sender,
+                content_type=content_type,
                 receiver=receiver,
                 message=message,
                 organization=organization,
-                group=group,  
+                group=group,
                 unique_identifier=unique_identifier,
             )
             await sync_to_async(chat_message.save)()
@@ -71,6 +73,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "message": message,
                     "sender": sender.pk,
                     "receiver": receiver.pk,
+                    "content_type":"content_type" ,
                     "organization": organization.pk,
                     "group": group.pk if group else None,  # Send None if group is None
                     "unique_identifier": unique_identifier,
@@ -83,6 +86,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         message = event["message"]
         sender = event["sender"]
         receiver = event["receiver"]
+        content_type = event["content_type"]
         organization = event["organization"]
         group = event["group"]  # This will be None if group was not provided
         unique_identifier = event["unique_identifier"]
@@ -94,6 +98,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 {
                     "message": message,
                     "sender": sender,
+                    "content_type":content_type,
                     "receiver": receiver,
                     "organization": organization,
                     "group": group,

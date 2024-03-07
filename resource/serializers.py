@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Resources, Type
+from .models import Resources
 import cloudinary.uploader
 from organization.models import Organization
 from group.models import Group
@@ -8,12 +8,17 @@ from platforms.models import Platform
 from accounts.models import User
 from organization.models import Organization
 from group.models import Group
+from rest_framework.validators import ValidationError
 
 
-class ResourcesTypeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Type
-        fields = "__all__"
+MAXIMUM_SIZE_UPLOAD = 2 * 1024 * 1024  # 2MB
+RESOURCE_TYPES = (
+    ("AUDIO", "AUDIO"),
+    ("VIDEO", "VIDEO"),
+    ("IMAGE", "IMAGE"),
+    ("DOCUMENT", "DOCUMENT"),
+    ("OTHERS", "OTHERS"),
+)
 
 
 class ResourcesSerializer(serializers.ModelSerializer):
@@ -28,7 +33,8 @@ class ResourcesSerializer(serializers.ModelSerializer):
 class CreateResourcesSerializer(serializers.ModelSerializer):
     file = serializers.FileField(required=True, write_only=True)
     title = serializers.CharField(required=True)
-    
+    type = serializers.ChoiceField(RESOURCE_TYPES,default="IMAGE")
+
     class Meta:
         model = Resources
         fields = [
@@ -46,6 +52,11 @@ class CreateResourcesSerializer(serializers.ModelSerializer):
             "cloud_id",
         ]
         read_only_fields = ["id", "media_url", "cloud_id", "size"]
+
+    def validate_file(self, value):
+        if value.size > MAXIMUM_SIZE_UPLOAD:
+            raise ValidationError("File size must not be more than 2MB")
+        return value
 
     def create(self, validated_data):
         file = validated_data.pop('file')  # Extract 'file' from validated_data
