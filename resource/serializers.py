@@ -33,7 +33,7 @@ class ResourcesSerializer(serializers.ModelSerializer):
 class CreateResourcesSerializer(serializers.ModelSerializer):
     file = serializers.FileField(required=True, write_only=True)
     title = serializers.CharField(required=True)
-    type = serializers.ChoiceField(RESOURCE_TYPES,default="IMAGE")
+    type = serializers.ChoiceField(RESOURCE_TYPES, required=True)
 
     class Meta:
         model = Resources

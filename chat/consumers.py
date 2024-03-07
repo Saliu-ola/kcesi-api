@@ -73,7 +73,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "message": message,
                     "sender": sender.pk,
                     "receiver": receiver.pk,
-                    "content_type":"content_type" ,
+                    "content_type":content_type ,
                     "organization": organization.pk,
                     "group": group.pk if group else None,  # Send None if group is None
                     "unique_identifier": unique_identifier,
