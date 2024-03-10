@@ -62,7 +62,7 @@ class CreateResourcesSerializer(serializers.ModelSerializer):
         file = validated_data.pop('file')  # Extract 'file' from validated_data
 
         # Upload the file to Cloudinary or your desired storage
-        upload_result = cloudinary.uploader.upload(file)
+        upload_result = cloudinary.uploader.upload(file, resource_type='raw')
 
         # Create a new Resources instance with the other fields
         instance = Resources.objects.create(
@@ -82,7 +82,7 @@ class CreateResourcesSerializer(serializers.ModelSerializer):
             cloudinary.uploader.destroy(instance.cloud_id)
 
             # Upload the new file to Cloudinary or your desired storage
-            upload_result = cloudinary.uploader.upload(file)
+            upload_result = cloudinary.uploader.upload(file, resource_type='raw')
 
             # Update the media_url and cloud_id with the new values
             instance.media_url = upload_result["url"]
