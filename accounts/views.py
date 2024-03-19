@@ -332,12 +332,9 @@ class UserViewSets(
 
         group_id = request.query_params["group_id"]
 
-        start_date = timezone.make_aware(
-            timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
-        )
-        end_date = timezone.make_aware(
-            timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
-        )
+        start_date =  timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
+
+        end_date = timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
 
         date_range = (start_date, end_date)
 
@@ -353,13 +350,13 @@ class UserViewSets(
             organization = Organization.objects.get(organization_id=organization_id)
         except ObjectDoesNotExist:
             return Response(
-                {"message": f"Organization for {group} not found or no longer exist"},
+                {"message": f"Organization with  {group.title} group not found or no longer exist"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
         try:
             socialization_instance = Socialization.objects.get(
-                organization=organization, group=group
+                organization=organization, group=group.pk
             )
         except ObjectDoesNotExist:
             return Response(
@@ -368,7 +365,7 @@ class UserViewSets(
             )
         try:
             externalization_instance = Externalization.objects.get(
-                organization=organization, group=group
+                organization=organization, group=group.pk
             )
         except ObjectDoesNotExist:
             return Response(
@@ -376,7 +373,9 @@ class UserViewSets(
                 status=status.HTTP_404_NOT_FOUND,
             )
         try:
-            combination_instance = Combination.objects.get(organization=organization, group=group)
+            combination_instance = Combination.objects.get(
+                organization=organization, group=group.pk
+            )
         except ObjectDoesNotExist:
             return Response(
                 {"message": f"Group {group.pk} have no combination activities constants"},
@@ -384,7 +383,7 @@ class UserViewSets(
             )
         try:
             internalization_instance = Internalization.objects.get(
-                organization=organization, group=group
+                organization=organization, group=group.pk
             )
         except ObjectDoesNotExist:
             return Response(
@@ -392,84 +391,54 @@ class UserViewSets(
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        try:
-            post_blog = Blog.objects.filter(
-                organization=organization, group=group, created_at__range=date_range
-            ).count()
-        except ObjectDoesNotExist:
-            post_blog = 0
+        post_blog = Blog.objects.filter(
+            organization=organization, group=group.pk, created_at__range=date_range
+        ).count()
 
-        try:
-            send_chat_message = InAppChat.objects.filter(
-                organization=organization, group=group, created_at__range=date_range
+        send_chat_message = InAppChat.objects.filter(
+                organization=organization, group=group.pk, created_at__range=date_range
             ).count()
-        except ObjectDoesNotExist:
-            send_chat_message = 0
 
-        try:
-            post_forum = Forum.objects.filter(
-                organization=organization, group=group, created_at__range=date_range
-            ).count()
-        except ObjectDoesNotExist:
-            post_forum = 0
+        post_forum = Forum.objects.filter(
+            organization=organization, group=group.pk, created_at__range=date_range
+        ).count()
 
-        try:
-            image_sharing = Resources.objects.filter(
-                type__name__icontains='Image',
-                organization=organization,
-                group=group,
-                created_at__range=date_range,
-            ).count()
-        except ObjectDoesNotExist:
-            image_sharing = 0
+        image_sharing = Resources.objects.filter(
+            type='IMAGE',
+            organization=organization,
+            group=group.pk,
+            created_at__range=date_range,
+        ).count()
 
-        try:
-            video_sharing = Resources.objects.filter(
-                type__name__icontains='Video',
-                organization=organization,
-                group=group,
-                created_at__range=date_range,
-            ).count()
-        except ObjectDoesNotExist:
-            video_sharing = 0
+        video_sharing = Resources.objects.filter(
+            type='VIDEO',
+            organization=organization,
+            group=group.pk,
+            created_at__range=date_range,
+        ).count()
 
-        try:
-            text_resource_sharing = Resources.objects.filter(
-                type__name__icontains='Text-Based',
-                organization=organization,
-                group=group,
-                created_at__range=date_range,
-            ).count()
-        except ObjectDoesNotExist:
-            text_resource_sharing = 0
+        text_resource_sharing = Resources.objects.filter(
+            type='DOCUMENT',
+            organization=organization,
+            group=group.pk,
+            created_at__range=date_range,
+        ).count()
 
-        try:
-            created_topic = Topic.objects.filter(
-                organization=organization, group=group, created_at__range=date_range
-            ).count()
-        except ObjectDoesNotExist:
-            created_topic = 0
+        created_topic = Topic.objects.filter(
+            organization=organization, group=group.pk, created_at__range=date_range
+        ).count()
 
-        try:
-            comment = Comment.objects.filter(
-                organization=organization, group=group, created_at__range=date_range
+        comment = Comment.objects.filter(
+                organization=organization, group=group.pk, created_at__range=date_range
             ).count()
-        except ObjectDoesNotExist:
-            comment = 0
 
-        try:
-            used_in_app_browser = BrowserHistory.objects.filter(
-                organization=organization, group=group, created_at__range=date_range
-            ).count()
-        except ObjectDoesNotExist:
-            used_in_app_browser = 0
+        used_in_app_browser = BrowserHistory.objects.filter(
+            organization=organization, group=group.pk, created_at__range=date_range
+        ).count()
 
-        try:
-            recieve_chat_message = InAppChat.objects.filter(
-                organization=organization, group=group, created_at__range=date_range
-            ).count()
-        except ObjectDoesNotExist:
-            recieve_chat_message = 0
+        recieve_chat_message = InAppChat.objects.filter(
+            organization=organization, group=group.pk, created_at__range=date_range
+        ).count()
 
         # Todo download_resource,read_blog,read_forum
 
@@ -522,10 +491,8 @@ class UserViewSets(
             "combination_engagement_percentage": combination_percentage,
             "internalization_engagement_percentage": internalization_percentage,
         }
-        try:
-            users_in_group = UserGroup.objects.filter(groups=group).values_list("user", flat=True)
-        except ObjectDoesNotExist:
-            users_in_group = []
+
+        users_in_group = UserGroup.objects.filter(groups=group.pk).values_list("user", flat=True)
 
         return Response(
             {
@@ -581,12 +548,16 @@ class UserViewSets(
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        start_date = timezone.make_aware(
-            timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
-        )
-        end_date = timezone.make_aware(
-            timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
-        )
+        try:
+            user_organization_pk = Organization.objects.get(organization_id=user.organization_id)
+        except ObjectDoesNotExist:
+            return Response(
+                {"message": f"organization id - {user.organization_id} not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        start_date = timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
+
+        end_date =  timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
 
         date_range = (start_date, end_date)
 
@@ -607,8 +578,12 @@ class UserViewSets(
         iec_list = []
 
         for group in user_groups:
+
             try:
-                socialization_instance = Socialization.objects.get(group=group)
+                socialization_instance = Socialization.objects.get(
+                    group=group, organization=user_organization_pk
+                )
+               
             except ObjectDoesNotExist:
                 return Response(
                     {
@@ -617,7 +592,9 @@ class UserViewSets(
                     status=status.HTTP_404_NOT_FOUND,
                 )
             try:
-                externalization_instance = Externalization.objects.get(group=group)
+                externalization_instance = Externalization.objects.get(
+                    group=group, organization=user_organization_pk
+                )
             except ObjectDoesNotExist:
                 return Response(
                     {
@@ -626,7 +603,9 @@ class UserViewSets(
                     status=status.HTTP_404_NOT_FOUND,
                 )
             try:
-                combination_instance = Combination.objects.get(group=group)
+                combination_instance = Combination.objects.get(
+                    group=group, organization=user_organization_pk
+                )
             except ObjectDoesNotExist:
                 return Response(
                     {
@@ -635,7 +614,9 @@ class UserViewSets(
                     status=status.HTTP_404_NOT_FOUND,
                 )
             try:
-                internalization_instance = Internalization.objects.get(group=group)
+                internalization_instance = Internalization.objects.get(
+                    group=group, organization=user_organization_pk
+                )
             except ObjectDoesNotExist:
                 return Response(
                     {
@@ -644,75 +625,45 @@ class UserViewSets(
                     status=status.HTTP_404_NOT_FOUND,
                 )
 
-            try:
-                post_blog = Blog.objects.filter(author=user, created_at__range=date_range).count()
-            except ObjectDoesNotExist:
-                post_blog = 0
+            post_blog = Blog.objects.filter(author=user, created_at__range=date_range).count()
 
-            try:
-                send_chat_message = InAppChat.objects.filter(
+            send_chat_message = InAppChat.objects.filter(
                     sender=user, created_at__range=date_range
                 ).count()
-            except ObjectDoesNotExist:
-                send_chat_message = 0
 
-            try:
-                post_forum = Forum.objects.filter(user=user, created_at__range=date_range).count()
-            except ObjectDoesNotExist:
-                post_forum = 0
+            post_forum = Forum.objects.filter(user=user, created_at__range=date_range).count()
 
-            try:
-                image_sharing = Resources.objects.filter(
-                    type__name__icontains='Image',
+            image_sharing = Resources.objects.filter(
+                type='IMAGE',
+                sender=user,
+                created_at__range=date_range,
+            ).count()
+
+            video_sharing = Resources.objects.filter(
+                    type='VIDEO',
                     sender=user,
                     created_at__range=date_range,
                 ).count()
-            except ObjectDoesNotExist:
-                image_sharing = 0
 
-            try:
-                video_sharing = Resources.objects.filter(
-                    type__name__icontains='Video',
+            text_resource_sharing = Resources.objects.filter(
+                    type='DOCUMENT',
                     sender=user,
                     created_at__range=date_range,
                 ).count()
-            except ObjectDoesNotExist:
-                video_sharing = 0
 
-            try:
-                text_resource_sharing = Resources.objects.filter(
-                    type__name__icontains='Text-Based',
-                    sender=user,
-                    created_at__range=date_range,
-                ).count()
-            except ObjectDoesNotExist:
-                text_resource_sharing = 0
-
-            try:
-                created_topic = Topic.objects.filter(
+            created_topic = Topic.objects.filter(
                     author=user, created_at__range=date_range
                 ).count()
-            except ObjectDoesNotExist:
-                created_topic = 0
 
-            try:
-                comment = Comment.objects.filter(user=user, created_at__range=date_range).count()
-            except ObjectDoesNotExist:
-                comment = 0
+            comment = Comment.objects.filter(user=user, created_at__range=date_range).count()
 
-            try:
-                used_in_app_browser = BrowserHistory.objects.filter(
+            used_in_app_browser = BrowserHistory.objects.filter(
                     user=user, created_at__range=date_range
                 ).count()
-            except ObjectDoesNotExist:
-                used_in_app_browser = 0
 
-            try:
-                recieve_chat_message = InAppChat.objects.filter(
+            recieve_chat_message = InAppChat.objects.filter(
                     receiver=user, created_at__range=date_range
                 ).count()
-            except ObjectDoesNotExist:
-                recieve_chat_message = 0
 
             # # Todo download_resource,read_blog,read_forum
 
@@ -831,7 +782,6 @@ class UserViewSets(
                     user__in=users_in_organization, groups=group
                 ).values("user__pk")
                 qs = self.get_queryset().filter(pk__in=users_in_group)
-                
 
             return Response(
                 {

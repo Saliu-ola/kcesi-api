@@ -54,6 +54,7 @@ class Socialization(models.Model):
             'text_resource_sharing': self.text_resource_sharing,
             'created_topic': self.created_topic,
         }
+        
         return calculate_category_score(constants, tallies)
 
     def calculate_socialization_percentage(self, sec, tes):

@@ -1,6 +1,4 @@
 
-
-
 def calculate_category_score(constants, tallies):
     score = sum(constants[key] * tallies[key] for key in constants)
 
