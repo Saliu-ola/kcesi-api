@@ -6,7 +6,7 @@ from django.db.models import Q
 
 class CategorySerializer(serializers.ModelSerializer):
     creator_full_name = serializers.StringRelatedField(source='creator.full_name')
-
+    group_name = serializers.StringRelatedField(source='group.title')
     class Meta:
         model = Category
         fields = "__all__"
