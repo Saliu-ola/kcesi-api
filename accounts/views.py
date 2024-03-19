@@ -89,9 +89,9 @@ class UserViewSets(
         return super().get_permissions()
 
     def perform_destroy(self, instance):
-        # Remove user image  from cloud after deleting
         if instance.cloud_id is not None:
             cloudinary.uploader.destroy(instance.cloud_id)
+        instance.delete()
 
     def paginate_results(self, queryset):
         page = self.paginate_queryset(queryset)

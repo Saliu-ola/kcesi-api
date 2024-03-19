@@ -12,7 +12,7 @@ from rest_framework.decorators import action
 from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
-
+import cloudinary.uploader
 
 class ForumViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
@@ -23,6 +23,12 @@ class ForumViewSets(viewsets.ModelViewSet):
     filterset_fields = ['category', 'user', 'organization', 'group']
     search_fields = ['topic']
     ordering_fields = ['created_at']
+
+    def perform_destroy(self, instance):
+
+        for resource in instance.resources.all():
+            cloudinary.uploader.destroy(resource.cloud_id)
+        instance.delete()
 
     def paginate_results(self, queryset):
         page = self.paginate_queryset(queryset)

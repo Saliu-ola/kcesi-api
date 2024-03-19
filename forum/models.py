@@ -4,6 +4,7 @@ from group.models import Group
 from organization.models import Organization
 from platforms.models import Platform
 from category.models import Category
+from resource.models import Resources
 
 
 class Forum(models.Model):
@@ -15,6 +16,8 @@ class Forum(models.Model):
     category = models.ForeignKey(
         Category, on_delete=models.CASCADE, related_name="cat_forums", null=True
     )
+    resources = models.ManyToManyField(Resources, related_name="forums")
+
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_forums")
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_forums")
 
