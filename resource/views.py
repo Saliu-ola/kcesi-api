@@ -24,8 +24,8 @@ class ResourcesViewSets(viewsets.ModelViewSet):
     parser_classes = [MultiPartParser]
 
     def perform_destroy(self, instance):
-        # Remove the cloud content using the cloud_id
         cloudinary.uploader.destroy(instance.cloud_id)
+        instance.delete()
 
     def get_serializer_class(self):
         if self.action in ['update', 'create', 'partial_update']:

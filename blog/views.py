@@ -16,7 +16,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from django.db.models import F, Value, CharField
 from django.db.models.functions import Concat
-
+import cloudinary.uploader
 
 class BlogViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
@@ -45,6 +45,13 @@ class BlogViewSets(viewsets.ModelViewSet):
         organization = Organization.objects.filter(organization_id=organization_id).first()
 
         return self.queryset.filter(organization=organization)
+
+    def perform_destroy(self, instance):
+    
+      for resource in instance.resources.all():
+        cloudinary.uploader.destroy(resource.cloud_id)
+      instance.delete()
+
 
     def perform_create(self, serializer):
         author = self.request.user
