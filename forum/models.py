@@ -32,7 +32,7 @@ class Forum(models.Model):
 
 
 class ForumComment(models.Model):
-    forum = organization = models.ForeignKey(
+    forum  = models.ForeignKey(
         Forum, on_delete=models.CASCADE, related_name="forum_comments"
     )
     content = models.TextField(null=True)
@@ -47,6 +47,27 @@ class ForumComment(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user} comments"
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
+class CommentReplies(models.Model):
+    comment = models.ForeignKey(Forum, on_delete=models.CASCADE, related_name="comment_replies")
+    content = models.TextField(null=True)
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="organization_comment_replies"
+    )
+    group = models.ForeignKey(
+        Group, on_delete=models.CASCADE, related_name="group_comment_replies"
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_comment_replies")
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
+
+    def __str__(self) -> str:
+        return f"{self.user} reply"
 
     class Meta:
         ordering = ["-created_at"]
