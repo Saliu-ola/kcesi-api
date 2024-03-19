@@ -193,6 +193,8 @@ class BaseViewSet(viewsets.ModelViewSet):
         }
 
 
+
+
 class SocializationViewSets(BaseViewSet):
     serializer_class = SocializationSerializer
     queryset = Socialization.objects.all()
