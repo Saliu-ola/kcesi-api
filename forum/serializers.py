@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Forum, ForumComment
+from .models import Forum, ForumComment,CommentReplies
 
 
 class ForumSerializer(serializers.ModelSerializer):
@@ -35,4 +35,12 @@ class ForumCommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ForumComment
+        fields = "__all__"
+
+
+class CommentReplySerializer(serializers.ModelSerializer):
+    user_full_name = serializers.StringRelatedField(source='user.full_name')
+
+    class Meta:
+        model = CommentReplies
         fields = "__all__"

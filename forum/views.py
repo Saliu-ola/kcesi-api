@@ -4,8 +4,8 @@ from rest_framework.decorators import APIView, api_view, permission_classes
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
-from .models import Forum, ForumComment
-from .serializers import ForumSerializer,ForumCreateSerializer, ForumCommentSerializer
+from .models import Forum, ForumComment,CommentReplies
+from .serializers import ForumSerializer,ForumCreateSerializer, ForumCommentSerializer,CommentReplySerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
@@ -144,6 +144,25 @@ class CommentViewSets(viewsets.ModelViewSet):
     queryset = ForumComment.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['user', 'organization', 'forum', 'group']
+    search_fields = ['content']
+    ordering_fields = ['created_at']
+
+    def paginate_results(self, queryset):
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class ReplyViewSets(viewsets.ModelViewSet):
+    http_method_names = ["get", "patch", "post", "put", "delete"]
+    serializer_class = CommentReplySerializer
+    permission_classes = [IsAuthenticated]
+    queryset = CommentReplies.objects.all()
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['user', 'organization', 'comment', 'group']
     search_fields = ['content']
     ordering_fields = ['created_at']
 
