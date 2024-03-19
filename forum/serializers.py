@@ -26,7 +26,16 @@ class ForumSerializer(serializers.ModelSerializer):
 class ForumCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Forum
-        fields = ["id", "topic", "category", "content", "organization", "group", "resources"]
+        fields = [
+            "id",
+            "topic",
+            "category",
+            "content",
+            "organization",
+            "group",
+            "resources",
+            "user",
+        ]
         read_only_fields = ["id"]
 
 
