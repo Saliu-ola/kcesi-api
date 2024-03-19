@@ -193,8 +193,6 @@ class BaseViewSet(viewsets.ModelViewSet):
         }
 
 
-
-
 class SocializationViewSets(BaseViewSet):
     serializer_class = SocializationSerializer
     queryset = Socialization.objects.all()
@@ -244,7 +242,6 @@ class SocializationViewSets(BaseViewSet):
 
         date_range = (start_date, end_date)
 
-        organization = get_object_or_404(Organization, organization_id=organization_id).pk
         try:
             group = Group.objects.get(pk=group_pk)
         except ObjectDoesNotExist:
@@ -386,9 +383,16 @@ class ExternalizationViewSets(BaseViewSet):
 
         date_range = (start_date, end_date)
 
-        organization = get_object_or_404(Organization, organization_id=organization_id).pk
-        group = get_object_or_404(Group, pk=group_pk)
-
+        try:
+            group = Group.objects.get(pk=group_pk)
+        except ObjectDoesNotExist:
+            return Response(
+                {
+                    'success': False,
+                    'message': "group not found",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
         users_in_group = UserGroup.objects.filter(groups=group.pk).values_list("user", flat=True)
 
         if not users_in_group:
@@ -509,17 +513,21 @@ class CombinationViewSets(BaseViewSet):
         organization_id = request.query_params["organization_id"]
         group_pk = request.query_params["group_pk"]
 
-        start_date = timezone.make_aware(
-            timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
-        )
-        end_date = timezone.make_aware(
-            timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
-        )
+        start_date = timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
+        end_date = timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
 
         date_range = (start_date, end_date)
 
-        organization = get_object_or_404(Organization, organization_id=organization_id).pk
-        group = get_object_or_404(Group, pk=group_pk)
+        try:
+            group = Group.objects.get(pk=group_pk)
+        except ObjectDoesNotExist:
+            return Response(
+                {
+                    'success': False,
+                    'message': "group not found",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         users_in_group = UserGroup.objects.filter(groups=group.pk).values_list("user", flat=True)
 
@@ -642,17 +650,21 @@ class InternalizationViewSets(BaseViewSet):
         organization_id = request.query_params["organization_id"]
         group_pk = request.query_params["group_pk"]
 
-        start_date = timezone.make_aware(
-            timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
-        )
-        end_date = timezone.make_aware(
-            timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
-        )
+        start_date = timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
+        end_date = timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
 
         date_range = (start_date, end_date)
 
-        organization = get_object_or_404(Organization, organization_id=organization_id).pk
-        group = get_object_or_404(Group, pk=group_pk)
+        try:
+            group = Group.objects.get(pk=group_pk)
+        except ObjectDoesNotExist:
+            return Response(
+                {
+                    'success': False,
+                    'message': "group not found",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         users_in_group = UserGroup.objects.filter(groups=group.pk).values_list("user", flat=True)
 
@@ -665,6 +677,7 @@ class InternalizationViewSets(BaseViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
         leaders = []
+        
         for user in users_in_group:
             organization_activity_scores = self.get_organization_activity_scores(
                 organization_id, group.pk, user, date_range
