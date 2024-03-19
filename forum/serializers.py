@@ -5,7 +5,7 @@ from .models import Forum, ForumComment
 
 class ForumSerializer(serializers.ModelSerializer):
     user_full_name = serializers.StringRelatedField(source='user.full_name')
-    
+
     group_name = serializers.StringRelatedField(
         source='group.title',
     )
@@ -21,6 +21,13 @@ class ForumSerializer(serializers.ModelSerializer):
     class Meta:
         model = Forum
         fields = "__all__"
+
+
+class ForumCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Forum
+        fields = ["id", "topic", "category", "content", "organization", "group", "resources"]
+        read_only_fields = ["id"]
 
 
 class ForumCommentSerializer(serializers.ModelSerializer):
