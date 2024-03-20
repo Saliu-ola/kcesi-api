@@ -169,11 +169,11 @@ class BaseViewSet(viewsets.ModelViewSet):
         internalization_instance = self.receive_model_instance(
             Internalization, organization_id, group, organization, "Internalization"
         )
-        combinations_instance = self.receive_model_instance(
+        combination_instance = self.receive_model_instance(
             Combination, organization_id, group, organization, "Combination"
         )
 
-        cec = combinations_instance.calculate_combination_score(tallies)
+        cec = combination_instance.calculate_combination_score(tallies)
         sec = socialization_instance.calculate_socialization_score(tallies)
         iec = internalization_instance.calculate_internalization_score(tallies)
         eec = externalization_instance.calculate_externalization_score(tallies)
@@ -183,7 +183,7 @@ class BaseViewSet(viewsets.ModelViewSet):
         return {
             "socialization_instance": socialization_instance,
             "externalization_instance": externalization_instance,
-            "combinations_instance": combinations_instance,
+            "combination_instance": combination_instance,
             "internalization_instance": internalization_instance,
             "tes": tes,
             "sec": sec,
@@ -701,7 +701,7 @@ class InternalizationViewSets(BaseViewSet):
                 "success": True,
                 "leaders": leaders_sorted[:10],
                 "organization_id": organization_id,
-                "group": group,
+                "group": group.pk,
                 "start_date": start_date,
                 "end_date": end_date,
             },
