@@ -33,7 +33,6 @@ class BlogCreateSerializer(serializers.ModelSerializer):
             "content",
             "organization",
             "group",
-            "author",
             "resources",
         ]
         read_only_fields = ["id"]
