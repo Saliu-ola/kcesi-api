@@ -47,6 +47,7 @@ from group.serializers import GroupSerializer
 from leader.models import Socialization, Externalization, Combination, Internalization
 from simpleblog.utils import calculate_total_engagement_score
 from .task import send_account_verification_mail, send_password_reset_mail
+from datetime import datetime
 
 # Create your views here.
 
@@ -308,13 +309,13 @@ class UserViewSets(
             ),
             OpenApiParameter(
                 name="start_date",
-                description="Start date in the format 'YYYY-MM-DD'",
+                description="Start date in the format 'YYYY-MM-DD'T'HH:mm:ss.SSS'Z'",
                 required=True,
                 type=OpenApiTypes.STR,
             ),
             OpenApiParameter(
                 name="end_date",
-                description="End date in the format 'YYYY-MM-DD'",
+                description="End date in the format 'YYYY-MM-DD'T'HH:mm:ss.SSS'Z'",
                 required=True,
                 type=OpenApiTypes.STR,
             ),
@@ -332,9 +333,9 @@ class UserViewSets(
 
         group_id = request.query_params["group_id"]
 
-        start_date =  timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
+        start_date = datetime.strptime(request.query_params["start_date"], "%Y-%m-%dT%H:%M:%S.%fZ")
 
-        end_date = timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
+        end_date = datetime.strptime(request.query_params["end_date"], "%Y-%m-%dT%H:%M:%S.%fZ")
 
         date_range = (start_date, end_date)
 
@@ -516,13 +517,13 @@ class UserViewSets(
             ),
             OpenApiParameter(
                 name="start_date",
-                description="Start date in the format 'YYYY-MM-DD'",
+                description="Start date in the format 'YYYY-MM-DD'T'HH:mm:ss.SSS'Z'",
                 required=True,
                 type=OpenApiTypes.STR,
             ),
             OpenApiParameter(
                 name="end_date",
-                description="End date in the format 'YYYY-MM-DD'",
+                description="End date in the format 'YYYY-MM-DD'T'HH:mm:ss.SSS'Z'",
                 required=True,
                 type=OpenApiTypes.STR,
             ),
@@ -555,9 +556,9 @@ class UserViewSets(
                 {"message": f"organization id - {user.organization_id} not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        start_date = timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
+        start_date = datetime.strptime(request.query_params["start_date"], "%Y-%m-%dT%H:%M:%S.%fZ")
 
-        end_date =  timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
+        end_date = datetime.strptime(request.query_params["end_date"], "%Y-%m-%dT%H:%M:%S.%fZ")
 
         date_range = (start_date, end_date)
 
@@ -583,7 +584,7 @@ class UserViewSets(
                 socialization_instance = Socialization.objects.get(
                     group=group, organization=user_organization_pk
                 )
-               
+
             except ObjectDoesNotExist:
                 return Response(
                     {

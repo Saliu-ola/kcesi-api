@@ -32,10 +32,10 @@ from browser_history.models import BrowserHistory
 from forum.models import Forum
 from topics.models import Topic
 from django.utils import timezone
-from simpleblog.utils import calculate_total_engagement_score
+from simpleblog.utils import calculate_total_engagement_score,calculate_categorized_percentage
 from accounts.models import User
 from rest_framework.exceptions import ValidationError
-
+from datetime import datetime
 
 class BaseViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
@@ -213,13 +213,13 @@ class SocializationViewSets(BaseViewSet):
             ),
             OpenApiParameter(
                 name="start_date",
-                description="Start date in the format 'YYYY-MM-DD'",
+                description="Start date in the format 'YYYY-MM-DD'T'HH:mm:ss.SSS'Z'",
                 required=True,
                 type=OpenApiTypes.STR,
             ),
             OpenApiParameter(
                 name="end_date",
-                description="End date in the format 'YYYY-MM-DD'",
+                description="End date in the format 'YYYY-MM-DD'T'HH:mm:ss.SSS'Z'",
                 required=True,
                 type=OpenApiTypes.STR,
             ),
@@ -237,8 +237,8 @@ class SocializationViewSets(BaseViewSet):
         organization_id = request.query_params["organization_id"]
         group_pk = request.query_params["group_pk"]
 
-        start_date = timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
-        end_date = timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
+        start_date = datetime.strptime(request.query_params["start_date"], "%Y-%m-%dT%H:%M:%S.%fZ")
+        end_date = datetime.strptime(request.query_params["end_date"], "%Y-%m-%dT%H:%M:%S.%fZ")
 
         date_range = (start_date, end_date)
 
@@ -280,9 +280,8 @@ class SocializationViewSets(BaseViewSet):
             user, percentage = user, socialization_percentage
 
             leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
-
-        leaders_sorted = sorted(leaders, key=lambda leader: leader['percentage'], reverse=True)
-
+        
+        leaders_sorted = calculate_categorized_percentage(leaders)
         return Response(
             {
                 "success": True,
@@ -350,13 +349,13 @@ class ExternalizationViewSets(BaseViewSet):
             ),
             OpenApiParameter(
                 name="start_date",
-                description="Start date in the format 'YYYY-MM-DD'",
+                description="Start date in the format 'YYYY-MM-DD'T'HH:mm:ss.SSS'Z'",
                 required=True,
                 type=OpenApiTypes.STR,
             ),
             OpenApiParameter(
                 name="end_date",
-                description="End date in the format 'YYYY-MM-DD'",
+                description="End date in the format 'YYYY-MM-DD'T'HH:mm:ss.SSS'Z'",
                 required=True,
                 type=OpenApiTypes.STR,
             ),
@@ -374,12 +373,8 @@ class ExternalizationViewSets(BaseViewSet):
         organization_id = request.query_params["organization_id"]
         group_pk = request.query_params["group_pk"]
 
-        start_date = timezone.make_aware(
-            timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
-        )
-        end_date = timezone.make_aware(
-            timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
-        )
+        start_date = datetime.strptime(request.query_params["start_date"], "%Y-%m-%dT%H:%M:%S.%fZ")
+        end_date = datetime.strptime(request.query_params["end_date"], "%Y-%m-%dT%H:%M:%S.%fZ")
 
         date_range = (start_date, end_date)
 
@@ -419,9 +414,8 @@ class ExternalizationViewSets(BaseViewSet):
             user, percentage = user, externalization_percentage
 
             leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
-
-        leaders_sorted = sorted(leaders, key=lambda leader: leader['percentage'], reverse=True)
-
+        
+        leaders_sorted = calculate_categorized_percentage(leaders)
         return Response(
             {
                 "success": True,
@@ -489,13 +483,13 @@ class CombinationViewSets(BaseViewSet):
             ),
             OpenApiParameter(
                 name="start_date",
-                description="Start date in the format 'YYYY-MM-DD'",
+                description="Start date in the format 'YYYY-MM-DD'T'HH:mm:ss.SSS'Z'",
                 required=True,
                 type=OpenApiTypes.STR,
             ),
             OpenApiParameter(
                 name="end_date",
-                description="End date in the format 'YYYY-MM-DD'",
+                description="End date in the format 'YYYY-MM-DD'T'HH:mm:ss.SSS'Z'",
                 required=True,
                 type=OpenApiTypes.STR,
             ),
@@ -513,8 +507,8 @@ class CombinationViewSets(BaseViewSet):
         organization_id = request.query_params["organization_id"]
         group_pk = request.query_params["group_pk"]
 
-        start_date = timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
-        end_date = timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
+        start_date = datetime.strptime(request.query_params["start_date"], "%Y-%m-%dT%H:%M:%S.%fZ")
+        end_date = datetime.strptime(request.query_params["end_date"], "%Y-%m-%dT%H:%M:%S.%fZ")
 
         date_range = (start_date, end_date)
 
@@ -556,8 +550,8 @@ class CombinationViewSets(BaseViewSet):
             user, percentage = user, combination_percentage
 
             leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
-
-        leaders_sorted = sorted(leaders, key=lambda leader: leader['percentage'], reverse=True)
+        
+        leaders_sorted=calculate_categorized_percentage(leaders)
 
         return Response(
             {
@@ -626,13 +620,13 @@ class InternalizationViewSets(BaseViewSet):
             ),
             OpenApiParameter(
                 name="start_date",
-                description="Start date in the format 'YYYY-MM-DD'",
+                description="Start date in the format 'YYYY-MM-DD'T'HH:mm:ss.SSS'Z'",
                 required=True,
                 type=OpenApiTypes.STR,
             ),
             OpenApiParameter(
                 name="end_date",
-                description="End date in the format 'YYYY-MM-DD'",
+                description="End date in the format 'YYYY-MM-DD'T'HH:mm:ss.SSS'Z'",
                 required=True,
                 type=OpenApiTypes.STR,
             ),
@@ -650,8 +644,8 @@ class InternalizationViewSets(BaseViewSet):
         organization_id = request.query_params["organization_id"]
         group_pk = request.query_params["group_pk"]
 
-        start_date = timezone.datetime.strptime(request.query_params["start_date"], "%Y-%m-%d")
-        end_date = timezone.datetime.strptime(request.query_params["end_date"], "%Y-%m-%d")
+        start_date = datetime.strptime(request.query_params["start_date"], "%Y-%m-%dT%H:%M:%S.%fZ")
+        end_date = datetime.strptime(request.query_params["end_date"], "%Y-%m-%dT%H:%M:%S.%fZ")
 
         date_range = (start_date, end_date)
 
@@ -677,7 +671,7 @@ class InternalizationViewSets(BaseViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
         leaders = []
-        
+
         for user in users_in_group:
             organization_activity_scores = self.get_organization_activity_scores(
                 organization_id, group.pk, user, date_range
@@ -693,9 +687,8 @@ class InternalizationViewSets(BaseViewSet):
             user, percentage = user, internalization_percentage
 
             leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
-
-        leaders_sorted = sorted(leaders, key=lambda leader: leader['percentage'], reverse=True)
-
+        
+        leaders_sorted = calculate_categorized_percentage(leaders)
         return Response(
             {
                 "success": True,

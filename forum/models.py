@@ -25,7 +25,7 @@ class Forum(models.Model):
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
     def __str__(self) -> str:
-        return self.topic
+        return f"{self.topic}"
 
     class Meta:
         ordering = ["-created_at"]
