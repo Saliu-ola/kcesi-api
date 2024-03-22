@@ -53,7 +53,9 @@ class ForumComment(models.Model):
 
 
 class CommentReplies(models.Model):
-    comment = models.ForeignKey(Forum, on_delete=models.CASCADE, related_name="comment_replies")
+    comment = models.ForeignKey(
+        ForumComment, on_delete=models.CASCADE, related_name="comment_replies"
+    )
     content = models.TextField(null=True)
     organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="organization_comment_replies"
