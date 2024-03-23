@@ -145,7 +145,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
                 return
 
             # Use sync_to_async to run synchronous ORM operations
-            forum = await sync_to_async(Forum.objects.get)(pk=user)
+            forum = await sync_to_async(Forum.objects.get)(pk=forum)
             user = await sync_to_async(User.objects.get)(pk=user)
             organization = await sync_to_async(Organization.objects.get)(pk=organization_id)
             group = await sync_to_async(Group.objects.get)(pk=group_id)
@@ -194,6 +194,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
                     "organization": organization,
                     "group": group,
                     "user": user,
+                    "created_at": created_at,
                 }
             )
         )
@@ -225,7 +226,7 @@ class RepliesConsumer(AsyncWebsocketConsumer):
         if text_data:
             try:
                 text_data_json = json.loads(text_data)
-                forum = text_data_json.get("forum")
+                comment = text_data_json.get("comment")
                 content = text_data_json.get("content")
                 organization_id = text_data_json.get("organization")
                 group_id = text_data_json.get("group")
@@ -236,7 +237,7 @@ class RepliesConsumer(AsyncWebsocketConsumer):
                 return
 
             # Use sync_to_async to run synchronous ORM operations
-            comment = await sync_to_async(comment.objects.get)(pk=user)
+            comment = await sync_to_async(comment.objects.get)(pk=comment)
             user = await sync_to_async(User.objects.get)(pk=user)
             organization = await sync_to_async(Organization.objects.get)(pk=organization_id)
             group = await sync_to_async(Group.objects.get)(pk=group_id)
@@ -285,6 +286,7 @@ class RepliesConsumer(AsyncWebsocketConsumer):
                     "organization": organization,
                     "group": group,
                     "user": user,
+                    "created_at": created_at,
                 }
             )
         )
