@@ -112,7 +112,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 class CommentConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
-        self.room_group_name = 'chat_%s' % self.room_name
+        self.room_group_name = 'comment_%s' % self.room_name
 
         # Join room group
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
@@ -204,7 +204,7 @@ class RepliesConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
-        self.room_group_name = 'chat_%s' % self.room_name
+        self.room_group_name = 'comment_replies_%s' % self.room_name
 
         # Join room group
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
@@ -237,7 +237,7 @@ class RepliesConsumer(AsyncWebsocketConsumer):
                 return
 
             # Use sync_to_async to run synchronous ORM operations
-            comment = await sync_to_async(comment.objects.get)(pk=comment)
+            comment = await sync_to_async(ForumComment.objects.get)(pk=comment)
             user = await sync_to_async(User.objects.get)(pk=user)
             organization = await sync_to_async(Organization.objects.get)(pk=organization_id)
             group = await sync_to_async(Group.objects.get)(pk=group_id)
