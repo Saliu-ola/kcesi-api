@@ -151,6 +151,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
             group = await sync_to_async(Group.objects.get)(pk=group_id)
 
             created_at = int(time.time())
+            user_full_name = user.full_name
 
             # Create and save the InAppChat instance
             comment = ForumComment(
@@ -171,8 +172,9 @@ class CommentConsumer(AsyncWebsocketConsumer):
                     "content": content,
                     "organization": organization.pk,
                     "group": group.pk,
-                    "user":user.pk,
+                    "user": user.pk,
                     "created_at": created_at,
+                    "user_full_name": user_full_name,
                 },
             )
 
@@ -183,6 +185,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
         organization = event["organization"]
         group = event["group"]
         user = event["user"]
+        user_full_name = event["user_full_name"]
         created_at = event["created_at"]
 
         # Send the received message back to the client
@@ -194,6 +197,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
                     "organization": organization,
                     "group": group,
                     "user": user,
+                    "user_full_name":user_full_name,
                     "created_at": created_at,
                 }
             )
@@ -242,6 +246,7 @@ class RepliesConsumer(AsyncWebsocketConsumer):
             organization = await sync_to_async(Organization.objects.get)(pk=organization_id)
             group = await sync_to_async(Group.objects.get)(pk=group_id)
 
+            user_full_name = user.full_name
             created_at = int(time.time())
 
             # Create and save the InAppChat instance
@@ -265,6 +270,7 @@ class RepliesConsumer(AsyncWebsocketConsumer):
                     "group": group.pk,
                     "user": user.pk,
                     "created_at": created_at,
+                    "user_full_name": user_full_name,
                 },
             )
 
@@ -275,6 +281,7 @@ class RepliesConsumer(AsyncWebsocketConsumer):
         organization = event["organization"]
         group = event["group"]
         user = event["user"]
+        user_full_name = event["user_full_name"]
         created_at = event["created_at"]
 
         # Send the received message back to the client
@@ -286,6 +293,7 @@ class RepliesConsumer(AsyncWebsocketConsumer):
                     "organization": organization,
                     "group": group,
                     "user": user,
+                    "user_full_name":user_full_name,
                     "created_at": created_at,
                 }
             )
