@@ -10,6 +10,7 @@ from django.db.models.signals import post_save
 from django.utils import timezone
 from organization.models import Organization
 from django.db import transaction
+from django.core.validators import MinValueValidator
 
 
 TOKEN_TYPE = (
@@ -68,6 +69,7 @@ class User(AbstractUser):
     is_verified = models.BooleanField(default=False, null=True)
     image_url = models.CharField(max_length=255, null=True)
     cloud_id = models.CharField(max_length=255, null=True)
+    online_count = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
@@ -78,6 +80,12 @@ class User(AbstractUser):
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
+
+    @property
+    def is_active_for_chat(self):
+        if self.online_count == 0 :
+            return False
+        return True
 
     def generate_organization_id(self):
         if self.is_superuser and self.role_id == 1:

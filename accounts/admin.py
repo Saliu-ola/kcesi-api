@@ -14,6 +14,7 @@ class UserAdmin(BaseUserAdmin):
         'role_id',
         'organization_id',
         'organization_name',
+        'is_active_for_chat',
     ]
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
