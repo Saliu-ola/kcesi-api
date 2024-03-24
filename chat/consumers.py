@@ -182,6 +182,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
             group = await database_sync_to_async(Group.objects.get)(pk=group_id)
 
             created_at = int(time.time())
+            user_full_name = user.full_name
 
             # Create and save the InAppChat instance
             comment = ForumComment(
@@ -202,8 +203,9 @@ class CommentConsumer(AsyncWebsocketConsumer):
                     "content": content,
                     "organization": organization.pk,
                     "group": group.pk,
-                    "user":user.pk,
+                    "user": user.pk,
                     "created_at": created_at,
+                    "user_full_name": user_full_name,
                 },
             )
 
@@ -214,6 +216,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
         organization = event["organization"]
         group = event["group"]
         user = event["user"]
+        user_full_name = event["user_full_name"]
         created_at = event["created_at"]
 
         # Send the received message back to the client
@@ -225,6 +228,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
                     "organization": organization,
                     "group": group,
                     "user": user,
+                    "user_full_name":user_full_name,
                     "created_at": created_at,
                 }
             )
@@ -235,7 +239,7 @@ class RepliesConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
-        self.room_group_name = 'chat_%s' % self.room_name
+        self.room_group_name = 'comment_replies_%s' % self.room_name
 
         # Join room group
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
@@ -273,6 +277,7 @@ class RepliesConsumer(AsyncWebsocketConsumer):
             organization = await database_sync_to_async(Organization.objects.get)(pk=organization_id)
             group = await database_sync_to_async(Group.objects.get)(pk=group_id)
 
+            user_full_name = user.full_name
             created_at = int(time.time())
 
             # Create and save the InAppChat instance
@@ -296,6 +301,7 @@ class RepliesConsumer(AsyncWebsocketConsumer):
                     "group": group.pk,
                     "user": user.pk,
                     "created_at": created_at,
+                    "user_full_name": user_full_name,
                 },
             )
 
@@ -306,6 +312,7 @@ class RepliesConsumer(AsyncWebsocketConsumer):
         organization = event["organization"]
         group = event["group"]
         user = event["user"]
+        user_full_name = event["user_full_name"]
         created_at = event["created_at"]
 
         # Send the received message back to the client
@@ -317,6 +324,7 @@ class RepliesConsumer(AsyncWebsocketConsumer):
                     "organization": organization,
                     "group": group,
                     "user": user,
+                    "user_full_name":user_full_name,
                     "created_at": created_at,
                 }
             )
