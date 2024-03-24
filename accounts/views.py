@@ -72,6 +72,7 @@ class UserViewSets(
         'phone',
         'organization_name',
         'gender',
+        
     ]
     search_fields = [
         'email',

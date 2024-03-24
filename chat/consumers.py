@@ -1,5 +1,10 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
-from asgiref.sync import sync_to_async
+from channels.db import database_sync_to_async
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
+from django.db.models import F
+from rest_framework_simplejwt.tokens import UntypedToken
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 import json
 import time
 
@@ -9,15 +14,41 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = 'chat_%s' % self.room_name
 
-        # Join room group
-        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+        try:
+            token = self.scope['query_string'].decode('utf-8').split('token=')[1]
+            decoded_data = UntypedToken(token).payload
+            user_id = decoded_data['user_id']
 
-        # Accept the WebSocket connection
-        await self.accept()
+            user = await self.get_user(user_id)
+        except (InvalidToken, IndexError, TokenError, get_user_model().DoesNotExist):
+            user = AnonymousUser()
+
+        if isinstance(user, AnonymousUser):
+            await self.accept()
+            await self.send(
+                text_data=json.dumps({"error": "Authentication invalid or not provided"})
+            )
+            await self.close()
+        else:
+            await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+            self.scope['user'] = user
+            await self.update_online_count(user.pk, increment=True)
+            await self.accept()
 
     async def disconnect(self, close_code):
-        # Leave room group
+        await self.update_online_count(self.scope['user'].pk, increment=False)
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+
+    @database_sync_to_async
+    def get_user(self, user_id):
+        return get_user_model().objects.get(pk=user_id)
+
+    @database_sync_to_async
+    def update_online_count(self, user_id, increment=True):
+        if increment:
+            get_user_model().objects.filter(pk=user_id).update(online_count=F('online_count') + 1)
+        else:
+            get_user_model().objects.filter(pk=user_id).update(online_count=F('online_count') - 1)
 
     # Receive message from WebSocket
     async def receive(self, text_data):
@@ -40,14 +71,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 print(f"Invalid JSON format: {e}")
                 return
 
-            # Use sync_to_async to run synchronous ORM operations
-            sender = await sync_to_async(User.objects.get)(pk=sender)
-            receiver = await sync_to_async(User.objects.get)(pk=receiver)
-            organization = await sync_to_async(Organization.objects.get)(pk=organization_id)
+            # Use database_sync_to_async to run synchronous ORM operations
+            sender = await database_sync_to_async(User.objects.get)(pk=sender)
+            receiver = await database_sync_to_async(User.objects.get)(pk=receiver)
+            organization = await database_sync_to_async(Organization.objects.get)(pk=organization_id)
 
             # Check if group_id is provided, if not, set group to None
             if group_id:
-                group = await sync_to_async(Group.objects.get)(pk=group_id)
+                group = await database_sync_to_async(Group.objects.get)(pk=group_id)
             else:
                 group = None
 
@@ -63,7 +94,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 group=group,
                 unique_identifier=unique_identifier,
             )
-            await sync_to_async(chat_message.save)()
+            await database_sync_to_async(chat_message.save)()
 
             # Proceed with sending message to room group
             await self.channel_layer.group_send(
@@ -112,7 +143,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 class CommentConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
-        self.room_group_name = 'chat_%s' % self.room_name
+        self.room_group_name = 'comments_%s' % self.room_name
 
         # Join room group
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
@@ -144,11 +175,11 @@ class CommentConsumer(AsyncWebsocketConsumer):
                 print(f"Invalid JSON format: {e}")
                 return
 
-            # Use sync_to_async to run synchronous ORM operations
-            forum = await sync_to_async(Forum.objects.get)(pk=forum)
-            user = await sync_to_async(User.objects.get)(pk=user)
-            organization = await sync_to_async(Organization.objects.get)(pk=organization_id)
-            group = await sync_to_async(Group.objects.get)(pk=group_id)
+            # Use database_sync_to_async to run synchronous ORM operations
+            forum = await database_sync_to_async(Forum.objects.get)(pk=forum)
+            user = await database_sync_to_async(User.objects.get)(pk=user)
+            organization = await database_sync_to_async(Organization.objects.get)(pk=organization_id)
+            group = await database_sync_to_async(Group.objects.get)(pk=group_id)
 
             created_at = int(time.time())
 
@@ -160,7 +191,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
                 group=group,
                 user=user,
             )
-            await sync_to_async(comment.save)()
+            await database_sync_to_async(comment.save)()
 
             # Proceed with sending message to room group
             await self.channel_layer.group_send(
@@ -236,11 +267,11 @@ class RepliesConsumer(AsyncWebsocketConsumer):
                 print(f"Invalid JSON format: {e}")
                 return
 
-            # Use sync_to_async to run synchronous ORM operations
-            comment = await sync_to_async(comment.objects.get)(pk=comment)
-            user = await sync_to_async(User.objects.get)(pk=user)
-            organization = await sync_to_async(Organization.objects.get)(pk=organization_id)
-            group = await sync_to_async(Group.objects.get)(pk=group_id)
+            # Use database_sync_to_async to run synchronous ORM operations
+            comment = await database_sync_to_async(comment.objects.get)(pk=comment)
+            user = await database_sync_to_async(User.objects.get)(pk=user)
+            organization = await database_sync_to_async(Organization.objects.get)(pk=organization_id)
+            group = await database_sync_to_async(Group.objects.get)(pk=group_id)
 
             created_at = int(time.time())
 
@@ -252,7 +283,7 @@ class RepliesConsumer(AsyncWebsocketConsumer):
                 group=group,
                 user=user,
             )
-            await sync_to_async(reply.save)()
+            await database_sync_to_async(reply.save)()
 
             # Proceed with sending message to room group
             await self.channel_layer.group_send(
