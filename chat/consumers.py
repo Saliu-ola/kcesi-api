@@ -1,16 +1,16 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AnonymousUser
-from django.db.models import F
-from rest_framework_simplejwt.tokens import UntypedToken
-from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 import json
 import time
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        from django.contrib.auth import get_user_model
+        from django.contrib.auth.models import AnonymousUser
+        from django.db.models import F
+        from rest_framework_simplejwt.tokens import UntypedToken
+        from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = 'chat_%s' % self.room_name
 
@@ -41,10 +41,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_user(self, user_id):
+        from django.contrib.auth import get_user_model
+
         return get_user_model().objects.get(pk=user_id)
 
     @database_sync_to_async
     def update_online_count(self, user_id, increment=True):
+        from django.contrib.auth import get_user_model
+        from django.db.models import F
+
         if increment:
             get_user_model().objects.filter(pk=user_id).update(online_count=F('online_count') + 1)
         else:
