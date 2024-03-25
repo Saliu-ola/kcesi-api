@@ -277,7 +277,7 @@ class RepliesConsumer(AsyncWebsocketConsumer):
                 return
 
             # Use database_sync_to_async to run synchronous ORM operations
-            comment = await database_sync_to_async(comment.objects.get)(pk=comment)
+            comment = await database_sync_to_async(ForumComment.objects.get)(pk=comment)
             user = await database_sync_to_async(User.objects.get)(pk=user)
             organization = await database_sync_to_async(Organization.objects.get)(pk=organization_id)
             group = await database_sync_to_async(Group.objects.get)(pk=group_id)
