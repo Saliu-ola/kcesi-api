@@ -23,6 +23,7 @@ class ForumSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+
 class ForumCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Forum
@@ -34,6 +35,8 @@ class ForumCreateSerializer(serializers.ModelSerializer):
             "organization",
             "group",
             "resources",
+            "start_time",
+            "end_time",
             "user",
         ]
         read_only_fields = ["id"]
@@ -45,6 +48,9 @@ class ForumCommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ForumComment
         fields = "__all__"
+
+
+
 
 
 class CommentReplySerializer(serializers.ModelSerializer):
