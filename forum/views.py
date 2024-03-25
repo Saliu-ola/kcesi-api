@@ -15,13 +15,14 @@ from drf_spectacular.types import OpenApiTypes
 import cloudinary.uploader
 from organization.models import Organization
 
+
 class ForumViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
     serializer_class = ForumSerializer
     permission_classes = [IsAuthenticated]
     queryset = Forum.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category', 'user', 'organization', 'group']
+    filterset_fields = ['category', 'user', 'organization', 'group', "start_time", "end_time"]
     search_fields = ['topic']
     ordering_fields = ['created_at']
 

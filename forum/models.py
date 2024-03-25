@@ -21,6 +21,10 @@ class Forum(models.Model):
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_forums")
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_forums")
 
+    start_time = models.DateTimeField(null=True)
+
+    end_time = models.DateTimeField(null=True)
+
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 

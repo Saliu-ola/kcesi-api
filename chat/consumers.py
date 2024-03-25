@@ -209,6 +209,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
                     "organization": organization.pk,
                     "group": group.pk,
                     "user": user.pk,
+                    "id":comment.pk,
                     "created_at": created_at,
                     "user_full_name": user_full_name,
                 },
@@ -221,6 +222,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
         organization = event["organization"]
         group = event["group"]
         user = event["user"]
+        id = event["id"]
         user_full_name = event["user_full_name"]
         created_at = event["created_at"]
 
@@ -233,6 +235,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
                     "organization": organization,
                     "group": group,
                     "user": user,
+                    "id":id,
                     "user_full_name":user_full_name,
                     "created_at": created_at,
                 }
