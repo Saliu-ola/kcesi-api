@@ -11,6 +11,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         from django.db.models import F
         from rest_framework_simplejwt.tokens import UntypedToken
         from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = 'chat_%s' % self.room_name
 
@@ -79,7 +80,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
             # Use database_sync_to_async to run synchronous ORM operations
             sender = await database_sync_to_async(User.objects.get)(pk=sender)
             receiver = await database_sync_to_async(User.objects.get)(pk=receiver)
-            organization = await database_sync_to_async(Organization.objects.get)(pk=organization_id)
+            organization = await database_sync_to_async(Organization.objects.get)(
+                pk=organization_id
+            )
 
             # Check if group_id is provided, if not, set group to None
             if group_id:
@@ -165,7 +168,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
         from organization.models import Organization
         from group.models import Group
         from accounts.models import User
-        from forum.models import Forum,ForumComment,CommentReplies
+        from forum.models import Forum, ForumComment, CommentReplies
 
         if text_data:
             try:
@@ -183,7 +186,9 @@ class CommentConsumer(AsyncWebsocketConsumer):
             # Use database_sync_to_async to run synchronous ORM operations
             forum = await database_sync_to_async(Forum.objects.get)(pk=forum)
             user = await database_sync_to_async(User.objects.get)(pk=user)
-            organization = await database_sync_to_async(Organization.objects.get)(pk=organization_id)
+            organization = await database_sync_to_async(Organization.objects.get)(
+                pk=organization_id
+            )
             group = await database_sync_to_async(Group.objects.get)(pk=group_id)
 
             created_at = int(time.time())
@@ -209,7 +214,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
                     "organization": organization.pk,
                     "group": group.pk,
                     "user": user.pk,
-                    "id":comment.pk,
+                    "id": comment.pk,
                     "created_at": created_at,
                     "user_full_name": user_full_name,
                 },
@@ -235,8 +240,8 @@ class CommentConsumer(AsyncWebsocketConsumer):
                     "organization": organization,
                     "group": group,
                     "user": user,
-                    "id":id,
-                    "user_full_name":user_full_name,
+                    "id": id,
+                    "user_full_name": user_full_name,
                     "created_at": created_at,
                 }
             )
@@ -282,7 +287,9 @@ class RepliesConsumer(AsyncWebsocketConsumer):
             # Use database_sync_to_async to run synchronous ORM operations
             comment = await database_sync_to_async(ForumComment.objects.get)(pk=comment)
             user = await database_sync_to_async(User.objects.get)(pk=user)
-            organization = await database_sync_to_async(Organization.objects.get)(pk=organization_id)
+            organization = await database_sync_to_async(Organization.objects.get)(
+                pk=organization_id
+            )
             group = await database_sync_to_async(Group.objects.get)(pk=group_id)
 
             user_full_name = user.full_name
@@ -332,7 +339,208 @@ class RepliesConsumer(AsyncWebsocketConsumer):
                     "organization": organization,
                     "group": group,
                     "user": user,
-                    "user_full_name":user_full_name,
+                    "user_full_name": user_full_name,
+                    "created_at": created_at,
+                }
+            )
+        )
+
+
+class BlogCommentConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.room_name = self.scope['url_route']['kwargs']['room_name']
+        self.room_group_name = 'blog_comments_%s' % self.room_name
+
+        # Join room group
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+
+        # Accept the WebSocket connection
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        # Leave room group
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+
+    # Receive message from WebSocket
+    async def receive(self, text_data):
+        from organization.models import Organization
+        from group.models import Group
+        from accounts.models import User
+        from blog.models import Blog, Comment, BlogCommentReplies
+        from platforms.models import Platform
+
+        if text_data:
+            try:
+                text_data_json = json.loads(text_data)
+                blog = text_data_json.get("blog")
+                content = text_data_json.get("content")
+                organization_id = text_data_json.get("organization")
+                group_id = text_data_json.get("group")
+                user = text_data_json.get("user")
+               
+
+            except json.JSONDecodeError as e:
+                print(f"Invalid JSON format: {e}")
+                return
+
+            # Use database_sync_to_async to run synchronous ORM operations
+            blog = await database_sync_to_async(Blog.objects.get)(pk=blog)
+            user = await database_sync_to_async(User.objects.get)(pk=user)
+            organization = await database_sync_to_async(Organization.objects.get)(
+                pk=organization_id
+            )
+            group = await database_sync_to_async(Group.objects.get)(pk=group_id)
+            
+
+            created_at = int(time.time())
+            user_full_name = user.full_name
+
+            # Create and save the InAppChat instance
+            new_comment = Comment(
+                blog=blog,
+                content=content,
+                organization=organization,
+                group=group,
+                user=user
+            )
+            await database_sync_to_async(new_comment.save)()
+
+            # Proceed with sending message to room group
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'blog_comment',
+                    "blog": blog.pk,
+                    "content": content,
+                    "organization": organization.pk,
+                    "group": group.pk,
+                    "user": user.pk,
+                    "id": new_comment.pk,
+                    "created_at": created_at,
+                    "user_full_name": user_full_name,
+                },
+            )
+
+    # Receive message from room group
+    async def blog_comment(self, event):
+        blog = event["blog"]
+        content = event["content"]
+        organization = event["organization"]
+        group = event["group"]
+        user = event["user"]
+        id = event["id"]
+        user_full_name = event["user_full_name"]
+        created_at = event["created_at"]
+
+        # Send the received message back to the client
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "blog": blog,
+                    "content": content,
+                    "organization": organization,
+                    "group": group,
+                    "user": user,
+                    "id": id,
+                    "user_full_name": user_full_name,
+                    "created_at": created_at,
+                }
+            )
+        )
+
+
+class BlogCommentRepliesConsumer(AsyncWebsocketConsumer):
+
+    async def connect(self):
+        self.room_name = self.scope['url_route']['kwargs']['room_name']
+        self.room_group_name = 'blog_comment_replies_%s' % self.room_name
+
+        # Join room group
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+
+        # Accept the WebSocket connection
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        # Leave room group
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+
+    # Receive message from WebSocket
+    async def receive(self, text_data):
+        from organization.models import Organization
+        from group.models import Group
+        from accounts.models import User
+        from blog.models import Comment,Blog,BlogCommentReplies
+
+        if text_data:
+            try:
+                text_data_json = json.loads(text_data)
+                comment = text_data_json.get("comment")
+                content = text_data_json.get("content")
+                organization_id = text_data_json.get("organization")
+                group_id = text_data_json.get("group")
+                user = text_data_json.get("user")
+
+            except json.JSONDecodeError as e:
+                print(f"Invalid JSON format: {e}")
+                return
+
+            # Use database_sync_to_async to run synchronous ORM operations
+            comment = await database_sync_to_async(Comment.objects.get)(pk=comment)
+            user = await database_sync_to_async(User.objects.get)(pk=user)
+            organization = await database_sync_to_async(Organization.objects.get)(
+                pk=organization_id
+            )
+            group = await database_sync_to_async(Group.objects.get)(pk=group_id)
+
+            user_full_name = user.full_name
+            created_at = int(time.time())
+
+            # Create and save the InAppChat instance
+            reply = BlogCommentReplies(
+                comment=comment,
+                content=content,
+                organization=organization,
+                group=group,
+                user=user,
+            )
+            await database_sync_to_async(reply.save)()
+
+            # Proceed with sending message to room group
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'reply',
+                    "comment": comment.pk,
+                    "content": content,
+                    "organization": organization.pk,
+                    "group": group.pk,
+                    "user": user.pk,
+                    "created_at": created_at,
+                    "user_full_name": user_full_name,
+                },
+            )
+
+    # Receive message from room group
+    async def reply(self, event):
+        comment = event["comment"]
+        content = event["content"]
+        organization = event["organization"]
+        group = event["group"]
+        user = event["user"]
+        user_full_name = event["user_full_name"]
+        created_at = event["created_at"]
+
+        # Send the received message back to the client
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "comment": comment,
+                    "content": content,
+                    "organization": organization,
+                    "group": group,
+                    "user": user,
+                    "user_full_name": user_full_name,
                     "created_at": created_at,
                 }
             )

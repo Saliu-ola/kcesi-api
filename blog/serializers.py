@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Blog, Comment
+from .models import Blog, Comment, BlogCommentReplies
 
 
 class BlogListSerializer(serializers.ModelSerializer):
@@ -43,4 +43,12 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
+        fields = "__all__"
+
+
+class BlogCommentReplySerializer(serializers.ModelSerializer):
+    user_full_name = serializers.StringRelatedField(source='user.full_name')
+
+    class Meta:
+        model = BlogCommentReplies
         fields = "__all__"

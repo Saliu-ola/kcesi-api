@@ -37,16 +37,34 @@ class Comment(models.Model):
     )
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_comments")
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_comments")
-
-    Platform = models.ForeignKey(
-        Platform, on_delete=models.CASCADE, related_name="platform_comments"
-    )
-
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
     def __str__(self) -> str:
         return f"{self.user} comments"
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
+class BlogCommentReplies(models.Model):
+    comment = organization = models.ForeignKey(
+        Comment, on_delete=models.CASCADE, related_name="blog_comment_replies"
+    )
+    content = models.TextField(null=True)
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="organization_blog_comment_replies"
+    )
+    group = models.ForeignKey(
+        Group, on_delete=models.CASCADE, related_name="group_blog_comment_replies"
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_blog_comment_replies")
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
+
+    def __str__(self) -> str:
+        return f"{self.user} blog_comment_reply"
 
     class Meta:
         ordering = ["-created_at"]
