@@ -285,7 +285,7 @@ class SocializationViewSets(BaseViewSet):
         return Response(
             {
                 "success": True,
-                "leaders": leaders_sorted[:10],
+                "leaders": leaders_sorted[:5],
                 "organization_id": organization_id,
                 "group": group.pk,
                 "start_date": start_date,
@@ -419,7 +419,7 @@ class ExternalizationViewSets(BaseViewSet):
         return Response(
             {
                 "success": True,
-                "leaders": leaders_sorted[:10],
+                "leaders": leaders_sorted[:5],
                 "organization_id": organization_id,
                 "group": group.pk,
                 "start_date": start_date,
@@ -556,7 +556,7 @@ class CombinationViewSets(BaseViewSet):
         return Response(
             {
                 "success": True,
-                "leaders": leaders_sorted[:10],
+                "leaders": leaders_sorted[:5],
                 "organization_id": organization_id,
                 "group": group.pk,
                 "start_date": start_date,
@@ -692,7 +692,7 @@ class InternalizationViewSets(BaseViewSet):
         return Response(
             {
                 "success": True,
-                "leaders": leaders_sorted[:10],
+                "leaders": leaders_sorted[:5],
                 "organization_id": organization_id,
                 "group": group.pk,
                 "start_date": start_date,
