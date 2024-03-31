@@ -16,7 +16,9 @@ class ForumSerializer(serializers.ModelSerializer):
         source='category.name',
     )
 
-    resources_url = serializers.SlugRelatedField(many=True, read_only=True, slug_field='media_url')
+    resources_url = serializers.StringRelatedField(
+        source='resources.media_url',many=True
+    )
 
     class Meta:
         model = Forum
