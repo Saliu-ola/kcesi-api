@@ -11,6 +11,8 @@ pip install --upgrade -r requirements.txt
 python manage.py collectstatic --no-input
 python manage.py makemigrations
 python manage.py migrate
+python manage.py dumpdata --exclude=contenttypes > fixture.json
+
 
 # # Debugging: Echo environment variables
 # echo "DJANGO_SUPERUSER_USERNAME: $DJANGO_SUPERUSER_USERNAME"

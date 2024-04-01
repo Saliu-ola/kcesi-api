@@ -20,7 +20,11 @@ class ForumViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
     serializer_class = ForumSerializer
     permission_classes = [IsAuthenticated]
-    queryset = Forum.objects.all()
+    queryset = (
+        Forum.objects.all()
+        .prefetch_related('resources')
+        .select_related('user', 'organization', 'group', 'category')
+    )
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['category', 'user', 'organization', 'group', "start_time", "end_time"]
     search_fields = ['topic']

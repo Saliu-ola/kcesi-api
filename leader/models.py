@@ -10,25 +10,25 @@ from simpleblog.utils import (
 
 class Socialization(models.Model):
     post_blog = models.DecimalField(
-        default=0, decimal_places=5, max_digits=9, validators=[MinValueValidator(0)]
+        default=0.00000, decimal_places=5, max_digits=9, validators=[MinValueValidator(0.00000)]
     )
     send_chat_message = models.DecimalField(
-        default=0, decimal_places=5, max_digits=9, validators=[MinValueValidator(0)]
+        default=0.00000, decimal_places=5, max_digits=9, validators=[MinValueValidator(0.00000)]
     )
     post_forum = models.DecimalField(
-        default=0, decimal_places=5, max_digits=9, validators=[MinValueValidator(0)]
+        default=0.00000, decimal_places=5, max_digits=9, validators=[MinValueValidator(0.00000)]
     )
     image_sharing = models.DecimalField(
-        default=0, decimal_places=5, max_digits=9, validators=[MinValueValidator(0)]
+        default=0.00000, decimal_places=5, max_digits=9, validators=[MinValueValidator(0.00000)]
     )
     video_sharing = models.DecimalField(
-        default=0, decimal_places=5, max_digits=9, validators=[MinValueValidator(0)]
+        default=0.00000, decimal_places=5, max_digits=9, validators=[MinValueValidator(0.00000)]
     )
     text_resource_sharing = models.DecimalField(
-        default=0, decimal_places=5, max_digits=9, validators=[MinValueValidator(0)]
+        default=0.00000, decimal_places=5, max_digits=9, validators=[MinValueValidator(0.00000)]
     )
     created_topic = models.DecimalField(
-        default=0, decimal_places=5, max_digits=9, validators=[MinValueValidator(0)]
+        default=0.00000, decimal_places=5, max_digits=9, validators=[MinValueValidator(0.00000)]
     )
     organization = models.ForeignKey(
         Organization,
@@ -54,7 +54,7 @@ class Socialization(models.Model):
             'text_resource_sharing': self.text_resource_sharing,
             'created_topic': self.created_topic,
         }
-        
+
         return calculate_category_score(constants, tallies)
 
     def calculate_socialization_percentage(self, sec, tes):
@@ -64,19 +64,19 @@ class Socialization(models.Model):
 
 class Externalization(models.Model):
     post_blog = models.DecimalField(
-        default=0, decimal_places=5, max_digits=9, validators=[MinValueValidator(0)]
+        default=0.00000, decimal_places=5, max_digits=9, validators=[MinValueValidator(0.00000)]
     )
     send_chat_message = models.DecimalField(
-        default=0, decimal_places=5, max_digits=9, validators=[MinValueValidator(0)]
+        default=0.00000, decimal_places=5, max_digits=9, validators=[MinValueValidator(0.00000)]
     )
     post_forum = models.DecimalField(
-        default=0, decimal_places=5, max_digits=9, validators=[MinValueValidator(0)]
+        default=0.00000, decimal_places=5, max_digits=9, validators=[MinValueValidator(0.00000)]
     )
     created_topic = models.DecimalField(
-        default=0, decimal_places=5, max_digits=9, validators=[MinValueValidator(0)]
+        default=0.00000, decimal_places=5, max_digits=9, validators=[MinValueValidator(0.00000)]
     )
     comment = models.DecimalField(
-        default=0, decimal_places=5, max_digits=9, validators=[MinValueValidator(0)]
+        default=0.00000, decimal_places=5, max_digits=9, validators=[MinValueValidator(0.00000)]
     )
     organization = models.ForeignKey(
         Organization,
@@ -108,10 +108,10 @@ class Externalization(models.Model):
 
 class Combination(models.Model):
     created_topic = models.DecimalField(
-        default=0, decimal_places=5, max_digits=9, validators=[MinValueValidator(0)]
+        default=0.00000, decimal_places=5, max_digits=9, validators=[MinValueValidator(0.00000)]
     )
     post_blog = models.DecimalField(
-        default=0, decimal_places=5, max_digits=9, validators=[MinValueValidator(0)]
+        default=0.00000, decimal_places=5, max_digits=9, validators=[MinValueValidator(0.00000)]
     )
     organization = models.ForeignKey(
         Organization,
@@ -140,19 +140,19 @@ class Combination(models.Model):
 
 class Internalization(models.Model):
     used_in_app_browser = models.DecimalField(
-        default=0, decimal_places=5, max_digits=9, validators=[MinValueValidator(0)]
+        default=0.00000, decimal_places=5, max_digits=9, validators=[MinValueValidator(0.00000)]
     )
     read_blog = models.DecimalField(
-        default=0, decimal_places=5, max_digits=9, validators=[MinValueValidator(0)]
+        default=0.00000, decimal_places=5, max_digits=9, validators=[MinValueValidator(0.00000)]
     )
     read_forum = models.DecimalField(
-        default=0, decimal_places=5, max_digits=9, validators=[MinValueValidator(0)]
+        default=0.00000, decimal_places=5, max_digits=9, validators=[MinValueValidator(0.00000)]
     )
     recieve_chat_message = models.DecimalField(
-        default=0, decimal_places=5, max_digits=9, validators=[MinValueValidator(0)]
+        default=0.00000, decimal_places=5, max_digits=9, validators=[MinValueValidator(0.00000)]
     )
     download_resources = models.DecimalField(
-        default=0, decimal_places=5, max_digits=9, validators=[MinValueValidator(0)]
+        default=0.00000, decimal_places=5, max_digits=9, validators=[MinValueValidator(0.00000)]
     )
     organization = models.ForeignKey(
         Organization,

@@ -16,9 +16,10 @@ class BlogListSerializer(serializers.ModelSerializer):
     category_name = serializers.StringRelatedField(
         source='category.name',
     )
-    resources_url = serializers.StringRelatedField(
-        source='resources.media_url',many=True
-     )
+    resources_url = serializers.SlugRelatedField(
+        many=True, read_only=True, slug_field='media_url', source='resources'
+    )
+
     class Meta:
         model = Blog
         fields = "__all__"

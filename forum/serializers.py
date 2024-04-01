@@ -16,14 +16,13 @@ class ForumSerializer(serializers.ModelSerializer):
         source='category.name',
     )
 
-    resources_url = serializers.StringRelatedField(
-        source='resources.media_url',many=True
+    resources_url = serializers.SlugRelatedField(
+        many=True, read_only=True, slug_field='media_url', source='resources'
     )
 
     class Meta:
         model = Forum
         fields = "__all__"
-
 
 
 class ForumCreateSerializer(serializers.ModelSerializer):
@@ -50,9 +49,6 @@ class ForumCommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ForumComment
         fields = "__all__"
-
-
-
 
 
 class CommentReplySerializer(serializers.ModelSerializer):

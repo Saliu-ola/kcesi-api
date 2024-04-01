@@ -26,3 +26,4 @@ channels-redis
 django-channels
 daphne
 redis
+python-dotenv
