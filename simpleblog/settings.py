@@ -222,6 +222,8 @@ EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
 EMAIL_USE_TLS = "EMAIL_USE_TLS"
 
 
+GOOGLE_GEMINI_API_KEY = config("GOOGLE_GEMINI_API_KEY")
+
 # Add your Cloudinary configuration
 cloudinary.config(
     cloud_name=config('CLOUD_NAME'),

@@ -27,3 +27,4 @@ django-channels
 daphne
 redis
 python-dotenv
+google-generativeai
