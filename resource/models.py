@@ -4,19 +4,19 @@ from organization.models import Organization
 from group.models import Group
 from accounts.models import User
 from cloudinary.models import CloudinaryField
-
-
-class Type(models.Model):
-    name = models.CharField(max_length=50, null=True)
-
-    def __str__(self) -> str:
-        return self.name
+RESOURCE_TYPES = (
+    ("AUDIO", "AUDIO"),
+    ("VIDEO", "VIDEO"),
+    ("IMAGE", "IMAGE"),
+    ("DOCUMENT", "DOCUMENT"),
+    ("OTHERS", "OTHERS"),
+)
 
 
 class Resources(models.Model):
     title = models.CharField(max_length=50, null=True)
     size = models.IntegerField(null=True)
-    type = models.ForeignKey(Type, on_delete=models.CASCADE, related_name="type_resources")
+    type = models.CharField(max_length=20, choices=RESOURCE_TYPES, default="IMAGE")
     platform = models.ForeignKey(
         Platform, on_delete=models.CASCADE, related_name="platform_resources", null=True
     )

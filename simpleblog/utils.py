@@ -1,4 +1,4 @@
-
+from decimal import Decimal, ROUND_DOWN
 
 
 def calculate_category_score(constants, tallies):
@@ -89,6 +89,30 @@ def calculate_engagement_scores(tallies):
     }
 
 
+
+def calculate_categorized_percentage(leaders):
+    total = sum([score['percentage'] for score in leaders])
+    if total == 0:
+        return [{"user": data['user'], "percentage": "0.00"} for data in leaders]
+    else:
+        individual_categorized_percentage_list = [
+            {
+                "user": data['user'],
+                "percentage": "{:.2f}".format(
+                    (Decimal(data['percentage']) * Decimal('100.00')) / total
+                ),
+            }
+            for data in leaders
+        ]
+
+        leaders_sorted = sorted(
+            individual_categorized_percentage_list,
+            key=lambda x: float(x['percentage']),
+            reverse=True,
+        )
+        return leaders_sorted
+
+
 # # Example usage
 # tallies_example = {
 #     "post_blog": 1,
@@ -108,4 +132,3 @@ def calculate_engagement_scores(tallies):
 
 # result = calculate_engagement_scores(tallies_example)
 # print(result)
-

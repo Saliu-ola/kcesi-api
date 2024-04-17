@@ -4,25 +4,48 @@ from rest_framework.decorators import APIView, api_view, permission_classes
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
-from .models import Forum, ForumComment
-from .serializers import ForumSerializer, ForumCommentSerializer
+from .models import Forum, ForumComment,CommentReplies
+from .serializers import ForumSerializer,ForumCreateSerializer, ForumCommentSerializer,CommentReplySerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
 from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
+import cloudinary.uploader
+from organization.models import Organization
 
 
 class ForumViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
     serializer_class = ForumSerializer
     permission_classes = [IsAuthenticated]
-    queryset = Forum.objects.all()
+    queryset = (
+        Forum.objects.all()
+        .prefetch_related('resources')
+        .select_related('user', 'organization', 'group', 'category')
+    )
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category', 'user', 'organization', 'group']
+    filterset_fields = ['category', 'user', 'organization', 'group', "start_time", "end_time"]
     search_fields = ['topic']
     ordering_fields = ['created_at']
+
+    def get_queryset(self):
+        organization_id = self.request.user.organization_id
+        organization = Organization.objects.filter(organization_id=organization_id).first()
+
+        return self.queryset.filter(organization=organization)
+
+    def perform_destroy(self, instance):
+
+        for resource in instance.resources.all():
+            cloudinary.uploader.destroy(resource.cloud_id)
+        instance.delete()
+
+    def get_serializer_class(self):
+        if self.action in ["retrieve", "list"]:
+            return ForumSerializer
+        return ForumCreateSerializer
 
     def paginate_results(self, queryset):
         page = self.paginate_queryset(queryset)
@@ -126,6 +149,25 @@ class CommentViewSets(viewsets.ModelViewSet):
     queryset = ForumComment.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['user', 'organization', 'forum', 'group']
+    search_fields = ['content']
+    ordering_fields = ['created_at']
+
+    def paginate_results(self, queryset):
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class ReplyViewSets(viewsets.ModelViewSet):
+    http_method_names = ["get", "patch", "post", "put", "delete"]
+    serializer_class = CommentReplySerializer
+    permission_classes = [IsAuthenticated]
+    queryset = CommentReplies.objects.all()
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['user', 'organization', 'comment', 'group']
     search_fields = ['content']
     ordering_fields = ['created_at']
 

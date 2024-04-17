@@ -4,6 +4,7 @@ from group.models import Group
 from organization.models import Organization
 from platforms.models import Platform
 from category.models import Category
+from resource.models import Resources
 
 
 class Forum(models.Model):
@@ -15,21 +16,27 @@ class Forum(models.Model):
     category = models.ForeignKey(
         Category, on_delete=models.CASCADE, related_name="cat_forums", null=True
     )
+    resources = models.ManyToManyField(Resources, related_name="forums")
+
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_forums")
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_forums")
+
+    start_time = models.DateTimeField(null=True)
+
+    end_time = models.DateTimeField(null=True)
 
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
     def __str__(self) -> str:
-        return self.topic
+        return f"{self.topic}"
 
     class Meta:
         ordering = ["-created_at"]
 
 
 class ForumComment(models.Model):
-    forum = organization = models.ForeignKey(
+    forum  = models.ForeignKey(
         Forum, on_delete=models.CASCADE, related_name="forum_comments"
     )
     content = models.TextField(null=True)
@@ -44,6 +51,29 @@ class ForumComment(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user} comments"
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
+class CommentReplies(models.Model):
+    comment = models.ForeignKey(
+        ForumComment, on_delete=models.CASCADE, related_name="comment_replies"
+    )
+    content = models.TextField(null=True)
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="organization_comment_replies"
+    )
+    group = models.ForeignKey(
+        Group, on_delete=models.CASCADE, related_name="group_comment_replies"
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_comment_replies")
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
+
+    def __str__(self) -> str:
+        return f"{self.user} reply"
 
     class Meta:
         ordering = ["-created_at"]

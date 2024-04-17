@@ -1,11 +1,12 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ResourcesViewSets
+from .views import FeedbackViewSets
 
-app_name = 'resource'
+app_name = 'feedbacks'
 
 router = DefaultRouter()
-router.register('', ResourcesViewSets)
+
+router.register('', FeedbackViewSets)
 
 
 urlpatterns = [

@@ -14,6 +14,7 @@ EXISITING_EMAIL_ERROR = "Email has already been used"
 class ListUserSerializer(serializers.ModelSerializer):
     user_groups = serializers.SerializerMethodField(method_name='get_user_groups')
     organization = serializers.SerializerMethodField(method_name="get_user_organization")
+    active_for_chat = serializers.SerializerMethodField(method_name="check_user_online")
 
     class Meta:
         model = User
@@ -36,6 +37,7 @@ class ListUserSerializer(serializers.ModelSerializer):
             "image_url",
             "cloud_id",
             "user_groups",
+            "active_for_chat",
             "created_at",
             "updated_at",
             "is_verified",
@@ -46,6 +48,9 @@ class ListUserSerializer(serializers.ModelSerializer):
             return UserGroupCreateSerializer(UserGroup.objects.get(user=instance)).data
         except ObjectDoesNotExist:
             return None
+
+    def check_user_online(self, instance):
+        return instance.is_active_for_chat
 
     def get_user_organization(self, instance):
         try:
