@@ -6,6 +6,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from .models import Group, UserGroup
 from .serializers import (
+    GroupAISerializer,
     GroupSerializer,
     UserGroupListSerializer,
     UserGroupCreateSerializer,
@@ -17,6 +18,10 @@ from rest_framework.decorators import action
 from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
 from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.parsers import MultiPartParser, FormParser
+from simpleblog.ai import (
+    get_foreign_terms,get_percentage_relevancy,
+    check_percentage_relevance_of_uncommon_words,
+)
 
 
 class GroupViewSets(viewsets.ModelViewSet):
@@ -39,6 +44,53 @@ class GroupViewSets(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+    @action(
+        methods=['POST'],
+        detail=True,
+        permission_classes=[AllowAny],
+        serializer_class=GroupAISerializer,
+        url_path='check-relevance',
+    )
+    def check_relevance(self, request, pk=None):
+        """To check relevance of input texts to group description"""
+        try:
+            group = self.get_object()
+            serializer = GroupAISerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            new_content = serializer.data["content"]
+            existing_text = group.related_terms
+            uncommon_text = get_foreign_terms(new_content,existing_text)
+
+            # decided to add the new incoming that are relevant before getting final relevace
+            if uncommon_text:
+                score = check_percentage_relevance_of_uncommon_words(uncommon_text, group.content)
+                score = float(score)
+                if score >= 45:
+                    existing_text.extend(uncommon_text)
+                    group.related_terms = existing_text
+                    group.save()
+            
+            #so i fetch the updated one along
+            relevant_percentage = get_percentage_relevancy(new_content, group.related_terms)
+            relevant_percentage = float(relevant_percentage)
+
+            rating = 'Very Bad'
+            if relevant_percentage > 59:
+                rating = 'Excellent'
+            elif relevant_percentage > 49:
+                rating = 'Very Good'
+            elif relevant_percentage > 29:
+                rating = 'Good'
+            elif relevant_percentage > 14:
+                rating = 'Fair'
+            elif relevant_percentage > 10:
+                rating = 'Bad'
+
+            response = {"relevancy_percentage": relevant_percentage, "rating": rating}
+            return Response(response, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserGroupsViewSets(viewsets.ModelViewSet):

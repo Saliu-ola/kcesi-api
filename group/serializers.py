@@ -8,11 +8,14 @@ from django.shortcuts import get_object_or_404
 from rest_framework.validators import UniqueTogetherValidator
 from django.db.models import Q
 from simpleblog.ai import get_cleaned_and_lematized_terms;
+from django.db import transaction, IntegrityError
+
 
 class GroupSerializer(serializers.ModelSerializer):
     organization_name = serializers.SerializerMethodField(
         read_only=True, method_name="get_organization_name"
     )
+    related_terms = serializers.JSONField(read_only=True)
 
     class Meta:
         model = Group
@@ -27,17 +30,36 @@ class GroupSerializer(serializers.ModelSerializer):
         ).exists():
             raise serializers.ValidationError(f"{title} group already exists for the organization")
 
-        group =  super().create(validated_data)
-        related_terms = get_cleaned_and_lematized_terms(group.content)
-        if not related_terms:
-            raise serializers.ValidationError ("No related words found for the group content")
-        group.related_terms = related_terms
+        try:
+            with transaction.atomic():
+                group = super().create(validated_data)
+                related_terms = get_cleaned_and_lematized_terms(group.content)
 
-        group.save()
+                if not related_terms:
+                    raise serializers.ValidationError(
+                        "No related words found for the group content"
+                    )
+                group.related_terms = related_terms
+                group.save()
+        except IntegrityError as e:
+            # Handle specific database integrity errors
+            raise serializers.ValidationError("Database integrity error: " + str(e))
+        except Exception as e:
+            # Handle other exceptions
+            print(str(e))
+            raise serializers.ValidationError("Kindly try again,unable to generate terminologies for the group")
+
         return group
 
     def get_organization_name(self, instance):
         return Organization.objects.get(organization_id=instance.organization_id).name
+
+
+class GroupAISerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Group
+        fields = ["id", "content"]
 
 
 class UserGroupListSerializer(serializers.ModelSerializer):

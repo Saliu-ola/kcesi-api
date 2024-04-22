@@ -5,9 +5,9 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import google.generativeai as genai
 import pandas as pd
+import numpy as np
 
 pd.set_option('display.max_rows', 500)
-import numpy as np
 
 # Download necessary NLTK data
 nltk.download('wordnet')
@@ -29,64 +29,83 @@ def stop_word_removal(text, stop_word_corpus, punct_str):
     return clean_text.translate(str.maketrans('', '', punct_str))
 
 
-def clean_data_and_lemmatize(input_text):
-    existing_texts = [input_text]
+def clean_data_and_lemmatize(input_texts):
+    if isinstance(input_texts, str):
+        input_texts = [input_texts]  # Convert single string to list
 
     stop_words = stopwords.words('english')
+    punct_str = string.punctuation
 
     existing_texts_cleaned = [
-        stop_word_removal(headline, stop_words, string.punctuation) for headline in existing_texts
+        stop_word_removal(text, stop_words, punct_str) for text in input_texts
     ]
 
-    # Convert the cleaned texts, which is in the form of a list, into a single string
-    existing_texts_cleaned_string = ''.join(existing_texts_cleaned)
-
-    # Split new_texts_cleaned by space to form a list of words
+    existing_texts_cleaned_string = ' '.join(existing_texts_cleaned)
     existing_texts_cleaned_list = [x for x in existing_texts_cleaned_string.split(' ')]
 
-    # Find the unique values of new_texts_cleaned and existing_texts_cleaned
     unique_words_existing_texts_cleaned_list = np.unique(np.array(existing_texts_cleaned_list))
 
-    # Implementing lemmatization
     lemmatized_existing_words = [
         lemmatizer.lemmatize(word) for word in unique_words_existing_texts_cleaned_list
     ]
 
-    # Lemmatization with: POS = ADJECTIVE
-    lemmatized_existing_words_adj = [
-        lemmatizer.lemmatize(word, pos="a") for word in lemmatized_existing_words
-    ]
-
-    # Lemmatization with: POS = VERB
-    lemmatized_existing_words = [
-        lemmatizer.lemmatize(word, pos="v") for word in lemmatized_existing_words_adj
-    ]
-
-    unique_lemmatized_existing_words = np.unique(np.array(lemmatized_existing_words))
-
-    return unique_lemmatized_existing_words
+    return lemmatized_existing_words
 
 
 def fetch_related_terms(description):
-    """Fetch related terms for a given description, and return them as cleaned, lemmatized words with stopwords."""
     prompt = f"description: '{description}'. Fetch at least 3000 unique related terms for a given description, and return them as cleaned and lemmatized words as a list.should be in fomat [term,term,term]"
-
     response = model.generate_content(prompt)
     result = response.text
-
-    # Assuming the response is a list of terms separated by commas, split the string to get a list
     related_terms_list = result.split(',')
-
-    # Validate that the list is not empty
     if not related_terms_list:
         print("No related terms were found.")
         return []
-
     return related_terms_list
+
+def check_percentage_relevance_of_uncommon_words(uncommon_words,description):
+    prompt = f" for description: '{description}', what is the percentage relevance or relation of the words '{uncommon_words}',return only the percentage digits, e.g 24.55 in 2d.p,if the words are not relevant return 0.00 "
+    response = model.generate_content(prompt)
+    result = response.text
+    return result
 
 
 def get_cleaned_and_lematized_terms(description):
-    return clean_data_and_lemmatize(fetch_related_terms(description))
+    related_terms = fetch_related_terms(description)
+    return clean_data_and_lemmatize(related_terms)
 
 
-print(get_cleaned_and_lematized_terms('reproduction in human'))
+def get_relevance_percentage_for_new_texts_and_its_uncommon_words(new_text, existing_text):
+
+    lemmatized_and_clean_new_text = clean_data_and_lemmatize(new_text.split(','))
+    lemmatized_and_clean_existing_text = clean_data_and_lemmatize(existing_text)
+
+    common = list(
+        x for x in lemmatized_and_clean_new_text if x in lemmatized_and_clean_existing_text
+    )
+    uncommon = list(
+        x for x in lemmatized_and_clean_new_text if x not in lemmatized_and_clean_existing_text
+    )
+
+    new_text_count = len(lemmatized_and_clean_new_text)
+    common_count = len(common)
+
+    relevance_percentage = round(((common_count / new_text_count) * 100), 2)
+    return relevance_percentage, uncommon
+
+
+def get_percentage_relevancy(new_text, existing_text):
+    return get_relevance_percentage_for_new_texts_and_its_uncommon_words(new_text, existing_text)[0]
+
+def get_foreign_terms(new_text, existing_text):
+    return get_relevance_percentage_for_new_texts_and_its_uncommon_words(new_text, existing_text)[1]
+
+
+
+
+
+# uncommon_words = get_relevance_percentage_for_new_texts_and_its_uncommon_words(
+#     new_text="sometimes we have movement,reproduction,respiration as characterisitics of adaption a living thing",
+#     existing_text=["nutriton", "respiration", "movement", "reproduction", "death", "growth"],
+# )[1]
+
+# print(check_percentage_relevance_of_uncommon_words(uncommon_words,'football is a game of chance'))
