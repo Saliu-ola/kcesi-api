@@ -1,94 +1,92 @@
 import string
-import google.generativeai as genai
 import os
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+import google.generativeai as genai
+import pandas as pd
 
+pd.set_option('display.max_rows', 500)
+import numpy as np
 
+# Download necessary NLTK data
+nltk.download('wordnet')
+nltk.download('stopwords')
+
+# Configure Google Generative AI
 GOOGLE_GEMINI_API_KEY = os.environ.get("GOOGLE_GEMINI_API_KEY")
 genai.configure(api_key=GOOGLE_GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-pro')
 
+# Initialize the lemmatizer
+lemmatizer = WordNetLemmatizer()
 
-def fetch_related_terms(keyword_title, description, input_sentence):
-    """Fetch related terms for a given keyword and description, and return them as cleaned and lemmatized words."""
-    response = model.generate_content(
-        f"Assuming i have a keyword '{keyword_title}' and its description: '{description}' , what is the percentage relevance of the words in the input sentence '{input_sentence}' as regards to the  keyword and description?. return the percentage alone. nothing else aside a percentage please.always append the percentage,even if it is 0%"
-    )
+
+def stop_word_removal(text, stop_word_corpus, punct_str):
+    clean_text = ' '.join(
+        [word.lower() for word in text.split() if word.lower() not in stop_word_corpus]
+    ).replace('\n', ' ')
+    return clean_text.translate(str.maketrans('', '', punct_str))
+
+
+def clean_data_and_lemmatize(input_text):
+    existing_texts = [input_text]
+
+    stop_words = stopwords.words('english')
+
+    existing_texts_cleaned = [
+        stop_word_removal(headline, stop_words, string.punctuation) for headline in existing_texts
+    ]
+
+    # Convert the cleaned texts, which is in the form of a list, into a single string
+    existing_texts_cleaned_string = ''.join(existing_texts_cleaned)
+
+    # Split new_texts_cleaned by space to form a list of words
+    existing_texts_cleaned_list = [x for x in existing_texts_cleaned_string.split(' ')]
+
+    # Find the unique values of new_texts_cleaned and existing_texts_cleaned
+    unique_words_existing_texts_cleaned_list = np.unique(np.array(existing_texts_cleaned_list))
+
+    # Implementing lemmatization
+    lemmatized_existing_words = [
+        lemmatizer.lemmatize(word) for word in unique_words_existing_texts_cleaned_list
+    ]
+
+    # Lemmatization with: POS = ADJECTIVE
+    lemmatized_existing_words_adj = [
+        lemmatizer.lemmatize(word, pos="a") for word in lemmatized_existing_words
+    ]
+
+    # Lemmatization with: POS = VERB
+    lemmatized_existing_words = [
+        lemmatizer.lemmatize(word, pos="v") for word in lemmatized_existing_words_adj
+    ]
+
+    unique_lemmatized_existing_words = np.unique(np.array(lemmatized_existing_words))
+
+    return unique_lemmatized_existing_words
+
+
+def fetch_related_terms(description):
+    """Fetch related terms for a given description, and return them as cleaned, lemmatized words with stopwords."""
+    prompt = f"description: '{description}'. Fetch at least 3000 unique related terms for a given description, and return them as cleaned and lemmatized words as a list.should be in fomat [term,term,term]"
+
+    response = model.generate_content(prompt)
     result = response.text
 
-    return result
+    # Assuming the response is a list of terms separated by commas, split the string to get a list
+    related_terms_list = result.split(',')
+
+    # Validate that the list is not empty
+    if not related_terms_list:
+        print("No related terms were found.")
+        return []
+
+    return related_terms_list
 
 
-print(
-    fetch_related_terms(
-        keyword_title="Biology",
-        description="study of reproduction",
-        input_sentence="I love football",
-    )
-)
+def get_cleaned_and_lematized_terms(description):
+    return clean_data_and_lemmatize(fetch_related_terms(description))
 
 
-# from nltk.corpus import stopwords
-# from nltk.stem import WordNetLemmatizer
-# from nltk.tokenize import word_tokenize
-# import string
-# import openai
-
-
-# def fetch_related_terms(keyword_title, description):
-#     # Define the system message to set the context for the conversation
-#     system_message = {
-#         "role": "system",
-#         "content": f"You are a helpful assistant that provides related terms for the topic '{keyword_title}' based on the description '{description}'.",
-#     }
-
-#     # Define the user message to prompt the model
-#     user_message = {"role": "user", "content": "What are some related terms?"}
-
-#     # Combine the system and user messages
-#     messages = [system_message, user_message]
-
-#     # Send the request to the ChatGPT API
-#     response = openai.Completion.create(
-#         engine="gpt-3.5-turbo",
-#         prompt=messages,
-#         max_tokens=100,  # Adjust the number of tokens as needed
-#     )
-
-#     # Extract the generated text
-#     generated_text = response['choices'][0]['text']
-
-#     # Split the generated text into words
-#     words = generated_text.split()
-
-#     return words
-
-
-# def clean_normalize_lemmatize(words):
-#     # Convert to lowercase
-#     words = [word.lower() for word in words]
-
-#     # Remove punctuation
-#     words = [''.join(c for c in w if c not in string.punctuation) for w in words]
-
-#     # Remove stopwords
-#     stop_words = set(stopwords.words('english'))
-#     words = [word for word in words if word not in stop_words]
-
-#     # Lemmatize
-#     lemmatizer = WordNetLemmatizer()
-#     words = [lemmatizer.lemmatize(word) for word in words]
-
-#     return words
-
-
-# # Example usage
-# keyword_title = "biology"
-# description = "study of living things"
-
-# # Fetch related terms using the placeholder function
-# related_terms = fetch_related_terms(keyword_title, description)
-
-# # Clean, normalize, and lemmatize the terms
-# base_words = clean_normalize_lemmatize(related_terms)
-
-# print(base_words)
+print(get_cleaned_and_lematized_terms('reproduction in human'))

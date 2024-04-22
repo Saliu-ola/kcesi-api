@@ -28,3 +28,7 @@ daphne
 redis
 python-dotenv
 google-generativeai
+pandas
+nltk 
+
+

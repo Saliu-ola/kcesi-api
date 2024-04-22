@@ -7,7 +7,7 @@ from rest_framework.validators import ValidationError
 from django.shortcuts import get_object_or_404
 from rest_framework.validators import UniqueTogetherValidator
 from django.db.models import Q
-
+from simpleblog.ai import get_cleaned_and_lematized_terms;
 
 class GroupSerializer(serializers.ModelSerializer):
     organization_name = serializers.SerializerMethodField(
@@ -27,7 +27,14 @@ class GroupSerializer(serializers.ModelSerializer):
         ).exists():
             raise serializers.ValidationError(f"{title} group already exists for the organization")
 
-        return super().create(validated_data)
+        group =  super().create(validated_data)
+        related_terms = get_cleaned_and_lematized_terms(group.content)
+        if not related_terms:
+            raise serializers.ValidationError ("No related words found for the group content")
+        group.related_terms = related_terms
+
+        group.save()
+        return group
 
     def get_organization_name(self, instance):
         return Organization.objects.get(organization_id=instance.organization_id).name
@@ -100,7 +107,3 @@ class UpdateUserGroupSerializer(serializers.ModelSerializer):
             )
 
         return data
-    
-    
-    
-    
