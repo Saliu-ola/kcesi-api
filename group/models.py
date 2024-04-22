@@ -21,6 +21,7 @@ class Group(models.Model):
     organization_id = models.CharField(max_length=15, null=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
+    related_terms = models.JSONField(null=True, blank=True)
 
     def __str__(self) -> str:
         return self.title

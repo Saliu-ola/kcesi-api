@@ -17,7 +17,7 @@ newTexts = ''' Cells are the fundamental units of life, serving as the building 
 existingTexts = [existingTexts]
 newTexts = [newTexts]
 stop_words = stopwords.words('english')
-print(stop_words)
+
 
 
 def stop_word_removal(text, stop_word_corpus, punct_str):
