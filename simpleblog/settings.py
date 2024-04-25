@@ -60,7 +60,7 @@ AUTH_USER_MODEL = "accounts.User"
 
 
 CLIENT_URL = config('CLIENT_URL')
-REDIS_URL = config('REDIS_URL', '127.0.0.1:6379')
+REDIS_URL = config('redis://red-col2v8i0si5c73e4c92g:6379', '127.0.0.1:6379')
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
