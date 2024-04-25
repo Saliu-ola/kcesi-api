@@ -12,25 +12,25 @@ pip install --upgrade pip
 pip install --upgrade -r requirements.txt
 
 # Collect static files
-/opt/render/project/src/.venv/bin/python3.7 manage.py collectstatic --no-input
+python3.7 manage.py collectstatic --no-input
 
 # Make database migrations
-/opt/render/project/src/.venv/bin/python3.7 manage.py makemigrations
+python3.7 manage.py makemigrations
 
 # Apply database migrations
-/opt/render/project/src/.venv/bin/python3.7 manage.py migrate
+python3.7 manage.py migrate
 
 # Dump data (excluding contenttypes) to fixture.json
-# /opt/render/project/src/.venv/bin/python3.7 manage.py dumpdata --exclude=contenttypes > fixture.json
+# python3.7 manage.py dumpdata --exclude=contenttypes > fixture.json
 
 # Debugging: Echo environment variables
 # echo "DJANGO_SUPERUSER_USERNAME: $DJANGO_SUPERUSER_USERNAME"
 # echo "DJANGO_SUPERUSER_EMAIL: $DJANGO_SUPERUSER_EMAIL"
 # echo "DJANGO_SUPERUSER_PASSWORD: $DJANGO_SUPERUSER_PASSWORD"
 
-# # Create superuser if environment variables are provided
+# Create superuser if environment variables are provided
 # if [ -n "$DJANGO_SUPERUSER_USERNAME" ] && [ -n "$DJANGO_SUPERUSER_EMAIL" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ]; then
-#     DJANGO_SUPERUSER_PASSWORD="$DJANGO_SUPERUSER_PASSWORD" /opt/render/project/src/.venv/bin/python3.7 manage.py createsuperuser --noinput --username "$DJANGO_SUPERUSER_USERNAME" --email "$DJANGO_SUPERUSER_EMAIL"
+#     DJANGO_SUPERUSER_PASSWORD="$DJANGO_SUPERUSER_PASSWORD" python3.7 manage.py createsuperuser --noinput --username "$DJANGO_SUPERUSER_USERNAME" --email "$DJANGO_SUPERUSER_EMAIL"
 # fi
 
 # Deactivate virtual environment
