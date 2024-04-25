@@ -60,9 +60,7 @@ AUTH_USER_MODEL = "accounts.User"
 
 
 CLIENT_URL = config('CLIENT_URL')
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
-REDIS_URL = REDIS_URL.replace("redis://", "")
-REDIS_HOST, REDIS_PORT = REDIS_URL.split(':')
+REDIS_URL = config('REDIS_URL', 'redis://127.0.0.1:6379')
 
 
 MIDDLEWARE = [
@@ -141,13 +139,13 @@ TEMPLATES = [
 WSGI_APPLICATION = "simpleblog.wsgi.application"
 ASGI_APPLICATION = "simpleblog.asgi.application"
 
-
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [(REDIS_HOST, int(REDIS_PORT))],
+            'hosts': [REDIS_URL],
         },
+        # 'ROUTING': 'core'
     },
 }
 
