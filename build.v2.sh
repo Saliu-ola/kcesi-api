@@ -34,4 +34,4 @@ python manage.py migrate
 # fi
 
 # Deactivate virtual environment
-# deactivate
+deactivate
