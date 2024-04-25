@@ -1,6 +1,6 @@
 asgiref
 black
-Django==4.0
+Django>=4.2
 django_debug_toolbar
 djangorestframework
 djangorestframework-simplejwt
