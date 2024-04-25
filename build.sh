@@ -7,6 +7,8 @@ set -o errexit
 
 # Use pip to upgrade requirements
 pip install --upgrade -r requirements.txt
+pip install --upgrade django
+pip install --upgrade channels
 
 
 python manage.py collectstatic --no-input

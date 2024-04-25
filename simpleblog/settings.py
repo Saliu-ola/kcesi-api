@@ -24,8 +24,8 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
-    'daphne',
     'channels',
+    'daphne',
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -60,7 +60,10 @@ AUTH_USER_MODEL = "accounts.User"
 
 
 CLIENT_URL = config('CLIENT_URL')
-REDIS_URL = config('REDIS_URL', default='redis://red-col2v8i0si5c73e4c92g:6379')
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+REDIS_URL = REDIS_URL.replace("redis://", "")
+REDIS_HOST, REDIS_PORT = REDIS_URL.split(':')
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -138,16 +141,15 @@ TEMPLATES = [
 WSGI_APPLICATION = "simpleblog.wsgi.application"
 ASGI_APPLICATION = "simpleblog.asgi.application"
 
+
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [REDIS_URL],
+            'hosts': [(REDIS_HOST, int(REDIS_PORT))],
         },
-        # 'ROUTING': 'core'
     },
 }
-
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
