@@ -30,6 +30,6 @@ python-dotenv
 google-generativeai
 pandas
 nltk 
-dotenv
+
 
 

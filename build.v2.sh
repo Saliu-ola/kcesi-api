@@ -8,6 +8,9 @@ source /opt/render/project/src/.venv/bin/activate
 # Upgrade pip
 pip install --upgrade pip
 
+# Install python-dotenv
+pip install python-dotenv
+
 # Use pip to upgrade requirements
 pip install --upgrade -r requirements.txt
 
