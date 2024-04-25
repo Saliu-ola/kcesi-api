@@ -21,10 +21,6 @@ django-cloudinary-storage
 cloudinary
 Pillow
 drf-spectacular
-channels==4.1
-channels-redis
-django-channels
-daphne==4.1.2
 redis
 python-dotenv
 google-generativeai
