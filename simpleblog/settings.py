@@ -140,13 +140,17 @@ WSGI_APPLICATION = "simpleblog.wsgi.application"
 ASGI_APPLICATION = "simpleblog.asgi.application"
 
 CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            'hosts': [REDIS_URL],
+    "default": {
+        "BACKEND": "channels_redis.pubsub.RedisPubSubChannelLayer",
+        "CONFIG": {
+            "hosts": [
+                {
+                    "address":REDIS_URL , # "REDIS_TLS_URL"
+                    "ssl_cert_reqs": None,
+                }
+            ]
         },
-        # 'ROUTING': 'core'
-    },
+    }
 }
 
 # Database
