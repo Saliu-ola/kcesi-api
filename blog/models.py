@@ -5,6 +5,7 @@ from organization.models import Organization
 from platforms.models import Platform
 from resource.models import Resources
 from category.models import Category
+from django.core.validators import MinValueValidator
 
 
 class Blog(models.Model):
@@ -19,6 +20,9 @@ class Blog(models.Model):
     resources = models.ManyToManyField(Resources, related_name="blogs")
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
+    score = models.DecimalField(
+        default=0.00, decimal_places=2, max_digits=5, validators=[MinValueValidator(0.00)]
+    )
 
     def __str__(self) -> str:
         return self.topic
@@ -39,6 +43,9 @@ class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_comments")
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
+    score = models.DecimalField(
+        default=0.00, decimal_places=2, max_digits=5, validators=[MinValueValidator(0.00)]
+    )
 
     def __str__(self) -> str:
         return f"{self.user} comments"
@@ -62,6 +69,9 @@ class BlogCommentReplies(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
+    score = models.DecimalField(
+        default=0.00, decimal_places=2, max_digits=5, validators=[MinValueValidator(0.00)]
+    )
 
     def __str__(self) -> str:
         return f"{self.user} blog_comment_reply"

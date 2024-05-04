@@ -5,6 +5,7 @@ from organization.models import Organization
 from platforms.models import Platform
 from category.models import Category
 from resource.models import Resources
+from django.core.validators import MinValueValidator
 
 
 class Forum(models.Model):
@@ -24,6 +25,9 @@ class Forum(models.Model):
     start_time = models.DateTimeField(null=True)
 
     end_time = models.DateTimeField(null=True)
+    score = models.DecimalField(
+        default=0.00, decimal_places=2, max_digits=5, validators=[MinValueValidator(0.00)]
+    )
 
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
@@ -45,6 +49,9 @@ class ForumComment(models.Model):
     )
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_forum_comments")
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_forum_comments")
+    score = models.DecimalField(
+        default=0.00, decimal_places=2, max_digits=5, validators=[MinValueValidator(0.00)]
+    )
 
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
@@ -68,6 +75,9 @@ class CommentReplies(models.Model):
         Group, on_delete=models.CASCADE, related_name="group_comment_replies"
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_comment_replies")
+    score = models.DecimalField(
+        default=0.00, decimal_places=2, max_digits=5, validators=[MinValueValidator(0.00)]
+    )
 
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)

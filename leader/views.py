@@ -29,13 +29,20 @@ from blog.models import Blog, Comment
 from in_app_chat.models import InAppChat
 from resource.models import Resources
 from browser_history.models import BrowserHistory
-from forum.models import Forum
+from forum.models import Forum, ForumComment
 from topics.models import Topic
 from django.utils import timezone
-from simpleblog.utils import calculate_total_engagement_score,calculate_categorized_percentage
+from simpleblog.utils import (
+    calculate_total_engagement_score,
+    calculate_categorized_percentage,
+    calculate_ai_division,
+)
 from accounts.models import User
 from rest_framework.exceptions import ValidationError
 from datetime import datetime
+from decimal import Decimal
+from django.db.models import Sum
+
 
 class BaseViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
@@ -59,6 +66,14 @@ class BaseViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+    def get_aggregated_score(self, model, organization, group, date_range, kwargs):
+        filters = {'organization': organization, 'group': group.pk, 'created_at__range': date_range}
+
+        if kwargs:
+            filters.update(**kwargs)
+        aggregate_score = model.objects.filter(**filters).aggregate(total_score=Sum("score"))
+        return aggregate_score.get("total_score") or 0.00
 
     def get_count_model_instances(self, model, organization, group, date_range, kwargs):
         filters = {'organization': organization, 'group': group.pk, 'created_at__range': date_range}
@@ -87,15 +102,33 @@ class BaseViewSet(viewsets.ModelViewSet):
         organization = get_object_or_404(Organization, organization_id=organization_id).pk
         group = get_object_or_404(Group, pk=group_pk)
 
-        post_blog = self.get_count_model_instances(
+        post_blog_count = self.get_count_model_instances(
             Blog, organization, group, date_range, {'author': user}
         )
-        send_chat_message = self.get_count_model_instances(
+        post_blog_ai_score = self.get_aggregated_score(
+            Blog, organization, group, date_range, {'author': user}
+        )
+
+        post_blog = calculate_ai_division(post_blog_ai_score, post_blog_count)
+
+        send_chat_message_count = self.get_count_model_instances(
             InAppChat, organization, group, date_range, {'sender': user}
         )
-        post_forum = self.get_count_model_instances(
+        send_chat_message_ai_score = self.get_aggregated_score(
+            InAppChat, organization, group, date_range, {'sender': user}
+        )
+        send_chat_message = calculate_ai_division(
+            send_chat_message_ai_score, send_chat_message_count
+        )
+
+        post_forum_count = self.get_count_model_instances(
             Forum, organization, group, date_range, {'user': user}
         )
+        post_forum_ai_score = self.get_aggregated_score(
+            Forum, organization, group, date_range, {'user': user}
+        )
+        post_forum = calculate_ai_division(post_forum_ai_score , post_forum_count)
+
         image_sharing = self.get_count_model_instances(
             Resources,
             organization,
@@ -120,13 +153,43 @@ class BaseViewSet(viewsets.ModelViewSet):
         created_topic = self.get_count_model_instances(
             Topic, organization, group, date_range, {'author': user}
         )
-        comment = self.get_count_model_instances(
+
+        comment_for_blog_count = self.get_count_model_instances(
             Comment,
             organization,
             group,
             date_range,
             {'user': user},
         )
+        comment_for_forum_count = self.get_count_model_instances(
+            ForumComment,
+            organization,
+            group,
+            date_range,
+            {'user': user},
+        )
+
+        total_comment_count = comment_for_blog_count + comment_for_forum_count
+
+        comment_for_blog_ai_score = self.get_aggregated_score(
+            Comment,
+            organization,
+            group,
+            date_range,
+            {'user': user},
+        )
+        comment_for_forum_ai_score = self.get_aggregated_score(
+            ForumComment,
+            organization,
+            group,
+            date_range,
+            {'user': user},
+        )
+
+        total_comment_ai_score = comment_for_blog_ai_score + comment_for_forum_ai_score
+
+        comment = calculate_ai_division(total_comment_ai_score, total_comment_count)
+
         used_in_app_browser = self.get_count_model_instances(
             BrowserHistory,
             organization,

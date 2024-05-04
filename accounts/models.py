@@ -18,7 +18,10 @@ TOKEN_TYPE = (
     ('PASSWORD_RESET', 'PASSWORD_RESET'),
 )
 
-GENDER = (('MALE', 'MALE'), ('FEMALE', 'FEMALE'))
+GENDER = (
+    ('MALE', 'MALE'),
+    ('FEMALE', 'FEMALE'),
+)
 
 
 # Create a new user
