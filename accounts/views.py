@@ -26,6 +26,7 @@ from .serializers import (
 )
 from rest_framework.decorators import action
 from django.db import transaction
+from django.db.models import Sum
 from .tokens import create_jwt_pair_for_user
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
@@ -35,7 +36,7 @@ from blog.models import Blog, Comment
 from in_app_chat.models import InAppChat
 from resource.models import Resources
 from browser_history.models import BrowserHistory
-from forum.models import Forum
+from forum.models import Forum, ForumComment
 from topics.models import Topic
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
@@ -45,7 +46,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from group.models import UserGroup
 from group.serializers import GroupSerializer
 from leader.models import Socialization, Externalization, Combination, Internalization
-from simpleblog.utils import calculate_total_engagement_score
+from simpleblog.utils import calculate_total_engagement_score,calculate_ai_division
 from .task import send_account_verification_mail, send_password_reset_mail
 from datetime import datetime
 
@@ -71,8 +72,7 @@ class UserViewSets(
         'role_id',
         'phone',
         'organization_name',
-        'gender',
-        
+      
     ]
     search_fields = [
         'email',
@@ -82,7 +82,7 @@ class UserViewSets(
         'first_name',
         'last_name',
     ]
-    ordering_fields = ['created_at', 'last_login', 'email', 'role_id', 'first_group_id']
+    ordering_fields = ['created_at',]
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', 'create', 'update', 'partial_update', 'destroy']:
@@ -102,6 +102,12 @@ class UserViewSets(
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+    def get_aggregated_score(self, model, organization, group, date_range):
+        filters = {'organization': organization, 'group': group.pk, 'created_at__range': date_range}
+
+        aggregate_score = model.objects.filter(**filters).aggregate(total_score=Sum("score"))
+        return aggregate_score.get("total_score") or 0.00
 
     @action(
         methods=['POST'],
@@ -393,17 +399,32 @@ class UserViewSets(
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        post_blog = Blog.objects.filter(
+        post_blog_count = Blog.objects.filter(
             organization=organization, group=group.pk, created_at__range=date_range
         ).count()
 
-        send_chat_message = InAppChat.objects.filter(
-                organization=organization, group=group.pk, created_at__range=date_range
-            ).count()
+        post_blog_ai_score =  self.get_aggregated_score(Blog,organization,group,date_range)
+        post_blog = calculate_ai_division(post_blog_ai_score, post_blog_count)
 
-        post_forum = Forum.objects.filter(
+        send_chat_message_count = InAppChat.objects.filter(
             organization=organization, group=group.pk, created_at__range=date_range
         ).count()
+
+        send_chat_message_ai_score = self.get_aggregated_score(
+            InAppChat, organization, group, date_range
+        )
+        send_chat_message = calculate_ai_division(
+            send_chat_message_ai_score, send_chat_message_count
+        )
+
+        post_forum_count = Forum.objects.filter(
+            organization=organization, group=group.pk, created_at__range=date_range
+        ).count()
+
+        post_forum_ai_score = self.get_aggregated_score(
+            Forum, organization, group, date_range
+        )
+        post_forum = calculate_ai_division(post_forum_ai_score, post_forum_count)
 
         image_sharing = Resources.objects.filter(
             type='IMAGE',
@@ -430,9 +451,33 @@ class UserViewSets(
             organization=organization, group=group.pk, created_at__range=date_range
         ).count()
 
-        comment = Comment.objects.filter(
-                organization=organization, group=group.pk, created_at__range=date_range
-            ).count()
+        comment_for_blog_count = Comment.objects.filter(
+            organization=organization, group=group.pk, created_at__range=date_range
+        ).count()
+
+        comment_for_forum_count = ForumComment.objects.filter(
+            organization=organization, group=group.pk, created_at__range=date_range
+        ).count()
+
+        total_comment_count = comment_for_blog_count + comment_for_forum_count
+
+        comment_for_blog_ai_score = self.get_aggregated_score(
+            Comment,
+            organization,
+            group,
+            date_range,
+        )
+        comment_for_forum_ai_score = self.get_aggregated_score(
+            ForumComment,
+            organization,
+            group,
+            date_range,
+
+        )
+
+        total_comment_ai_score = comment_for_blog_ai_score + comment_for_forum_ai_score
+
+        comment = calculate_ai_division(total_comment_ai_score, total_comment_count)
 
         used_in_app_browser = BrowserHistory.objects.filter(
             organization=organization, group=group.pk, created_at__range=date_range
@@ -627,13 +672,40 @@ class UserViewSets(
                     status=status.HTTP_404_NOT_FOUND,
                 )
 
-            post_blog = Blog.objects.filter(author=user, created_at__range=date_range).count()
+            post_blog_count = Blog.objects.filter(author=user, created_at__range=date_range).count()
 
-            send_chat_message = InAppChat.objects.filter(
+            blog_aggregate_score = Blog.objects.filter(
+                author=user, created_at__range=date_range
+            ).aggregate(total_score=Sum("score"))
+
+            post_blog_ai_score = blog_aggregate_score.get("total_score") or 0.00
+
+            post_blog = calculate_ai_division(post_blog_ai_score, post_blog_count)
+
+            send_chat_message_count = InAppChat.objects.filter(
                     sender=user, created_at__range=date_range
                 ).count()
 
-            post_forum = Forum.objects.filter(user=user, created_at__range=date_range).count()
+            send_chat_message_aggregate_score = InAppChat.objects.filter(
+                sender=user, created_at__range=date_range
+            ).aggregate(total_score=Sum("score"))
+
+            send_chat_message_ai_score = (
+                send_chat_message_aggregate_score.get("total_score") or 0.00
+            )
+            send_chat_message = calculate_ai_division(
+                send_chat_message_ai_score ,send_chat_message_count
+            )
+
+            post_forum_count = Forum.objects.filter(user=user, created_at__range=date_range).count()
+
+            forum_aggregate_score = Forum.objects.filter(
+                user=user, created_at__range=date_range
+            ).aggregate(total_score=Sum("score"))
+
+            post_forum_ai_score = forum_aggregate_score.get("total_score") or 0.00
+
+            post_forum = calculate_ai_division(post_forum_ai_score, post_forum_count)
 
             image_sharing = Resources.objects.filter(
                 type='IMAGE',
@@ -657,7 +729,23 @@ class UserViewSets(
                     author=user, created_at__range=date_range
                 ).count()
 
-            comment = Comment.objects.filter(user=user, created_at__range=date_range).count()
+            comment_for_blog_count = Comment.objects.filter(user=user, created_at__range=date_range).count()
+
+            comment_for_forum_count = ForumComment.objects.filter(user=user, created_at__range=date_range).count()
+
+            total_comment_count = comment_for_blog_count + comment_for_forum_count
+
+            blog_comment_agrregate =  Comment.objects.filter(user=user, created_at__range=date_range).aggregate(total_score=Sum("score"))
+
+            forum_comment_agrregate =  ForumComment.objects.filter(user=user, created_at__range=date_range).aggregate(total_score=Sum("score"))
+
+            comment_for_blog_ai_score = blog_comment_agrregate.get("total_score") or 0.00
+
+            comment_for_forum_ai_score = forum_comment_agrregate.get("total_score") or 0.00
+
+            total_comment_ai_score = comment_for_blog_ai_score + comment_for_forum_ai_score
+
+            comment = calculate_ai_division(total_comment_ai_score, total_comment_count)
 
             used_in_app_browser = BrowserHistory.objects.filter(
                     user=user, created_at__range=date_range

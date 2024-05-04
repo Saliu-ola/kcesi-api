@@ -1,8 +1,17 @@
 from decimal import Decimal, ROUND_DOWN
 
 
+def calculate_ai_division(ai_score,count):
+    try:
+        result = Decimal(ai_score / count)
+    except ZeroDivisionError:
+        result = Decimal('0.00')
+
+    return result
+
+
 def calculate_category_score(constants, tallies):
-    score = sum(constants[key] * tallies[key] for key in constants)
+    score =  ( sum(constants[key] * tallies[key] for key in constants))
 
     return score
 
@@ -87,7 +96,6 @@ def calculate_engagement_scores(tallies):
         "combination_engagement_percentage": combination_percentage,
         "internalization_engagement_percentage": internalization_percentage,
     }
-
 
 
 def calculate_categorized_percentage(leaders):

@@ -35,6 +35,7 @@ class ForumCreateSerializer(serializers.ModelSerializer):
             "content",
             "organization",
             "group",
+            "score",
             "resources",
             "start_time",
             "end_time",

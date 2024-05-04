@@ -73,6 +73,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 organization_id = text_data_json.get("organization")
                 group_id = text_data_json.get("group")
                 unique_identifier = text_data_json.get("unique_identifier")
+                score = text_data_json.get("score")
             except json.JSONDecodeError as e:
                 print(f"Invalid JSON format: {e}")
                 return
@@ -101,6 +102,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 organization=organization,
                 group=group,
                 unique_identifier=unique_identifier,
+                score=score,
             )
             await database_sync_to_async(chat_message.save)()
 
@@ -116,6 +118,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "organization": organization.pk,
                     "group": group.pk if group else None,  # Send None if group is None
                     "unique_identifier": unique_identifier,
+                    "score": score,
                     "created_at": created_at,
                 },
             )
@@ -127,6 +130,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         receiver = event["receiver"]
         content_type = event["content_type"]
         organization = event["organization"]
+        score = event["score"]
         group = event["group"]  # This will be None if group was not provided
         unique_identifier = event["unique_identifier"]
         created_at = event["created_at"]
@@ -142,6 +146,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "organization": organization,
                     "group": group,
                     "unique_identifier": unique_identifier,
+                    "score": score,
                     "created_at": created_at,
                 }
             )
@@ -178,6 +183,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
                 organization_id = text_data_json.get("organization")
                 group_id = text_data_json.get("group")
                 user = text_data_json.get("user")
+                score = text_data_json.get("score")
 
             except json.JSONDecodeError as e:
                 print(f"Invalid JSON format: {e}")
@@ -201,6 +207,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
                 organization=organization,
                 group=group,
                 user=user,
+                score=score,
             )
             await database_sync_to_async(comment.save)()
 
@@ -215,6 +222,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
                     "group": group.pk,
                     "user": user.pk,
                     "id": comment.pk,
+                    "score": score,
                     "created_at": created_at,
                     "user_full_name": user_full_name,
                 },
@@ -229,6 +237,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
         user = event["user"]
         id = event["id"]
         user_full_name = event["user_full_name"]
+        score = event["score"]
         created_at = event["created_at"]
 
         # Send the received message back to the client
@@ -241,6 +250,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
                     "group": group,
                     "user": user,
                     "id": id,
+                    "score": score,
                     "user_full_name": user_full_name,
                     "created_at": created_at,
                 }
@@ -279,6 +289,7 @@ class RepliesConsumer(AsyncWebsocketConsumer):
                 organization_id = text_data_json.get("organization")
                 group_id = text_data_json.get("group")
                 user = text_data_json.get("user")
+                score = text_data_json.get("score")
 
             except json.JSONDecodeError as e:
                 print(f"Invalid JSON format: {e}")
@@ -302,6 +313,7 @@ class RepliesConsumer(AsyncWebsocketConsumer):
                 organization=organization,
                 group=group,
                 user=user,
+                score=score,
             )
             await database_sync_to_async(reply.save)()
 
@@ -315,6 +327,7 @@ class RepliesConsumer(AsyncWebsocketConsumer):
                     "organization": organization.pk,
                     "group": group.pk,
                     "user": user.pk,
+                    "score": score,
                     "created_at": created_at,
                     "user_full_name": user_full_name,
                 },
@@ -327,6 +340,7 @@ class RepliesConsumer(AsyncWebsocketConsumer):
         organization = event["organization"]
         group = event["group"]
         user = event["user"]
+        score = event["score"]
         user_full_name = event["user_full_name"]
         created_at = event["created_at"]
 
@@ -339,6 +353,7 @@ class RepliesConsumer(AsyncWebsocketConsumer):
                     "organization": organization,
                     "group": group,
                     "user": user,
+                    "score": score,
                     "user_full_name": user_full_name,
                     "created_at": created_at,
                 }
@@ -377,7 +392,7 @@ class BlogCommentConsumer(AsyncWebsocketConsumer):
                 organization_id = text_data_json.get("organization")
                 group_id = text_data_json.get("group")
                 user = text_data_json.get("user")
-               
+                score = text_data_json.get("score")
 
             except json.JSONDecodeError as e:
                 print(f"Invalid JSON format: {e}")
@@ -390,7 +405,6 @@ class BlogCommentConsumer(AsyncWebsocketConsumer):
                 pk=organization_id
             )
             group = await database_sync_to_async(Group.objects.get)(pk=group_id)
-            
 
             created_at = int(time.time())
             user_full_name = user.full_name
@@ -401,7 +415,8 @@ class BlogCommentConsumer(AsyncWebsocketConsumer):
                 content=content,
                 organization=organization,
                 group=group,
-                user=user
+                user=user,
+                score=score,
             )
             await database_sync_to_async(new_comment.save)()
 
@@ -416,6 +431,7 @@ class BlogCommentConsumer(AsyncWebsocketConsumer):
                     "group": group.pk,
                     "user": user.pk,
                     "id": new_comment.pk,
+                    "score": score,
                     "created_at": created_at,
                     "user_full_name": user_full_name,
                 },
@@ -429,6 +445,7 @@ class BlogCommentConsumer(AsyncWebsocketConsumer):
         group = event["group"]
         user = event["user"]
         id = event["id"]
+        score = event["score"]
         user_full_name = event["user_full_name"]
         created_at = event["created_at"]
 
@@ -442,6 +459,7 @@ class BlogCommentConsumer(AsyncWebsocketConsumer):
                     "group": group,
                     "user": user,
                     "id": id,
+                    "score": score,
                     "user_full_name": user_full_name,
                     "created_at": created_at,
                 }
@@ -480,6 +498,7 @@ class BlogCommentRepliesConsumer(AsyncWebsocketConsumer):
                 organization_id = text_data_json.get("organization")
                 group_id = text_data_json.get("group")
                 user = text_data_json.get("user")
+                score = text_data_json.get("score")
 
             except json.JSONDecodeError as e:
                 print(f"Invalid JSON format: {e}")
@@ -503,6 +522,7 @@ class BlogCommentRepliesConsumer(AsyncWebsocketConsumer):
                 organization=organization,
                 group=group,
                 user=user,
+                score=score,
             )
             await database_sync_to_async(reply.save)()
 
@@ -517,6 +537,7 @@ class BlogCommentRepliesConsumer(AsyncWebsocketConsumer):
                     "group": group.pk,
                     "user": user.pk,
                     "created_at": created_at,
+                    "score":score,
                     "user_full_name": user_full_name,
                 },
             )
@@ -528,6 +549,7 @@ class BlogCommentRepliesConsumer(AsyncWebsocketConsumer):
         organization = event["organization"]
         group = event["group"]
         user = event["user"]
+        score = event["score"]
         user_full_name = event["user_full_name"]
         created_at = event["created_at"]
 
@@ -541,6 +563,7 @@ class BlogCommentRepliesConsumer(AsyncWebsocketConsumer):
                     "group": group,
                     "user": user,
                     "user_full_name": user_full_name,
+                    "score":score,
                     "created_at": created_at,
                 }
             )
