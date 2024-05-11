@@ -34,7 +34,9 @@ class Feedback(models.Model):
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
     def __str__(self):
-        return f"feedback--{self.pk}"
-
+        if self.pk is not None:
+            return f"feedback--{self.pk}"
+        else:
+            return "Feedback with None primary key"
     class Meta:
         ordering = ["-created_at"]
