@@ -36,6 +36,8 @@ class Feedback(models.Model):
     def __str__(self):
         if self.pk is not None:
             return f"feedback--{self.pk}"
+        else:
+            return "Unnamed Feedback"
 
     class Meta:
         ordering = ["-created_at"]
