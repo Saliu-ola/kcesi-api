@@ -24,7 +24,7 @@ class BadWordsViewSets(
     viewsets.GenericViewSet,
 ):
     serializer_class = BadWordSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     queryset = BadWord.objects.all()
 
     @action(

@@ -11,7 +11,7 @@ class BadWord(models.Model):
         return str(self.pk)  
 
     def save(self, *args, **kwargs):
-        if BadWord.objects.exists():  
+        if BadWord.objects.count() > 1:  
             raise ValidationError("Only one collection is allowed to be saved")
         super().save(*args, **kwargs) 
 
