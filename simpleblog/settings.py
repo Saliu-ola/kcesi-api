@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "category",
     "leader",
     "feedback",
+    "hate_speech",
     # third-party-apps
     "rest_framework",
     "corsheaders",
