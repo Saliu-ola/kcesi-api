@@ -7,7 +7,7 @@ from .serializers import (
 )
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
-from simpleblog.ai import clean_data_and_lemmatize
+from simpleblog.ai import clean_data_and_lemmatize, get_bad_word_prediction_score_using_model
 
 
 class BadWordsViewSets(
@@ -85,5 +85,24 @@ class BadWordsViewSets(
                     status=200,
                     data={"message": "OK"},
                 )
+
+        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(
+        methods=['POST'],
+        detail=False,
+        permission_classes=[AllowAny],
+        serializer_class=HateSpeechCheckerSerializer,
+        url_path='predict-word-with-model',
+    )
+    def predict_word_with_model(self,request,pk=None):
+        serializer = HateSpeechCheckerSerializer(data=request.data)
+        if serializer.is_valid():
+            incoming_text= serializer.validated_data["text"]
+            predicted_text = get_bad_word_prediction_score_using_model(incoming_text)
+            return Response(
+                status=200,
+                data={"message": predicted_text}
+            )
 
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
