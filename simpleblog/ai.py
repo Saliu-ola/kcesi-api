@@ -2,10 +2,17 @@ import string
 import os
 import nltk
 from nltk.corpus import stopwords
+stemmer = nltk.SnowballStemmer("english")
 from nltk.stem import WordNetLemmatizer
 import google.generativeai as genai
 import pandas as pd
 import numpy as np
+import re
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
+
 
 pd.set_option('display.max_rows', 500)
 
@@ -100,8 +107,47 @@ def get_foreign_terms(new_text, existing_text):
     return get_relevance_percentage_for_new_texts_and_its_uncommon_words(new_text, existing_text)[1]
 
 
+def clean(text):
+    stopword = stopwords.words('english')
+    text = str(text).lower()
+    text = re.sub('[.?]', '', text)
+    text = re.sub('https?://\S+|www.\S+', '', text)
+    text = re.sub('<.?>+', '', text)
+    text = re.sub(r'[^\w\s]', '', text)
+    text = re.sub('\n', '', text)
+    text = re.sub('\w\d\w', '', text)
+    text = [word for word in text.split(' ') if word not in stopword]
+    text = " ".join(text)
+    text = [stemmer.stem(word) for word in text.split(' ')]
+    text = " ".join(text)
+    return text
 
 
+def get_bad_word_prediction_score_using_model(new_text):
+    data = pd.read_csv("labeled_data2.csv")
+
+    data["labels"] = data["class"].map(
+    {0: "Hate Speech", 1: "Offensive Speech", 2: "No Hate and Offensive Speech"}
+    )
+    data = data[["tweet", "labels"]]
+    data["tweet"] = data["tweet"].apply(clean)
+    x = np.array(data["tweet"])
+    y = np.array(data["labels"])
+    cv = CountVectorizer()
+    X = cv.fit_transform(x)
+    X_train, X_text, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+    model = DecisionTreeClassifier()
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_text)
+    text = new_text
+    text = cv.transform([text]).toarray()
+    speech_with_predicted_model = model.predict((text))
+
+    return speech_with_predicted_model
+
+
+
+# print(get_bad_word_from_prediction_model("You are stupid"))
 
 # uncommon_words = get_relevance_percentage_for_new_texts_and_its_uncommon_words(
 #     new_text="sometimes we have movement,reproduction,respiration as characterisitics of adaption a living thing",

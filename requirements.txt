@@ -26,6 +26,4 @@ python-dotenv
 google-generativeai
 pandas
 nltk 
-
-
-
+scikit-learn

@@ -889,7 +889,7 @@ class UserSignUpView(generics.GenericAPIView):
     serializer_class = UserSignUpSerializer
     permission_classes = [AllowAny]
 
-    @transaction.atomic
+
     def post(self, request: Request):
         data = request.data
         serializer = self.serializer_class(data=data)
