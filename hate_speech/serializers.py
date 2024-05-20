@@ -16,3 +16,7 @@ class BadWordSerializer(serializers.ModelSerializer):
         if BadWord.objects.count() > 1:
             raise serializers.ValidationError("Only one collection is allowed to be saved.you can only remove or add")
         return super().create(validated_data)
+
+class HateSpeechCheckerSerializer(serializers.Serializer):
+    text = serializers.CharField(max_length=None)
+    

@@ -1,20 +1,13 @@
-from django.shortcuts import get_object_or_404
 from rest_framework import generics, mixins, status
-from rest_framework.decorators import APIView, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.request import Request
 from rest_framework.response import Response
 from .models import BadWord
 from .serializers import (
-  BadWordSerializer
+  BadWordSerializer,HateSpeechCheckerSerializer
 )
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
-from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
-from drf_spectacular.utils import extend_schema, OpenApiParameter
-from drf_spectacular.types import OpenApiTypes
-from organization.models import Organization
+from simpleblog.ai import clean_data_and_lemmatize
 
 
 class BadWordsViewSets(
@@ -65,4 +58,32 @@ class BadWordsViewSets(
             obj.save()
 
             return Response(status=200, data={"message": "words removed successfully"})
+        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(
+        methods=['POST'],
+        detail=False,
+        permission_classes=[AllowAny],
+        serializer_class=HateSpeechCheckerSerializer,
+        url_path='check-hate-speech',
+    )
+    def check_hate_speech(self,request,pk=None):
+        serializer = HateSpeechCheckerSerializer(data=request.data)
+        if serializer.is_valid():
+            incoming_text= serializer.validated_data["text"]
+            clean_and_lematize_text = clean_data_and_lemmatize(incoming_text)
+            bad_words = self.get_queryset().first().related_terms
+            bad_words_in_input = [word for word in clean_and_lematize_text if word in set(bad_words)]
+            bad_word_count = len(bad_words_in_input)
+            if bad_word_count > 0:
+                return Response(
+                    status=400,
+                    data={"message": "'Alert! The text contains one or more bad words.'"},
+                )
+            else:
+                return Response(
+                    status=200,
+                    data={"message": "OK"},
+                )
+
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
