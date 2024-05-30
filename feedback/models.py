@@ -17,7 +17,10 @@ class Feedback(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_feedbacks")
 
     recipent_type = models.CharField(
-        max_length=20, choices=FEEDBACK_CONCERNED_TYPE, null=False,
+        max_length=20,
+        choices=FEEDBACK_CONCERNED_TYPE,
+        null=False,
+        default='ORGANIZATION',
     )
     concerned_organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE,null=True, related_name="organization_feedbacks"
@@ -28,6 +31,8 @@ class Feedback(models.Model):
     concerned_platform = models.ForeignKey(
         Group, on_delete=models.CASCADE, null=True, related_name="platform_feedbbacks"
     )
+
+    is_sorted = models.BooleanField(default=False,null=True)
 
     created_at = models.DateTimeField(auto_now_add=True, null=True)
 
