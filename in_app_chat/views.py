@@ -20,6 +20,7 @@ class InAppChatViewSets(
     mixins.RetrieveModelMixin,
     mixins.DestroyModelMixin,
     mixins.UpdateModelMixin,
+    mixins.CreateModelMixin,
     viewsets.GenericViewSet,
 ):
 
