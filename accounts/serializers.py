@@ -68,6 +68,18 @@ class ListUserSerializer(serializers.ModelSerializer):
                 return Organization.objects.get(organization_id=instance.organization_id).pk
         except ObjectDoesNotExist:
             return None
+    def get_user_groups(self, instance):
+        try:
+            user_group_object =  UserGroupCreateSerializer(UserGroup.objects.get(user=instance)).data
+            data = [{
+            
+                    "group_id":group,
+                    "group_name":Group.objects.get(pk=group).title,
+            }  for group in user_group_object["groups"]]
+
+            return data
+        except ObjectDoesNotExist:
+            return None
 
 
 class UserSignUpSerializer(serializers.ModelSerializer):
