@@ -28,6 +28,7 @@ class FeedbackViewSets(viewsets.ModelViewSet):
         'concerned_organization',
         'concerned_group',
         'concerned_platform',
+        'is_sorted',
     ]
     search_fields = ['content']
     ordering_fields = ['created_at']
@@ -48,4 +49,37 @@ class FeedbackViewSets(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action in ["retrieve", "list"]:
             return FeedbackListSerializer
-        return FeedbackCreateSerializer
+        elif self.action in ["delete","update","create","partial_update"]:
+            return FeedbackCreateSerializer
+        else:
+            return None
+
+    @action(
+        methods=['POST'],
+        detail=True,
+        serializer_class=None,
+        url_path='set-complete-feedback',
+    )
+    def set_feedack_sorted(self,request,pk=None):
+        feedback = self.get_object()
+        feedback.is_sorted =True
+        feedback.save()
+        return Response(
+            {"success": True, "message": "feedback sorted successfully"},
+            status=status.HTTP_200_OK,
+        )
+
+    @action(
+        methods=['POST'],
+        detail=True,
+        serializer_class=None,
+        url_path='set-feedback-unsorted',
+    )
+    def set_feedack_unsorted(self, request, pk=None):
+        feedback = self.get_object()
+        feedback.is_sorted = False
+        feedback.save()
+        return Response(
+            {"success": True, "message": "feedback unsorted successfully"},
+            status=status.HTTP_200_OK,
+        )
