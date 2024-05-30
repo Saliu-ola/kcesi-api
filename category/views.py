@@ -26,6 +26,21 @@ class CategoryViewSets(viewsets.ModelViewSet):
     search_fields = ['name']
     ordering_fields = ['created_at']
 
+    ADMIN_ROLE_ID = 2
+    SUPER_ADMIN_ROLE_ID = 1
+    USER_ROLE_ID = 3
+
+    def get_queryset(self):
+        if self.request.user.role_id == self.SUPER_ADMIN_ROLE_ID:
+            return self.queryset
+        elif self.request.user.role_id in [self.ADMIN_ROLE_ID, self.USER_ROLE_ID]:
+            organization_id = self.request.user.organization_id
+            organization = Organization.objects.filter(organization_id=organization_id).first()
+            return self.queryset.filter(organization=organization)
+
+        else:
+            raise ValueError("Role id not present")
+
     def perform_create(self, serializer):
         creator = self.request.user
         serializer.save(creator=creator)

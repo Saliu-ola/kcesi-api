@@ -1,5 +1,7 @@
 from rest_framework.request import Request
 from rest_framework.response import Response
+
+from organization.models import Organization
 from .models import Resources
 from .serializers import ResourcesSerializer, CreateResourcesSerializer
 from django_filters.rest_framework import DjangoFilterBackend
@@ -26,7 +28,19 @@ class ResourcesViewSets(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         cloudinary.uploader.destroy(instance.cloud_id)
         instance.delete()
+    
+    ADMIN_ROLE_ID = 2
+    SUPER_ADMIN_ROLE_ID = 1  
+    USER_ROLE_ID = 3
 
+    def get_queryset(self):
+        if self.request.user.role_id == self.SUPER_ADMIN_ROLE_ID:
+            return self.queryset
+        elif self.request.user.role_id in [self.ADMIN_ROLE_ID,self.USER_ROLE_ID]:
+            organization_id = self.request.user.organization_id
+            organization = Organization.objects.filter(organization_id=organization_id).first()
+            return self.queryset.filter(organization=organization)
+        
     def get_serializer_class(self):
         if self.action in ['update', 'create', 'partial_update']:
             return CreateResourcesSerializer

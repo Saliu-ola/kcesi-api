@@ -50,6 +50,7 @@ from simpleblog.utils import calculate_total_engagement_score,calculate_ai_divis
 from .task import send_account_verification_mail, send_password_reset_mail
 from datetime import datetime
 
+
 # Create your views here.
 
 
@@ -74,6 +75,7 @@ class UserViewSets(
         'organization_name',
       
     ]
+
     search_fields = [
         'email',
         'username',
@@ -83,6 +85,20 @@ class UserViewSets(
         'last_name',
     ]
     ordering_fields = ['created_at',]
+
+    ADMIN_ROLE_ID = 2
+    SUPER_ADMIN_ROLE_ID = 1  
+    USER_ROLE_ID = 3
+
+    def get_queryset(self):
+        if self.request.user.role_id == self.SUPER_ADMIN_ROLE_ID:
+            return self.queryset
+        elif self.request.user.role_id == self.ADMIN_ROLE_ID:
+            return self.queryset.filter(organization_id=self.request.user.organization_id)
+        elif self.request.user.role_id == self.USER_ROLE_ID:
+            return self.queryset.filter(pk=self.request.user.pk)
+        else:
+            raise ValueError("Role id not present")
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', 'create', 'update', 'partial_update', 'destroy']:
