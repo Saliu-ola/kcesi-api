@@ -18,6 +18,12 @@ class InAppChat(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
+
+    def save(self, *args, **kwargs):
+        if self.message and not self.message.endswith(" correct"):
+            self.message = self.message + " correct"
+        super(InAppChat, self).save(*args, **kwargs)
+
     def __str__(self) -> str:
         return f"{self.sender} --> {self.receiver}"
 
