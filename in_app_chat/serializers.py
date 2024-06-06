@@ -13,6 +13,11 @@ class InAppChatSerializer(serializers.ModelSerializer):
         source='organization.name',
     )
 
+
+    def create(self, validated_data):
+        validated_data['message'] = validated_data['message'] + " + (corect)"
+        return super().create(validated_data)
+
     class Meta:
         model = InAppChat
         fields = "__all__"
