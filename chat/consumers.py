@@ -109,7 +109,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 self.room_group_name,
                 {
                     'type': 'chat_message',
-                    "message": message,
+                    "message": chat_message.message,
                     "sender": sender.pk,
                     "receiver": receiver.pk,
                     "content_type": content_type,
