@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Group, UserGroup
+from .models import Group, UserGroup 
 from organization.models import Organization
 from accounts.models import User
 from rest_framework.validators import ValidationError
@@ -129,3 +129,5 @@ class UpdateUserGroupSerializer(serializers.ModelSerializer):
             )
 
         return data
+
+

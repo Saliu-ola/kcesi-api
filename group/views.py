@@ -1,18 +1,19 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, mixins, status
 from rest_framework.decorators import APIView, api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny , IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 
 from organization.models import Organization
-from .models import Group, UserGroup
+from .models import Group, UserGroup 
 from .serializers import (
     GroupAISerializer,
     GroupSerializer,
     UserGroupListSerializer,
     UserGroupCreateSerializer,
     UpdateUserGroupSerializer,
+    
 )
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
@@ -168,3 +169,6 @@ class UserGroupsViewSets(viewsets.ModelViewSet):
         else:
             return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response(UserGroupCreateSerializer(user_group_instance).data)
+
+
+
