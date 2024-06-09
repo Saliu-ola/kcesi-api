@@ -47,3 +47,7 @@ class UserGroup(models.Model):
     class Meta:
         ordering = ["-created_at"]
         constraints = [models.UniqueConstraint(fields=['user'], name='unique_user_per_group')]
+
+
+
+
