@@ -3,6 +3,12 @@ from .models import *
 from accounts.models import User
 from group.models import *
 
+LIBRARY_CHOICES = [
+    ('AI', 'AI '),
+    ('FILES', 'FILES '),
+    ]
+
+
 class GroupLeaderSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
     group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
@@ -34,6 +40,29 @@ class GroupLeaderSerializer(serializers.ModelSerializer):
 
 
 class LibraryOptionSerializer(serializers.ModelSerializer):
+    library_type = serializers.ChoiceField(LIBRARY_CHOICES, required=True)
+
     class Meta:
         model = LibraryOption
+        fields = ['id', 'library_type' , 'group']
+
+
+
+class LibraryFileSerializer(serializers.ModelSerializer):
+    group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    
+
+    class Meta:
+        model = LibraryFile
         fields = '__all__'
+
+    def validate(self, data):
+        group = data.get('group')
+        user = data.get('user')
+        
+        # Custom validation: Ensure the user is a member of the group
+        if not UserGroup.objects.filter(user=user, groups=group).exists():
+            raise serializers.ValidationError("The user is not a member of the group.")
+        
+        return data
