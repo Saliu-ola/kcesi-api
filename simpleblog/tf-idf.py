@@ -33,40 +33,30 @@ nltk.download('averaged_perceptron_tagger')
 
 
 
-# pdfs_Dataset = []
+pdfs_Dataset = []
 
 
-# reader =PdfReader('/content/1-s2.0-S001671852300115X-main.pdf')
-# page = reader.pages[0]
-# fullfile1Text = " "
-# for i in range(len(reader.pages)):
-#   page = reader.pages[i]
-#   file1Text = page.extract_text()
-#   fullfile1Text += file1Text
+reader =PdfReader('C:/Users/USER/Downloads/random_paragraph.pdf')
+page = reader.pages[0]
+fullfile1Text = " "
+for i in range(len(reader.pages)):
+  page = reader.pages[i]
+  file1Text = page.extract_text()
+  fullfile1Text += file1Text
+
+pdfs_Dataset.append(fullfile1Text)
 
 
-# reader =PdfReader('/content/1-s2.0-S0167268123001439-main.pdf')
-# page = reader.pages[0]
-# fullfile2Text = " "
-# for i in range(len(reader.pages)):
-#   page = reader.pages[i]
-#   file2Text = page.extract_text()
-#   fullfile2Text += file2Text
+reader =PdfReader('C:/Users/USER/Downloads/two_paragraphs.pdf')
+page = reader.pages[0]
+fullfile2Text = " "
+for i in range(len(reader.pages)):
+  page = reader.pages[i]
+  file2Text = page.extract_text()
+  fullfile2Text += file2Text
 
+pdfs_Dataset.append(fullfile2Text)
 
-# # Loop through all the texts extracted from the pdfs, add them to a variable called pdfs_Dataset to form the dataset
-# pdfs_Dataset = [fullfile1Text, fullfile2Text, fullfile3Text, fullfile4Text, fullfile5Text,
-#                    fullfile6Text, fullfile7Text, fullfile8Text, fullfile9Text, fullfile10Text,
-#                    fullfile11Text, fullfile12Text, fullfile13Text, fullfile14Text
-#                    ]
-
-
-
-# Test data
-pdfs_Dataset = ['''We'd wed I'll pen(s) men fought driven liked beautifully love t0 help 123you animal's head 1000 times, but the real1ty is th@t n0t every question gets answered. To improve your chances, here are some tips:''', 'We are life doing great', 'We cell are doing great', 'We are doing great',
-                   'We are doing great', 'We are doing great', 'We are doing great', 'We are doing great', 'We are doing great',
-                   'We are doing great', 'We are doing great', 'We are doing great', 'We are doing great', 'We are doing great'
-                   ]
 
 
 # Do the lemmatization using spaCy
@@ -86,16 +76,10 @@ for i in pdfs_Dataset:
   pdfs_Dataset_Lemmatized.append(lemmatizedWordsSentence)
   counterLemma +=1
 
-print(pdfs_Dataset, '\n')
-print(pdfs_Dataset_Lemmatized)
+# print(pdfs_Dataset, '\n')
+# print(pdfs_Dataset_Lemmatized)
 
 
-# Pick the words that are not in the stop word corpus
-# Turn the resulting words into lowercase
-# Remove newlines
-# And remove punctuations (explained below)
-
-# The function to be used to clean up the dataset
 
 stop_words = stopwords.words('english')
 
@@ -108,8 +92,6 @@ def stop_word_removal(text, stop_word_corpus, punct_str):
 # Clean up the dataset using the stop_word_removal function (pass it to the function, element by element)
 pdfs_Dataset_cleaned = [stop_word_removal(fileContent,stop_words,string.punctuation)
                 for fileContent in pdfs_Dataset_Lemmatized]
-
-
 
 
 
@@ -127,14 +109,7 @@ for i in pdfs_Dataset_cleaned:
   pdfs_Dataset_Only_Letters.append(onlyLetterWordsSentence)            # Add the sentence to the list: pdfs_Dataset_Only_Letters
   counter +=1
 
-print(pdfs_Dataset_Only_Letters, '\n')
 
-
-# Final results
-print('Original text: ', pdfs_Dataset[0], '\n')
-print('Lemmatized words: ', pdfs_Dataset_Lemmatized[0], '\n')
-print('Cleaned: ', pdfs_Dataset_cleaned[0], '\n')
-print('Only-letters words: ', pdfs_Dataset_Only_Letters, '\n')
 
 
 
@@ -149,7 +124,7 @@ sklearn_df = pd.DataFrame(data = X.toarray(),columns=vectorizer.get_feature_name
 print (X,'\n')
 print(X.toarray())
 
-sklearn_df
+# sklearn_df
 
 
 # Get the given % score range
@@ -158,41 +133,43 @@ sklearn_df
 # So we can't just ignore most of them like that
 
 percentage = 80
-number_of_docs = 11  # Note: This will be picked automatically
+number_of_docs = 2  # Note: This will be picked automatically
 final_words_for_lib = []
 
 counter3 = 0
 
 for i in range(number_of_docs):
+    # Check if the row index is within the DataFrame bounds
+    if counter3 >= 0 and counter3 < sklearn_df.shape[0]:
+        # Calculation of the range (max and min) of values to be extracted
+        # Max = max in the row and add 0.000001 for range accuracy purpose
+        max_value = sklearn_df.iloc[counter3].max()
 
-  # Calculation the range (max and min) of values to be extracted
+        # Min - calculate it
+        min_value = (max_value * (100 - percentage)) / 100
 
-  #Max = max in the row and add 0.000001 for range accuracy purpose
-  row_index = counter3
-  max_value = sklearn_df.iloc[row_index].max()
+        # Adjust min and max values slightly for range accuracy
+        min_value -= 1e-13
+        max_value += 1e-13
 
-  #Min - calculate it
-  min_value = (max_value * (100-percentage))/100
+        # Get the columns where the row values fall within the specified range
+        words_in_range = sklearn_df.columns[(sklearn_df.iloc[counter3] >= min_value) & (sklearn_df.iloc[counter3] <= max_value)]
 
-  min_value = min_value - 0.0000000000000001
-  max_value = max_value + 0.0000000000000001
+        # Append the words in range to the final list
+        final_words_for_lib.extend(list(words_in_range))
+    
+    else:
+        print(f"Error: row_index {counter3} is out-of-bounds")
 
-  # Get the columns where the row values fall within the specified range
-  words_in_range = sklearn_df.columns[(sklearn_df.iloc[row_index] >= min_value) & (sklearn_df.iloc[row_index] <= max_value)]
+    counter3 += 1
 
-  #print(list(words_in_range))
-
-  final_words_for_lib.extend(list(words_in_range))
-
-  counter3 += 1
-
-
-print('Final Words: ', final_words_for_lib,'\n')
+# Print the final list of words for verification
+print(final_words_for_lib)
 
 # Find unique words
 unique_final_words_for_lib = np.unique(np.array(final_words_for_lib))
 
-print('Total number of words in the table: ', sklearn_df.shape[1],'\n')
-print('Number of final words: ', len(final_words_for_lib),'\n')
-print('Number of unique final words: ', len(unique_final_words_for_lib),'\n')
-print('Unique Final Words: ',unique_final_words_for_lib)
+# print('Total number of words in the table: ', sklearn_df.shape[1],'\n')
+# print('Number of final words: ', len(final_words_for_lib),'\n')
+# print('Number of unique final words: ', len(unique_final_words_for_lib),'\n')
+# print('Unique Final Words: ',unique_final_words_for_lib)
