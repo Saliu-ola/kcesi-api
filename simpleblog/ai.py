@@ -17,8 +17,8 @@ from sklearn.metrics import accuracy_score
 pd.set_option('display.max_rows', 500)
 
 # Download necessary NLTK data
-# nltk.download('wordnet')
-# nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('stopwords')
 
 # Configure Google Generative AI
 GOOGLE_GEMINI_API_KEY = os.environ.get("GOOGLE_GEMINI_API_KEY")
