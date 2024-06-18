@@ -35,14 +35,21 @@ class LibraryOption(models.Model):
 
 
 class LibraryFile(models.Model):
+
+    STATUS_CHOICES = [
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('pending', 'Pending'),
+    ]
+     
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='library_files')
     filename = models.CharField(max_length=255)
     filedescription = models.TextField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    status = models.CharField(max_length=50)
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='pending')
     datetime = models.DateTimeField(default=timezone.now)
     file_url = models.CharField(max_length=255, blank=True, null=True)
-    
+    is_synchronize = models.BooleanField(default=False)    
 
     def __str__(self):
         return self.filename

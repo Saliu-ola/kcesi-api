@@ -51,7 +51,7 @@ class LibraryOptionSerializer(serializers.ModelSerializer):
 class LibraryFileSerializer(serializers.ModelSerializer):
     group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-    
+    status = serializers.ChoiceField(choices=LibraryFile.STATUS_CHOICES)
 
     class Meta:
         model = LibraryFile
