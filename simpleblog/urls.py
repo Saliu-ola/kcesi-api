@@ -4,6 +4,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path('flag/', include('activity_flag.urls')),
     path("groups/", include("group.urls")),
     path("categories/", include("category.urls")),
     path("seci-activity-score/", include("leader.urls")),

@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "feedback",
     "hate_speech",
     "groupleader",
+    "activity_flag",
     # third-party-apps
     "rest_framework",
     "corsheaders",
@@ -166,7 +167,7 @@ DATABASES = {
     }
 }
 
-DATABASES["default"] = dj_database_url.parse(config("DATABASE_URL"))
+# DATABASES["default"] = dj_database_url.parse(config("DATABASE_URL"))
 
 
 # Password validation
