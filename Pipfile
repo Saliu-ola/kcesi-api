@@ -6,7 +6,7 @@ name = "pypi"
 [packages]
 asgiref = "*"
 black = "*"
-django = "*"
+django = ">=4.2.1"
 django-debug-toolbar = "*"
 djangorestframework = "*"
 djangorestframework-simplejwt = "*"
@@ -27,14 +27,14 @@ django-cloudinary-storage = "*"
 cloudinary = "*"
 pillow = "*"
 drf-spectacular = "*"
-channels = "*"
-channels-redis = "*"
-django-channels = "*"
-daphne = "*"
 redis = "*"
 python-dotenv = "*"
+google-generativeai = "*"
+pandas = "*"
+nltk = "*"
+scikit-learn = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.11"
+python_version = "3.12"
