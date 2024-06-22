@@ -66,3 +66,8 @@ class LibraryFileSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("The user is not a member of the group.")
         
         return data
+    
+class SyncLibraryFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LibraryFile
+        fields = ['group', 'filename', 'filedescription', 'user', 'status', 'datetime', 'file_url', 'is_synchronize']
