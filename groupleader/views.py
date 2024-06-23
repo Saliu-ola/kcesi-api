@@ -48,7 +48,7 @@ class LibraryOptionRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIVi
 
     def get_object(self):
         group_id = self.kwargs['group_id']
-        return get_object_or_404(GroupLeader,group=group_id)
+        return get_object_or_404(LibraryOption,group=group_id)
 
 
 class LibraryFileListCreateView(generics.ListCreateAPIView):
@@ -63,7 +63,7 @@ class LibraryFileRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView
 
     def get_object(self):
         group_id = self.kwargs['group_id']
-        return get_object_or_404(GroupLeader,group=group_id)
+        return get_object_or_404(LibraryFile,group=group_id)
 
 
 
