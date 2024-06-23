@@ -24,6 +24,7 @@ class GroupLeaderListCreateView(generics.ListCreateAPIView):
     serializer_class = GroupLeaderSerializer
     permission_classes = [IsAuthenticated]
 
+    
 class GroupLeaderRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = GroupLeader.objects.all()
     serializer_class = GroupLeaderSerializer
@@ -45,6 +46,10 @@ class LibraryOptionRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIVi
     serializer_class = LibraryOptionSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_object(self):
+        group_id = self.kwargs['group_id']
+        return get_object_or_404(GroupLeader,group=group_id)
+
 
 class LibraryFileListCreateView(generics.ListCreateAPIView):
     queryset = LibraryFile.objects.all()
@@ -55,6 +60,10 @@ class LibraryFileRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView
     queryset = LibraryFile.objects.all()
     serializer_class = LibraryFileSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        group_id = self.kwargs['group_id']
+        return get_object_or_404(GroupLeader,group=group_id)
 
 
 

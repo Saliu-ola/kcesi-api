@@ -2,6 +2,8 @@ from rest_framework import serializers
 from .models import *
 from accounts.models import User
 from group.models import *
+from accounts.serializers import ListUserSerializer
+
 
 LIBRARY_CHOICES = [
     ('AI', 'AI '),
@@ -10,12 +12,14 @@ LIBRARY_CHOICES = [
 
 
 class GroupLeaderSerializer(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True)
+    user_details = ListUserSerializer(source='user',read_only = True)
     group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
+    
 
     class Meta:
         model = GroupLeader
-        fields = ['id', 'user', 'group', 'assigned_at']
+        fields = ['id', 'user_details', 'user' ,'group', 'assigned_at']
 
 
     # def to_internal_value(self, data):
@@ -37,6 +41,7 @@ class GroupLeaderSerializer(serializers.ModelSerializer):
         
         return data
     
+
 
 
 class LibraryOptionSerializer(serializers.ModelSerializer):
