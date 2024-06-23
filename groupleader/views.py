@@ -29,6 +29,10 @@ class GroupLeaderRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView
     serializer_class = GroupLeaderSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_object(self):
+        group_id = self.kwargs['group_id']
+        return get_object_or_404(GroupLeader,group=group_id)
+
 
 
 class LibraryOptionListCreateView(generics.ListCreateAPIView):
