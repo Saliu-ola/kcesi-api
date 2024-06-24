@@ -6,6 +6,8 @@ set -o errexit
 pip install -r requirements.txt
 pip install -U 'channels[daphne]' channels-redis
 
+python -m spacy download en_core_web_sm
+
 # Convert static asset files
 python manage.py collectstatic --no-input
 
