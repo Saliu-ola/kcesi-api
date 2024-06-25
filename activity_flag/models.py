@@ -25,11 +25,11 @@ class Activity_flag(models.Model):
 
         ]
 
-    activity_type_id = models.PositiveSmallIntegerField(choices=Activity_Choices)
-    activity_id = models.PositiveIntegerField() # will b d pk of (Blog, Forum ...) instance
-    author_id = models.PositiveIntegerField()
+    activity_type_id = models.PositiveSmallIntegerField(choices=Activity_Choices, null=False, blank=False)
+    activity_id = models.PositiveIntegerField(null=False, blank=False) # will b d pk of (Blog, Forum ...) instance
+    author_id = models.PositiveIntegerField(null=False, blank=False)
     flagged_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='flagged_by') # User initiating  request
-    group_id = models.PositiveIntegerField()  # Storing the PK of the group
+    group_id = models.PositiveIntegerField(null=False, blank=False)  # Storing the PK of the group
     comment = models.TextField()
     flag_count = models.IntegerField(default=0)
     active = models.BooleanField(default=True)
