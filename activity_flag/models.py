@@ -25,23 +25,26 @@ class Activity_flag(models.Model):
 
         ]
 
-    activity_type_id = models.PositiveSmallIntegerField(choices=Activity_Choices) 
-    flagged_id = models.PositiveIntegerField() # will b d pk of (Blog, Forum ...) instance
-    flagged_by = models.ForeignKey(User, on_delete=models.PROTECT) # User initiating  request
-    description = models.TextField()
-    datetime_flagged = models.DateTimeField(default=timezone.now)
-    active = models.BooleanField(default=True)
+    activity_type_id = models.PositiveSmallIntegerField(choices=Activity_Choices)
+    activity_id = models.PositiveIntegerField() # will b d pk of (Blog, Forum ...) instance
+    author_id = models.PositiveIntegerField()
+    flagged_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='flagged_by') # User initiating  request
+    group_id = models.PositiveIntegerField()  # Storing the PK of the group
+    comment = models.TextField()
     flag_count = models.IntegerField(default=0)
+    active = models.BooleanField(default=True)
+    
+    datetime_flagged = models.DateTimeField(default=timezone.now)
 
     class Meta:
-        unique_together = ('activity_type_id', 'flagged_by', 'flagged_id')
+        unique_together = ('activity_type_id', 'flagged_by', 'activity_id')
 
     def __str__(self):
-        return f"Flag(type={self.get_activity_type_id_display()}, by={self.flagged_by}, id={self.flagged_id})"
+        return f"Flag(type={self.get_activity_type_id_display()} , authored by={User.objects.get(pk=self.author_id).username} , flagged-by={self.flagged_by.username})"
 
 
 
-
+# Authored-by={self.activity_id.username},
 
 
 
@@ -77,11 +80,13 @@ class Activity_flag(models.Model):
 
 
 #     activity_type = models.IntegerField(choices=ACTIVITY_CHOICES, null=False, blank=False)
+#     author_id = models.ForeignKey(User, on_delete=models.PROTECT, related_name='author')
 #     blog = models.ForeignKey(Blog, on_delete=models.CASCADE, null=True, blank=True)
 #     forum = models.ForeignKey(Forum, on_delete=models.CASCADE, null=True, blank=True)
 #     chat = models.ForeignKey(ChatInstance, on_delete=models.CASCADE, null=True, blank=True)
-#     flagged_by = models.ForeignKey(User, on_delete=models.CASCADE)
-#     description = models.TextField()
+#     flagged_by = models.ForeignKey(User, on_delete=models.CASCADE)s
+#     group_id = models.ForeignKey(Group, on_delete=models.PROTECT)
+#     comment = models.TextField()
 #     datetime_flagged = models.DateTimeField(auto_now_add=True)
 #     active = models.BooleanField(default=True)
 #     flag_count = models.IntegerField(default=0)

@@ -1,29 +1,68 @@
 from rest_framework import serializers
 from .models import Activity_flag
 from django.contrib.auth import get_user_model
+from group.models import Group 
+from .models import Activity_flag
 
 User = get_user_model()
 
 
-class FlagSerializer(serializers.ModelSerializer):
+class CreateFlagSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Activity_flag
-        fields = ['activity_type_id', 'flagged_id', 'flagged_by', 'description', 'datetime_flagged', 'active', 'flag_count']
+        fields = ['activity_type_id', 'activity_id', 'flagged_by', 'author_id', 'group_id', 'comment', 'datetime_flagged', 'active', 'flag_count']
         read_only_fields = ['datetime_flagged', 'flagged_by', 'active', 'flag_count']
+
+
 
 
     def validate(self, data):
         request_user = self.context['request_user']
         if Activity_flag.objects.filter(activity_type_id=data['activity_type_id'],
-                                         flagged_by=request_user, flagged_id=data['flagged_id']).exists():
+                                         flagged_by=request_user, activity_id=data['activity_id']).exists():
             raise serializers.ValidationError("You have already flagged this content.")
         return data
 
 
+
+
+act_type = {
+    1:"Blog",
+    2:"Chat",
+    3:"Forum"
+}
+
+
+
+class FlagSerializer(serializers.ModelSerializer):
+    flagged_by = serializers.CharField(source='flagged_by.username', read_only=True)
+    author_id = serializers.SerializerMethodField()
+    # group_id = serializers.SerializerMethodField()
+    activity_type = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Activity_flag
+        fields = '__all__'
+
+    def get_author_id(self, obj):
+        return User.objects.get(pk=obj.author_id).username
+
+    # def get_group_id(self, obj):
+    #     return Group.objects.get(pk=obj.group_id).name
+
+    def get_activity_type(self, obj):
+        return act_type.get(obj.activity_type_id)
+
+
+class DestroyFlagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Activity_flag
+        fields = '__all__'
+
 class FlagStatusSerializer(serializers.Serializer):
     activity_type_id = serializers.IntegerField(required=True)
-    flagged_id = serializers.IntegerField(required=True)
+    activity_id = serializers.IntegerField(required=True)
 
 
 
@@ -48,7 +87,7 @@ class FlagStatusSerializer(serializers.Serializer):
 # class FlagSerializer(serializers.ModelSerializer):
 #     class Meta:
 #         model = ActivityFlag
-#         fields = ['activity_type', 'blog', 'forum', 'chat', 'flagged_by', 'description', 'datetime_flagged', 'active', 'flag_count']
+#         fields = ['activity_type', 'blog', 'forum', 'chat', 'author_id', 'group_id',  'flagged_by', 'comment', 'datetime_flagged', 'active', 'flag_count']
 #         read_only_fields = ['datetime_flagged', 'flagged_by', 'active', 'flag_count']
 
 
