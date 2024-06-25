@@ -55,10 +55,13 @@ class FlagSerializer(serializers.ModelSerializer):
         return act_type.get(obj.activity_type_id)
 
 
+
 class DestroyFlagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Activity_flag
         fields = '__all__'
+
+
 
 class FlagStatusSerializer(serializers.Serializer):
     activity_type_id = serializers.IntegerField(required=True)

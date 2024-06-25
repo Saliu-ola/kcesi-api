@@ -10,6 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
 from group.models import Group
 from django.contrib.auth import get_user_model
+from .permissions import IsSuperAdminOrAdmin, IsSuperAdmin, IsAdmin
 from rest_framework.exceptions import NotFound
 
 
@@ -87,7 +88,7 @@ class FlagCreateView(generics.ListCreateAPIView):
 
 class ActivityFlagListView(generics.ListAPIView):
     serializer_class = FlagSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsSuperAdminOrAdmin]
 
     def get_queryset(self):
         queryset = Activity_flag.objects.all()
@@ -102,14 +103,14 @@ class ActivityFlagListView(generics.ListAPIView):
 class ActivityFlagRetrieveView(generics.RetrieveAPIView):
     queryset = Activity_flag.objects.all()
     serializer_class = FlagSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsSuperAdminOrAdmin]
     lookup_field = 'id'
 
 
 
 class ActivityFlagDeleteView(generics.DestroyAPIView):
     queryset = Activity_flag.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsSuperAdminOrAdmin]
     lookup_field = 'id'
 
 
