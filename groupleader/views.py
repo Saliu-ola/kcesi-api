@@ -63,7 +63,8 @@ class LibraryFileRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView
 
     def get_object(self):
         group_id = self.kwargs['group_id']
-        return get_object_or_404(LibraryFile,group=group_id)
+        libraryfile_id =self.kwargs['libraryfile_id']
+        return get_object_or_404(LibraryFile,group=group_id,pk=libraryfile_id)
 
 
 
