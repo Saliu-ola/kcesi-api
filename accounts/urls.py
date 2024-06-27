@@ -30,7 +30,10 @@ urlpatterns = [
         views.PasswordResetConfirmView.as_view(),
         name="reset_password",
     ),
+
     path("jwt/create/", TokenObtainPairView.as_view(), name="jwt_create"),
     path("jwt/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("jwt/verify/", TokenVerifyView.as_view(), name="token_verify"),
+    path('signup/csv-upload/', views.BulkUserCSVUploadView.as_view(), name='bulk-user-csv-upload')
+
 ]

@@ -8,6 +8,10 @@ from group.models import Group, UserGroup
 from django.core.exceptions import ObjectDoesNotExist
 from organization.models import Organization
 
+import csv
+import requests
+from io import StringIO
+
 EXISITING_EMAIL_ERROR = "Email has already been used"
 
 
@@ -183,3 +187,38 @@ class OrganizationByIDInputSerializer(serializers.Serializer):
             "organization_name": instance["organization_name"],
             "groups": [instance["groups"]],
         }
+
+
+
+
+class UserRegCSVUploadSerializer(serializers.Serializer):
+    file_url = serializers.URLField()
+
+    def validate_file_url(self, url):
+        # Fetch the content from the URL
+        response = requests.get(url)
+        if response.status_code != 200:
+            raise ValidationError("Failed to fetch csv file.")
+        
+        # content_type = response.headers.get('Content-Type')
+
+        # will need adjustment, unsure if frontend can handle the file format check
+        # print(content_type)
+        # if 'text/csv' not in content_type and not url.lower().endswith('.csv'):
+        #     raise ValidationError("Invalid file type. Please provide a CSV file.")
+
+
+        # check 4 required columns
+        decoded_file = response.content.decode('utf-8')
+        io_string = StringIO(decoded_file)
+        reader = csv.DictReader(io_string)
+        required_columns = {'email','firstname', 'lastname'}
+        
+        missing_columns = required_columns - set(reader.fieldnames)
+        if missing_columns:
+            raise ValidationError(f"CSV file is missing required columns: {', '.join(missing_columns)}")
+
+        # if not required_columns.issubset(reader.fieldnames):
+        #     raise ValidationError("CSV file is missing required columns: " + ", ".join(required_columns))
+
+        return url
