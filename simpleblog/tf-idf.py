@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import nltk
 nltk.download('stopwords')
-from nltk.corpus import stopwords
+# from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 # Use pandas to increase the number of rows to display on the tf-idf table
@@ -26,9 +26,9 @@ from nltk.corpus import wordnet
 from nltk.tokenize import word_tokenize
 
 # Download necessary NLTK data files
-nltk.download('punkt')
-nltk.download('wordnet')
-nltk.download('averaged_perceptron_tagger')
+# nltk.download('punkt')
+# nltk.download('wordnet')
+# nltk.download('averaged_perceptron_tagger')
 
 
 

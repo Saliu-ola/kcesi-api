@@ -22,6 +22,7 @@ class Group(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
     related_terms = models.JSONField(null=True, blank=True)
+    related_terms_library_b = models.JSONField(null=True, blank=True)           #from files upload
 
     def __str__(self) -> str:
         return self.title
