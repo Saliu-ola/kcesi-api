@@ -131,6 +131,14 @@ class ProcessLibraryFiles(GenericAPIView):
 
                 unique_final_words_for_lib = np.unique(np.array(final_words_for_lib))
                 generated_words[lib_file.filename] = list(unique_final_words_for_lib)
+                
+                # Update the related_terms_library_b field in the Group model
+                group = lib_file.group
+                if group.related_terms_library_b is None:
+                    group.related_terms_library_b = []
+                group.related_terms_library_b.extend(unique_final_words_for_lib)
+                group.related_terms_library_b = list(np.unique(np.array(group.related_terms_library_b)))  # Remove duplicates
+                group.save()
 
                 # Update the is_synchronize field
                 lib_file.is_synchronize = True
