@@ -9,6 +9,7 @@ from accounts.models import User
 from organization.models import Organization
 from group.models import Group
 from rest_framework.validators import ValidationError
+from .models import ResourceFileSize
 
 
 MAXIMUM_SIZE_UPLOAD = 2 * 1024 * 1024  # 2MB
@@ -100,3 +101,20 @@ class CreateResourcesSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
+
+
+
+class ResourceFileSizeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ResourceFileSize
+        fields = ['file_type', 'max_size']
+
+
+    def validate_max_size(self, value):
+        #maximum accceptable size for any file currently 1024mb (1GB)
+
+        if value < 1 or value > 1024:
+            raise serializers.ValidationError("Max size must be between 1 MB and 1024 MB (1 GB).")
+        return value

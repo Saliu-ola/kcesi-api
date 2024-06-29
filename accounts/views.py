@@ -1073,20 +1073,22 @@ class LoginView(generics.GenericAPIView):
 
 
 class BulkUserCSVUploadView(APIView):
-    permission_classes = [IsAuthenticated, IsSuperAdminOrAdmin]
+    permission_classes = [IsSuperAdminOrAdmin]
 
     def post(self, request):
         serializer = UserRegCSVUploadSerializer(data=request.data)
         if serializer.is_valid():
-            file_url = serializer.validated_data['file_url']
+            # file_url = serializer.validated_data['file_url']
+            csv_file = serializer.validated_data['file']
             default_password = settings.DEFAULT_PASSWORD
 
-            response = requests.get(file_url)
-            decoded_file = response.content.decode('utf-8')
+            # response = requests.get(data_file)
+            decoded_file = csv_file.read().decode('utf-8-sig') #response.content.decode('utf-8')
             io_string = StringIO(decoded_file)
             reader = csv.DictReader(io_string)
 
             users_to_create = []
+            successfully_created_users = []
             invalid_rows = []
             successfully_created = 0
             total_rows = 0
@@ -1096,19 +1098,19 @@ class BulkUserCSVUploadView(APIView):
                 total_rows += 1
 
                 try:
-                    first_name = row.get('firstname')
-                    last_name = row.get('lastname')
-                    username = row.get('username')
+                    row = {key.lower(): value for key, value in row.items()} #God! we may have to enforce type format
+
+                    first_name = row.get('first name')
+                    last_name = row.get('last name')
+                    username = row.get('user name')
                     email = row.get('email')
                     password = default_password
                     role_id = 3
 
                     if not email: #or not username
-                        invalid_rows.append(row)
-                        continue
+                        raise ValidationError(f"User missing compulsory field (email)")
 
                     if User.objects.filter(email=email).exists():
-                        # continue
                         raise ValidationError(f"User with email {email} already exists.")
                     
 
@@ -1131,7 +1133,7 @@ class BulkUserCSVUploadView(APIView):
                 for user in users_to_create:
                     try:
                         user.save()
-                        print(user.email)
+                        # print(user.email)
                         token, _ = Token.objects.update_or_create(
                             user=user,
                             token_type='ACCOUNT_VERIFICATION',
@@ -1146,15 +1148,17 @@ class BulkUserCSVUploadView(APIView):
                             "full_name": f"{user.first_name} {user.last_name}",
                             "link": verification_url,
                         }
-                        # print("user  created")
+                        # print("user created", user.email)
                         successfully_created += 1
                         send_account_verification_mail(email_data)
+                        successfully_created_users.append(user.email)
+                        # print(f"Verification mail sent to: {user.email}")
 
                     except IntegrityError:
                         # Skip users with existing email without stopping d process
                         # This accounts for user mistake if dey somehow include similar email in the csv
                         # should not be needed, but user can somehow do this.
-                        invalid_rows.append({"error": "User with this email already exists.", "user_data": {
+                        invalid_rows.append({"error": "Email was duplicated in uploaded file.", "user_data": {
                             "first_name": user.first_name,
                             "last_name": user.last_name,
                             "username": user.username,
@@ -1163,7 +1167,7 @@ class BulkUserCSVUploadView(APIView):
 
                     except Exception as e:
                         user.delete()
-                        # print("users  deleted") cos email failed.
+                        print("user deleted ", user.email) #cos email failed.
 
                         successfully_created -= 1
                         invalid_rows.append({"error": str(e), "user_data": {
@@ -1178,6 +1182,7 @@ class BulkUserCSVUploadView(APIView):
                 response_data = {
                     "successfully_created": successfully_created,
                     "unsuccessfully_created": unsuccessfully_created,
+                    "successfully_created_users": successfully_created_users,
                     "invalid_rows": invalid_rows,
                 }
 

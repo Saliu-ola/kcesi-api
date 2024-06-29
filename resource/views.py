@@ -12,6 +12,9 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 import cloudinary.uploader
 from rest_framework.parsers import MultiPartParser
+from accounts.permissions import IsSuperAdmin
+from .serializers import ResourceFileSizeSerializer
+from .models import ResourceFileSize
 
 
 class ResourcesViewSets(viewsets.ModelViewSet):
@@ -165,3 +168,64 @@ class ResourcesViewSets(viewsets.ModelViewSet):
             {"success": True, "total_resources": output},
             status=status.HTTP_200_OK,
         )
+
+
+
+
+class FileSizeCreateView(generics.CreateAPIView):
+    permission_classes = [IsSuperAdmin]
+    queryset = ResourceFileSize.objects.all()
+    serializer_class = ResourceFileSizeSerializer
+
+    def create(self, request, *args, **kwargs):
+        file_type = request.data.get('file_type')
+        if ResourceFileSize.objects.filter(file_type=file_type).exists():
+            return Response({"detail": "File type already exists."}, status=status.HTTP_400_BAD_REQUEST)
+        return super().create(request, *args, **kwargs)
+    
+
+
+class FileSizeUpdateView(generics.UpdateAPIView):
+    permission_classes = [IsSuperAdmin]
+    queryset = ResourceFileSize.objects.all()
+    serializer_class = ResourceFileSizeSerializer
+
+    def update(self, request, *args, **kwargs):
+        file_type = request.data.get('file_type')
+        instance = ResourceFileSize.objects.filter(file_type=file_type).first()
+        if not instance:
+            return Response({"detail": "File type not Initialized. Create one at resources/filesize/create/ "}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.get_serializer(instance, data=request.data, partial=kwargs.pop('partial', False))
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+    
+
+# class FileSizeRetrieveView(generics.RetrieveAPIView):
+#     permission_classes = [IsSuperAdmin]
+#     queryset = ResourceFileSize.objects.all()
+#     serializer_class = ResourceFileSizeSerializer
+
+#     def retrieve(self, request, *args, **kwargs):
+#         file_type = request.data.get('file_type')
+#         instance = ResourceFileSize.objects.filter(file_type=file_type).first()
+#         if not instance:
+#             return Response({"detail": "File type not found."}, status=status.HTTP_404_NOT_FOUND)
+#         serializer = self.get_serializer(instance)
+#         return Response(serializer.data)
+    
+
+
+class FileSizeRetrieveView(generics.RetrieveAPIView):
+    permission_classes = [IsSuperAdmin]
+    queryset = ResourceFileSize.objects.all()
+    serializer_class = ResourceFileSizeSerializer
+    lookup_field = 'file_type'
+    lookup_url_kwarg = 'file_type'
+
+    
+class FileSizeListView(generics.ListAPIView):
+    pagination_class = None
+    permission_classes = [IsSuperAdmin]
+    queryset = ResourceFileSize.objects.all()
+    serializer_class = ResourceFileSizeSerializer

@@ -104,6 +104,8 @@ class User(AbstractUser):
     def __str__(self):
         if self.username:
             return f"{self.username}"
+        elif self.email:
+            return f"{self.email}"
         else:
             return self.organization_name
 
