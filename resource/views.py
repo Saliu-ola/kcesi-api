@@ -217,7 +217,7 @@ class FileSizeUpdateView(generics.UpdateAPIView):
 
 
 class FileSizeRetrieveView(generics.RetrieveAPIView):
-    permission_classes = [IsSuperAdmin]
+    permission_classes = [IsAuthenticated]
     queryset = ResourceFileSize.objects.all()
     serializer_class = ResourceFileSizeSerializer
     lookup_field = 'file_type'
