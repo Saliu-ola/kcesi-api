@@ -230,6 +230,7 @@ EMAIL_PORT = config("EMAIL_PORT")
 EMAIL_HOST_USER = config("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
 EMAIL_USE_TLS = "EMAIL_USE_TLS"
+# EMAIL_USE_SSL = True
 
 
 GOOGLE_GEMINI_API_KEY = config("GOOGLE_GEMINI_API_KEY")
@@ -240,3 +241,5 @@ cloudinary.config(
     api_key=config("API_KEY"),
     api_secret=config("API_SECRET"),
 )
+
+DEFAULT_PASSWORD = config("DEFAULT_PASSWORD")

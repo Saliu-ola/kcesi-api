@@ -4,6 +4,8 @@ from organization.models import Organization
 from group.models import Group
 from accounts.models import User
 from cloudinary.models import CloudinaryField
+
+
 RESOURCE_TYPES = (
     ("AUDIO", "AUDIO"),
     ("VIDEO", "VIDEO"),
@@ -11,6 +13,8 @@ RESOURCE_TYPES = (
     ("DOCUMENT", "DOCUMENT"),
     ("OTHERS", "OTHERS"),
 )
+
+
 
 
 class Resources(models.Model):
@@ -43,3 +47,18 @@ class Resources(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+
+
+
+
+
+
+
+class ResourceFileSize(models.Model):
+
+    file_type = models.CharField(max_length=10, choices=RESOURCE_TYPES, unique=True)
+    max_size = models.PositiveIntegerField(default=1)
+
+    def __str__(self):
+        return f"{self.max_size} Megabyte"

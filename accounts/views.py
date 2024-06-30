@@ -24,8 +24,9 @@ from .serializers import (
     OrganizationByIDInputSerializer,
     UpdateUserImage,
 )
+
 from rest_framework.decorators import action
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.db.models import Sum
 from .tokens import create_jwt_pair_for_user
 from drf_spectacular.utils import extend_schema, OpenApiParameter
@@ -50,6 +51,11 @@ from simpleblog.utils import calculate_total_engagement_score,calculate_ai_divis
 from .task import send_account_verification_mail, send_password_reset_mail
 from datetime import datetime
 
+import requests
+from .serializers import UserRegCSVUploadSerializer
+from io import StringIO
+import csv
+from django.core.exceptions import ValidationError
 
 # Create your views here.
 
@@ -1062,3 +1068,127 @@ class LoginView(generics.GenericAPIView):
                     data={"message": "Invalid email or password"},
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
+            
+
+
+
+class BulkUserCSVUploadView(APIView):
+    permission_classes = [IsSuperAdminOrAdmin]
+
+    def post(self, request):
+        serializer = UserRegCSVUploadSerializer(data=request.data)
+        if serializer.is_valid():
+            # file_url = serializer.validated_data['file_url']
+            csv_file = serializer.validated_data['file']
+            default_password = settings.DEFAULT_PASSWORD
+
+            # response = requests.get(data_file)
+            decoded_file = csv_file.read().decode('utf-8-sig') #response.content.decode('utf-8')
+            io_string = StringIO(decoded_file)
+            reader = csv.DictReader(io_string)
+
+            users_to_create = []
+            successfully_created_users = []
+            invalid_rows = []
+            successfully_created = 0
+            total_rows = 0
+            
+
+            for row in reader:
+                total_rows += 1
+
+                try:
+                    row = {key.lower(): value for key, value in row.items()} #God! we may have to enforce type format
+
+                    first_name = row.get('first name')
+                    last_name = row.get('last name')
+                    username = row.get('user name')
+                    email = row.get('email')
+                    password = default_password
+                    role_id = 3
+
+                    if not email: #or not username
+                        raise ValidationError(f"User missing compulsory field (email)")
+
+                    if User.objects.filter(email=email).exists():
+                        raise ValidationError(f"User with email {email} already exists.")
+                    
+
+                    user = User(
+                    first_name=first_name,
+                    last_name=last_name,
+                    username=username,
+                    email=email,
+                    role_id=role_id
+                    )
+
+                    user.set_password(password)
+                    users_to_create.append(user)
+
+                except Exception as e:
+                    invalid_rows.append({"error": str(e), "user_data": row})
+
+
+            with transaction.atomic():
+                for user in users_to_create:
+                    try:
+                        user.save()
+                        # print(user.email)
+                        token, _ = Token.objects.update_or_create(
+                            user=user,
+                            token_type='ACCOUNT_VERIFICATION',
+                            defaults={'user': user, 'token_type': 'ACCOUNT_VERIFICATION'},
+                        )
+
+                        token.generate_random_token()
+                        verification_url = f"{settings.CLIENT_URL}/auth/verify_account/?token={token.token}"
+
+                        email_data = {
+                            "email": user.email,
+                            "full_name": f"{user.first_name} {user.last_name}",
+                            "link": verification_url,
+                        }
+                        # print("user created", user.email)
+                        successfully_created += 1
+                        send_account_verification_mail(email_data)
+                        successfully_created_users.append(user.email)
+                        # print(f"Verification mail sent to: {user.email}")
+
+                    except IntegrityError:
+                        # Skip users with existing email without stopping d process
+                        # This accounts for user mistake if dey somehow include similar email in the csv
+                        # should not be needed, but user can somehow do this.
+                        invalid_rows.append({"error": "Email was duplicated in uploaded file.", "user_data": {
+                            "first_name": user.first_name,
+                            "last_name": user.last_name,
+                            "username": user.username,
+                            "email": user.email,
+                        }})
+
+                    except Exception as e:
+                        user.delete()
+                        print("user deleted ", user.email) #cos email failed.
+
+                        successfully_created -= 1
+                        invalid_rows.append({"error": str(e), "user_data": {
+                            "first_name": user.first_name,
+                            "last_name": user.last_name,
+                            "username": user.username,
+                            "email": user.email
+                        }})
+
+                unsuccessfully_created = total_rows - successfully_created
+
+                response_data = {
+                    "successfully_created": successfully_created,
+                    "unsuccessfully_created": unsuccessfully_created,
+                    "successfully_created_users": successfully_created_users,
+                    "invalid_rows": invalid_rows,
+                }
+
+                if successfully_created > 0:
+                    return Response(response_data, status=status.HTTP_201_CREATED)
+                else:
+                    return Response(response_data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
