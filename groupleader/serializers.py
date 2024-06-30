@@ -57,10 +57,23 @@ class LibraryFileSerializer(serializers.ModelSerializer):
     group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
     status = serializers.ChoiceField(choices=LibraryFile.STATUS_CHOICES)
+    group_name = serializers.SerializerMethodField()
+    user_name = serializers.SerializerMethodField()
+    full_name = serializers.SerializerMethodField()
 
     class Meta:
         model = LibraryFile
         fields = '__all__'
+
+
+    def get_group_name(self, obj):
+        return obj.group.title
+
+    def get_user_name(self, obj):
+        return obj.user.username
+    
+    def get_full_name(self, obj):
+        return f"{obj.user.first_name} {obj.user.last_name}"
 
     def validate(self, data):
         group = data.get('group')
