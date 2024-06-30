@@ -18,6 +18,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.corpus import stopwords
 from rest_framework.generics import GenericAPIView
 import spacy 
+from rest_framework.exceptions import NotFound
 
 class GroupLeaderListCreateView(generics.ListCreateAPIView):
     queryset = GroupLeader.objects.all()
@@ -150,3 +151,31 @@ class ProcessLibraryFiles(GenericAPIView):
             'generated_words': generated_words,
             'message': 'TF-IDF processing completed successfully'
         }, status=status.HTTP_200_OK)
+
+
+
+#list all groups a user is the group leader 
+
+class GroupLeaderListView(generics.ListAPIView):
+    serializer_class = GroupGroupLeaderSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return Group.objects.filter(leader__user=user)
+    
+
+class GroupLibrariesRetrieveView(generics.RetrieveAPIView):
+    queryset = Group.objects.all()
+    serializer_class = GroupLibrariesSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        group_id = self.kwargs.get('group_id')
+        try:
+            group = Group.objects.get(id=group_id)
+        except Group.DoesNotExist:
+            raise NotFound("Group not found")
+
+        serializer = self.get_serializer(group)
+        return Response(serializer.data)
