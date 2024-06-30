@@ -89,3 +89,18 @@ class SyncLibraryFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = LibraryFile
         fields = ['group', 'filename', 'filedescription', 'user', 'status', 'datetime', 'file_url', 'is_synchronize']
+
+
+class GroupGroupLeaderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Group
+        fields = ['id', 'title', 'content', 'organization_id', 'created_at', 'updated_at', 'related_terms', 'related_terms_library_b']
+
+
+class GroupLibrariesSerializer(serializers.ModelSerializer):
+    related_terms = serializers.JSONField()
+    related_terms_library_b = serializers.JSONField()
+
+    class Meta:
+        model = Group
+        fields = ['related_terms', 'related_terms_library_b']

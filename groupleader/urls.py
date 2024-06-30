@@ -14,4 +14,8 @@ urlpatterns = [
     path('library-files/<int:group_id>/file/<int:libraryfile_id>', LibraryFileRetrieveUpdateDestroyView.as_view(), name='library-file-detail'),
 
     path('process-library-files/', ProcessLibraryFiles.as_view(), name='process-library-files'),
+
+    path('my-groups/', GroupLeaderListView.as_view(), name='my-groups'),
+
+    path('groups/<int:group_id>/libraries/', GroupLibrariesRetrieveView.as_view(), name='group-libraries'),
 ]
