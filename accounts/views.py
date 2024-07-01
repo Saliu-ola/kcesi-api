@@ -1120,10 +1120,13 @@ class BulkUserCSVUploadView(APIView):
                     username=username,
                     email=email,
                     role_id=role_id
+
                     )
 
                     user.set_password(password)
                     users_to_create.append(user)
+                    user.save()
+                    # print("user saved ", user.email)
 
                 except Exception as e:
                     invalid_rows.append({"error": str(e), "user_data": row})
@@ -1131,8 +1134,7 @@ class BulkUserCSVUploadView(APIView):
 
             with transaction.atomic():
                 for user in users_to_create:
-                    try:
-                        user.save()
+                    try:                   
                         # print(user.email)
                         token, _ = Token.objects.update_or_create(
                             user=user,
