@@ -165,17 +165,41 @@ class GroupLeaderListView(generics.ListAPIView):
         return Group.objects.filter(leader__user=user)
     
 
-class GroupLibrariesRetrieveView(generics.RetrieveAPIView):
+class GroupLibrariesRetrieveView(generics.GenericAPIView):
     queryset = Group.objects.all()
-    serializer_class = GroupLibrariesSerializer
     permission_classes = [IsAuthenticated]
+    serializer_class = GroupLibrariesSerializer
 
     def get(self, request, *args, **kwargs):
         group_id = self.kwargs.get('group_id')
+        library = request.query_params.get('library')
+
         try:
             group = Group.objects.get(id=group_id)
         except Group.DoesNotExist:
             raise NotFound("Group not found")
 
-        serializer = self.get_serializer(group)
-        return Response(serializer.data)
+        # Check if the user is a group leader
+        if not GroupLeader.objects.filter(user=request.user, group=group).exists():
+            return Response({"detail": "You do not have permission to perform this action because you are not a group leader "}, status=status.HTTP_403_FORBIDDEN)
+
+        if library == 'a':
+            terms = group.related_terms if group.related_terms is not None else []
+            library_name = 'Library A'
+        elif library == 'b':
+            terms = group.related_terms_library_b if group.related_terms_library_b is not None else []
+            library_name = 'Library B'
+        else:
+            return Response({"detail": "Invalid library"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not terms:
+            return Response({"detail": f"{library_name} is empty", "results": []}, status=status.HTTP_200_OK)
+
+        return self.paginate_results(terms)
+
+    def paginate_results(self, results):
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(results, self.request, view=self)
+        if page is not None:
+            return paginator.get_paginated_response(page)
+        return Response(results)
