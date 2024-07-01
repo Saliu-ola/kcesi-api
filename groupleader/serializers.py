@@ -98,8 +98,8 @@ class GroupGroupLeaderSerializer(serializers.ModelSerializer):
 
 
 class GroupLibrariesSerializer(serializers.ModelSerializer):
-    related_terms = serializers.JSONField()
-    related_terms_library_b = serializers.JSONField()
+    related_terms = serializers.ListField(child=serializers.CharField(), required=False)
+    related_terms_library_b = serializers.ListField(child=serializers.CharField(), required=False)
 
     class Meta:
         model = Group
