@@ -17,5 +17,7 @@ urlpatterns = [
 
     path('my-groups/', GroupLeaderListView.as_view(), name='my-groups'),
 
-    path('groups/<int:group_id>/libraries/', GroupLibrariesRetrieveView.as_view(), name='group-libraries'),
+    path('group-library/<int:group_id>/libraries/', GroupLibrariesRetrieveView.as_view(), name='group-libraries'),
+     path('group-library/<int:group_id>/libraries/add/', AddWordsToLibraryView.as_view(), name='add-words-to-library'),
+    path('group-library/<int:group_id>/libraries/delete/', DeleteWordsFromLibraryView.as_view(), name='delete-words-from-library'),
 ]
