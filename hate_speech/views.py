@@ -20,6 +20,11 @@ class BadWordsViewSets(
     permission_classes = [AllowAny]
     queryset = BadWord.objects.all()
 
+    def create(self, request, *args, **kwargs):
+        if BadWord.objects.exists():
+            return Response({"error": "Only one collection is allowed to be saved. You can only remove or add."}, status=status.HTTP_400_BAD_REQUEST)
+        return super().create(request, *args, **kwargs)
+
     @action(
         methods=['POST'],
         detail=False,
@@ -31,6 +36,8 @@ class BadWordsViewSets(
         serializer = BadWordSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             obj = self.get_queryset().first()
+            if obj is None:
+                return Response({"error": "No BadWord instance found. Ensure to create an instance"}, status=status.HTTP_400_BAD_REQUEST)
             new_words = serializer.validated_data["related_terms"]
             old_words = obj.related_terms
             merged_words = list(set(new_words + old_words))
@@ -51,6 +58,8 @@ class BadWordsViewSets(
         serializer = BadWordSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             obj = self.get_queryset().first()
+            if obj is None:
+                return Response({"error": "No BadWord instance found.Ensure to create an instance"}, status=status.HTTP_400_BAD_REQUEST)
             new_words = serializer.validated_data["related_terms"]
             old_words = obj.related_terms
             merged_words = [word for word in old_words if word not in new_words ]
