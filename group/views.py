@@ -26,6 +26,7 @@ from simpleblog.ai import (
     check_percentage_relevance_of_uncommon_words,
 )
 
+from groupleader.models import *
 
 class GroupViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
@@ -75,7 +76,9 @@ class GroupViewSets(viewsets.ModelViewSet):
             serializer = GroupAISerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             new_content = serializer.data["content"]
-            existing_text = group.related_terms
+            # existing_text = group.related_terms
+            # Conditionally assign existing_text based on library type
+            existing_text = group.related_terms if LibraryOption.library_type == 'AI' else group.related_terms_library_b
             uncommon_text = get_foreign_terms(new_content,existing_text)
 
             # decided to add the new incoming that are relevant before getting final relevace
@@ -84,11 +87,19 @@ class GroupViewSets(viewsets.ModelViewSet):
                 score = float(score)
                 if score >= 45:
                     existing_text.extend(uncommon_text)
-                    group.related_terms = existing_text
+                    if LibraryOption.library_type == 'AI':
+                        group.related_terms = existing_text
+                    else:
+                        group.related_terms_library_b = existing_text
                     group.save()
 
+            if LibraryOption.library_type == 'AI':
+                updated_text = group.related_terms
+            else:
+                updated_text = group.related_terms_library_b
+      
             # so i fetch the updated one along
-            relevant_percentage = get_percentage_relevancy(new_content, group.related_terms)
+            relevant_percentage = get_percentage_relevancy(new_content, updated_text)
             relevant_percentage = float(relevant_percentage)
 
             rating = 'Very Bad'
