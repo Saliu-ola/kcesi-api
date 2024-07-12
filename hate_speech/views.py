@@ -7,7 +7,17 @@ from .serializers import (
 )
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
-from simpleblog.ai import clean_data_and_lemmatize, get_bad_word_prediction_score_using_model
+from simpleblog.ai import clean_data_and_lemmatize
+import joblib 
+
+
+model = joblib.load('trained_model.pkl')
+cv = joblib.load('vectorizer.pkl')
+
+def get_bad_word_prediction_score_using_model(new_text):
+    text = cv.transform([new_text]).toarray()
+    speech_with_predicted_model = model.predict(text)
+    return speech_with_predicted_model
 
 
 class BadWordsViewSets(

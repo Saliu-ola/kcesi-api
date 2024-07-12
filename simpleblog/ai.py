@@ -12,7 +12,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
-
+import joblib 
 
 pd.set_option('display.max_rows', 500)
 
@@ -123,27 +123,54 @@ def clean(text):
     return text
 
 
-def get_bad_word_prediction_score_using_model(new_text):
-    data = pd.read_csv("labeled_data2.csv")
+# def get_bad_word_prediction_score_using_model(new_text):
+#     data = pd.read_csv("labeled_data2.csv")
 
-    data["labels"] = data["class"].map(
-    {0: "Hate Speech", 1: "Offensive Speech", 2: "No Hate and Offensive Speech"}
-    )
-    data = data[["tweet", "labels"]]
-    data["tweet"] = data["tweet"].apply(clean)
-    x = np.array(data["tweet"])
-    y = np.array(data["labels"])
-    cv = CountVectorizer()
-    X = cv.fit_transform(x)
-    X_train, X_text, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
-    model = DecisionTreeClassifier()
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_text)
-    text = new_text
-    text = cv.transform([text]).toarray()
-    speech_with_predicted_model = model.predict((text))
+#     data["labels"] = data["class"].map(
+#     {0: "Hate Speech", 1: "Offensive Speech", 2: "No Hate and Offensive Speech"}
+#     )
+#     data = data[["tweet", "labels"]]
+#     data["tweet"] = data["tweet"].apply(clean)
+#     x = np.array(data["tweet"])
+#     y = np.array(data["labels"])
+#     cv = CountVectorizer()
+#     X = cv.fit_transform(x)
+#     X_train, X_text, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+#     model = DecisionTreeClassifier()
+#     model.fit(X_train, y_train)
+#     y_pred = model.predict(X_text)
+#     text = new_text
+#     text = cv.transform([text]).toarray()
+#     speech_with_predicted_model = model.predict((text))
 
-    return speech_with_predicted_model
+#     return speech_with_predicted_model
+
+
+
+#hate speech model
+
+# data = pd.read_csv("labeled_data2.csv")
+# data["labels"] = data["class"].map(
+#     {0: "Hate Speech", 1: "Offensive Speech", 2: "No Hate and Offensive Speech"}
+#     )
+# data = data[["tweet", "labels"]]
+# data["tweet"] = data["tweet"].apply(clean)
+# x = np.array(data["tweet"])
+# y = np.array(data["labels"])
+# cv = CountVectorizer()
+# X = cv.fit_transform(x)
+# X_train, X_text, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+# model = DecisionTreeClassifier()
+# model.fit(X_train, y_train)
+# y_pred = model.predict(X_text)
+
+
+# joblib.dump(model, 'trained_model.pkl')
+# joblib.dump(cv, 'vectorizer.pkl') 
+
+
+
+
 
 
 
