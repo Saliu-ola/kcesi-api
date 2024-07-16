@@ -24,6 +24,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from simpleblog.ai import (
     get_foreign_terms,get_percentage_relevancy,
     check_percentage_relevance_of_uncommon_words,
+    fetch_update_related_terms,
 )
 
 from groupleader.models import *
@@ -76,30 +77,30 @@ class GroupViewSets(viewsets.ModelViewSet):
             serializer = GroupAISerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             new_content = serializer.data["content"]
-            # existing_text = group.related_terms
+            
             # Conditionally assign existing_text based on library type
             existing_text = group.related_terms if LibraryOption.library_type == 'AI' else group.related_terms_library_b
-            uncommon_text = get_foreign_terms(new_content,existing_text)
+            # uncommon_text = get_foreign_terms(new_content,existing_text)
 
             # decided to add the new incoming that are relevant before getting final relevace
-            if uncommon_text:
-                score = check_percentage_relevance_of_uncommon_words(uncommon_text, group.content)
-                score = float(score)
-                if score >= 45:
-                    existing_text.extend(uncommon_text)
-                    if LibraryOption.library_type == 'AI':
-                        group.related_terms = existing_text
-                    else:
-                        group.related_terms_library_b = existing_text
-                    group.save()
+            # if uncommon_text:
+            #     score = check_percentage_relevance_of_uncommon_words(uncommon_text, group.content)
+            #     score = float(score)
+            #     if score >= 45:
+            #         existing_text.extend(uncommon_text)
+            #         if LibraryOption.library_type == 'AI':
+            #             group.related_terms = existing_text
+            #         else:
+            #             group.related_terms_library_b = existing_text
+            #         group.save()
 
-            if LibraryOption.library_type == 'AI':
-                updated_text = group.related_terms
-            else:
-                updated_text = group.related_terms_library_b
+            # if LibraryOption.library_type == 'AI':
+            #     updated_text = group.related_terms
+            # else:
+            #     updated_text = group.related_terms_library_b
       
-            # so i fetch the updated one along
-            relevant_percentage = get_percentage_relevancy(new_content, updated_text)
+            
+            relevant_percentage = get_percentage_relevancy(new_content, existing_text)
             relevant_percentage = float(relevant_percentage)
 
             rating = 'Very Bad'
@@ -113,6 +114,20 @@ class GroupViewSets(viewsets.ModelViewSet):
                 rating = 'Fair'
             elif relevant_percentage > 10:
                 rating = 'Bad'
+
+            
+            if relevant_percentage >= 50 and len(new_content.split()) > 20 and LibraryOption.library_type == 'AI':
+                uncommon_text = get_foreign_terms(new_content, existing_text)
+                if uncommon_text:
+                # Fetch new related terms using Gemini API
+                    new_related_terms = fetch_update_related_terms(new_content)
+
+                # Remove common terms to avoid duplication
+                    updated_related_terms = [term for term in new_related_terms if term not in existing_text]
+
+                # Update the related terms and save the group
+                    group.related_terms.extend(updated_related_terms)
+                    group.save()
 
             response = {"relevancy_percentage": relevant_percentage, "rating": rating}
             return Response(response, status=status.HTTP_200_OK)
