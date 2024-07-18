@@ -1,19 +1,18 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, mixins, status
 from rest_framework.decorators import APIView, api_view, permission_classes
-from rest_framework.permissions import AllowAny , IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 
 from organization.models import Organization
-from .models import Group, UserGroup 
+from .models import Group, UserGroup
 from .serializers import (
     GroupAISerializer,
     GroupSerializer,
     UserGroupListSerializer,
     UserGroupCreateSerializer,
     UpdateUserGroupSerializer,
-    
 )
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
@@ -22,24 +21,30 @@ from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
 from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.parsers import MultiPartParser, FormParser
 from simpleblog.ai import (
-    get_foreign_terms,get_percentage_relevancy,
+    get_foreign_terms,
+    get_percentage_relevancy,
     check_percentage_relevance_of_uncommon_words,
 )
 
 from groupleader.models import *
+
 
 class GroupViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
     serializer_class = GroupSerializer
     permission_classes = [AllowAny]
     queryset = Group.objects.all()
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = [
-        'title',
-        'organization_id',
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
     ]
-    search_fields = ['title', 'content']
-    ordering_fields = ['created_at']
+    filterset_fields = [
+        "title",
+        "organization_id",
+    ]
+    search_fields = ["title", "content"]
+    ordering_fields = ["created_at"]
 
     ADMIN_ROLE_ID = 2
     SUPER_ADMIN_ROLE_ID = 1
@@ -49,7 +54,9 @@ class GroupViewSets(viewsets.ModelViewSet):
         if self.request.user.role_id == self.SUPER_ADMIN_ROLE_ID:
             return self.queryset
         elif self.request.user.role_id in [self.ADMIN_ROLE_ID, self.USER_ROLE_ID]:
-            return self.queryset.filter(organization_id=self.request.user.organization_id)
+            return self.queryset.filter(
+                organization_id=self.request.user.organization_id
+            )
 
         else:
             raise ValueError("Role id not present")
@@ -63,56 +70,46 @@ class GroupViewSets(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @action(
-        methods=['POST'],
+        methods=["POST"],
         detail=True,
         permission_classes=[AllowAny],
         serializer_class=GroupAISerializer,
-        url_path='check-relevance',
+        url_path="check-relevance",
     )
     def check_relevance(self, request, pk=None):
         """To check relevance of input texts to group description"""
         try:
             group = self.get_object()
+
+            library_option = LibraryOption.objects.get(group=group)
+            library_type = library_option.library_type
+
             serializer = GroupAISerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             new_content = serializer.data["content"]
             # existing_text = group.related_terms
             # Conditionally assign existing_text based on library type
-            existing_text = group.related_terms if LibraryOption.library_type == 'AI' else group.related_terms_library_b
-            uncommon_text = get_foreign_terms(new_content,existing_text)
-
-            # decided to add the new incoming that are relevant before getting final relevace
-            if uncommon_text:
-                score = check_percentage_relevance_of_uncommon_words(uncommon_text, group.content)
-                score = float(score)
-                if score >= 45:
-                    existing_text.extend(uncommon_text)
-                    if LibraryOption.library_type == 'AI':
-                        group.related_terms = existing_text
-                    else:
-                        group.related_terms_library_b = existing_text
-                    group.save()
-
-            if LibraryOption.library_type == 'AI':
-                updated_text = group.related_terms
+            if library_type == "AI":
+                existing_text = group.related_terms if group.related_terms else []
             else:
-                updated_text = group.related_terms_library_b
-      
+                existing_text = group.related_terms_library_b if group.related_terms_library_b else []
+            
+            
             # so i fetch the updated one along
-            relevant_percentage = get_percentage_relevancy(new_content, updated_text)
+            relevant_percentage = get_percentage_relevancy(new_content, existing_text)
             relevant_percentage = float(relevant_percentage)
 
-            rating = 'Very Bad'
+            rating = "Very Bad"
             if relevant_percentage > 59:
-                rating = 'Excellent'
+                rating = "Excellent"
             elif relevant_percentage > 49:
-                rating = 'Very Good'
+                rating = "Very Good"
             elif relevant_percentage > 29:
-                rating = 'Good'
+                rating = "Good"
             elif relevant_percentage > 14:
-                rating = 'Fair'
+                rating = "Fair"
             elif relevant_percentage > 10:
-                rating = 'Bad'
+                rating = "Bad"
 
             response = {"relevancy_percentage": relevant_percentage, "rating": rating}
             return Response(response, status=status.HTTP_200_OK)
@@ -125,9 +122,13 @@ class UserGroupsViewSets(viewsets.ModelViewSet):
     serializer_class = UserGroupCreateSerializer
     permission_classes = [AllowAny]
     queryset = UserGroup.objects.all()
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['user', 'user__organization_name', 'groups']
-    ordering_fields = ['created_at']
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
+    filterset_fields = ["user", "user__organization_name", "groups"]
+    ordering_fields = ["created_at"]
 
     def get_serializer_class(self):
         if self.action in ["retrieve", "list"]:
@@ -145,11 +146,11 @@ class UserGroupsViewSets(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @action(
-        methods=['POST'],
+        methods=["POST"],
         detail=False,
         permission_classes=[AllowAny],
         serializer_class=UpdateUserGroupSerializer,
-        url_path='add-group',
+        url_path="add-group",
     )
     def add(self, request, pk=None):
         serializer = UpdateUserGroupSerializer(data=request.data)
@@ -164,11 +165,11 @@ class UserGroupsViewSets(viewsets.ModelViewSet):
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(
-        methods=['POST'],
+        methods=["POST"],
         detail=False,
         permission_classes=[AllowAny],
         serializer_class=UpdateUserGroupSerializer,
-        url_path='remove-group',
+        url_path="remove-group",
     )
     def remove(self, request, pk=None):
         serializer = UpdateUserGroupSerializer(data=request.data)
@@ -180,6 +181,3 @@ class UserGroupsViewSets(viewsets.ModelViewSet):
         else:
             return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response(UserGroupCreateSerializer(user_group_instance).data)
-
-
-
