@@ -1,13 +1,15 @@
 from rest_framework import serializers
 
-from .models import Group, UserGroup 
+from groupleader.models import LibraryOption
+
+from .models import Group, UserGroup
 from organization.models import Organization
 from accounts.models import User
 from rest_framework.validators import ValidationError
 from django.shortcuts import get_object_or_404
 from rest_framework.validators import UniqueTogetherValidator
 from django.db.models import Q
-from simpleblog.ai import get_cleaned_and_lematized_terms;
+from simpleblog.ai import get_cleaned_and_lematized_terms
 from django.db import transaction, IntegrityError
 
 
@@ -28,7 +30,9 @@ class GroupSerializer(serializers.ModelSerializer):
         if Group.objects.filter(
             Q(title__iexact=title) & Q(organization_id__iexact=organization_id)
         ).exists():
-            raise serializers.ValidationError(f"{title} group already exists for the organization")
+            raise serializers.ValidationError(
+                f"{title} group already exists for the organization"
+            )
 
         try:
             with transaction.atomic():
@@ -41,13 +45,18 @@ class GroupSerializer(serializers.ModelSerializer):
                     )
                 group.related_terms = related_terms
                 group.save()
+                # Create a LibraryOption instance for the new group
+
+                LibraryOption.objects.create(group=group, library_type="AI")
         except IntegrityError as e:
             # Handle specific database integrity errors
             raise serializers.ValidationError("Database integrity error: " + str(e))
         except Exception as e:
             # Handle other exceptions
             print(str(e))
-            raise serializers.ValidationError("Kindly try again,unable to generate terminologies for the group")
+            raise serializers.ValidationError(
+                "Kindly try again,unable to generate terminologies for the group"
+            )
 
         return group
 
@@ -63,10 +72,12 @@ class GroupAISerializer(serializers.ModelSerializer):
 
 
 class UserGroupListSerializer(serializers.ModelSerializer):
-    full_name = serializers.StringRelatedField(source='user.full_name')
-    organization_name = serializers.StringRelatedField(source='user.organization_name')
-    organization_id = serializers.StringRelatedField(source='user.organization_id')
-    group_titles = serializers.StringRelatedField(source='groups', many=True, read_only=True)
+    full_name = serializers.StringRelatedField(source="user.full_name")
+    organization_name = serializers.StringRelatedField(source="user.organization_name")
+    organization_id = serializers.StringRelatedField(source="user.organization_id")
+    group_titles = serializers.StringRelatedField(
+        source="groups", many=True, read_only=True
+    )
 
     class Meta:
         model = UserGroup
@@ -80,7 +91,7 @@ class UserGroupCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         user = data["user"]
-        groups = data['groups']
+        groups = data["groups"]
 
         user_organization_id = user.organization_id
 
@@ -88,7 +99,9 @@ class UserGroupCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("User has no organization")
 
         invalid_groups = [
-            group.title for group in groups if group.organization_id != user_organization_id
+            group.title
+            for group in groups
+            if group.organization_id != user_organization_id
         ]
 
         if invalid_groups:
@@ -100,7 +113,9 @@ class UserGroupCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         if UserGroup.objects.filter(user=validated_data["user"]).exists():
-            raise serializers.ValidationError("Cannot create more than one UserGroup for a user")
+            raise serializers.ValidationError(
+                "Cannot create more than one UserGroup for a user"
+            )
 
         return super().create(validated_data)
 
@@ -112,7 +127,7 @@ class UpdateUserGroupSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         user = data["user"]
-        groups = data['groups']
+        groups = data["groups"]
 
         user_organization_id = user.organization_id
 
@@ -120,7 +135,9 @@ class UpdateUserGroupSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("User has no organization")
 
         invalid_groups = [
-            group.title for group in groups if group.organization_id != user_organization_id
+            group.title
+            for group in groups
+            if group.organization_id != user_organization_id
         ]
 
         if invalid_groups:
@@ -129,5 +146,3 @@ class UpdateUserGroupSerializer(serializers.ModelSerializer):
             )
 
         return data
-
-
