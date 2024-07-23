@@ -1,8 +1,8 @@
 from django.shortcuts import render
-from rest_framework import generics 
+from rest_framework import generics
 from .models import *
 from .serializers import *
-from rest_framework.permissions import IsAuthenticated , AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny
 import string
 import nltk
 import requests
@@ -10,16 +10,16 @@ import pandas as pd
 import numpy as np
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
-from rest_framework.views import APIView 
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from pypdf import PdfReader
 from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.corpus import stopwords
 from rest_framework.generics import GenericAPIView
-import spacy 
+import spacy
 from rest_framework.exceptions import NotFound
-from drf_spectacular.utils import extend_schema,OpenApiParameter
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from simpleblog.pagination import CustomPagination
 
 
@@ -28,16 +28,15 @@ class GroupLeaderListCreateView(generics.ListCreateAPIView):
     serializer_class = GroupLeaderSerializer
     permission_classes = [IsAuthenticated]
 
-    
+
 class GroupLeaderRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = GroupLeader.objects.all()
     serializer_class = GroupLeaderSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        group_id = self.kwargs['group_id']
-        return get_object_or_404(GroupLeader,group=group_id)
-
+        group_id = self.kwargs["group_id"]
+        return get_object_or_404(GroupLeader, group=group_id)
 
 
 class LibraryOptionListCreateView(generics.ListCreateAPIView):
@@ -45,14 +44,15 @@ class LibraryOptionListCreateView(generics.ListCreateAPIView):
     serializer_class = LibraryOptionSerializer
     permission_classes = [IsAuthenticated]
 
+
 class LibraryOptionRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = LibraryOption.objects.all()
     serializer_class = LibraryOptionSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        group_id = self.kwargs['group_id']
-        return get_object_or_404(LibraryOption,group=group_id)
+        group_id = self.kwargs["group_id"]
+        return get_object_or_404(LibraryOption, group=group_id)
 
 
 class LibraryFileListCreateView(generics.ListCreateAPIView):
@@ -60,35 +60,39 @@ class LibraryFileListCreateView(generics.ListCreateAPIView):
     serializer_class = LibraryFileSerializer
     permission_classes = [IsAuthenticated]
 
+
 class LibraryFileRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = LibraryFile.objects.all()
     serializer_class = LibraryFileSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        group_id = self.kwargs['group_id']
-        libraryfile_id =self.kwargs['libraryfile_id']
-        return get_object_or_404(LibraryFile,group=group_id,pk=libraryfile_id)
-
+        group_id = self.kwargs["group_id"]
+        libraryfile_id = self.kwargs["libraryfile_id"]
+        return get_object_or_404(LibraryFile, group=group_id, pk=libraryfile_id)
 
 
 # Ensure NLTK data files are downloaded
-nltk.download('stopwords')
-nltk.download('punkt')
-nltk.download('wordnet')
-nltk.download('averaged_perceptron_tagger')
+nltk.download("stopwords")
+nltk.download("punkt")
+nltk.download("wordnet")
+nltk.download("averaged_perceptron_tagger")
 
 
-stop_words = stopwords.words('english')
+stop_words = stopwords.words("english")
+
 
 def stop_word_removal(text, stop_word_corpus, punct_str):
-    clean_text = ' '.join([word.lower() for word in text.split() if word.lower()
-                 not in stop_word_corpus]).replace('\n',' ')
-    return clean_text.translate(str.maketrans('', '', punct_str))
+    clean_text = " ".join(
+        [word.lower() for word in text.split() if word.lower() not in stop_word_corpus]
+    ).replace("\n", " ")
+    return clean_text.translate(str.maketrans("", "", punct_str))
+
 
 class ProcessLibraryFiles(GenericAPIView):
     permission_classes = [AllowAny]
     serializer_class = SyncLibraryFileSerializer
+
     def get(self, request, *args, **kwargs):
         library_files = LibraryFile.objects.filter(is_synchronize=False)
         processed_files = []
@@ -97,10 +101,10 @@ class ProcessLibraryFiles(GenericAPIView):
         for lib_file in library_files:
             response = requests.get(lib_file.file_url)
             if response.status_code == 200:
-                with open('temp.pdf', 'wb') as f:
+                with open("temp.pdf", "wb") as f:
                     f.write(response.content)
-                
-                reader = PdfReader('temp.pdf')
+
+                reader = PdfReader("temp.pdf")
                 fullfileText = ""
                 for i in range(len(reader.pages)):
                     page = reader.pages[i]
@@ -110,15 +114,26 @@ class ProcessLibraryFiles(GenericAPIView):
                 pdfs_Dataset = [fullfileText]
 
                 # Apply lemmatization and stop word removal
-                nlp = spacy.load('en_core_web_sm')
-                pdfs_Dataset_Lemmatized = [' '.join([token.lemma_ for token in nlp(text)]) for text in pdfs_Dataset]
-                pdfs_Dataset_cleaned = [stop_word_removal(text, stop_words, string.punctuation) for text in pdfs_Dataset_Lemmatized]
-                pdfs_Dataset_Only_Letters = [' '.join([word for word in text.split() if word.isalpha()]) for text in pdfs_Dataset_cleaned]
+                nlp = spacy.load("en_core_web_sm")
+                pdfs_Dataset_Lemmatized = [
+                    " ".join([token.lemma_ for token in nlp(text)])
+                    for text in pdfs_Dataset
+                ]
+                pdfs_Dataset_cleaned = [
+                    stop_word_removal(text, stop_words, string.punctuation)
+                    for text in pdfs_Dataset_Lemmatized
+                ]
+                pdfs_Dataset_Only_Letters = [
+                    " ".join([word for word in text.split() if word.isalpha()])
+                    for text in pdfs_Dataset_cleaned
+                ]
 
                 # TF-IDF Processing
                 vectorizer = TfidfVectorizer()
                 X = vectorizer.fit_transform(pdfs_Dataset_Only_Letters)
-                sklearn_df = pd.DataFrame(data=X.toarray(), columns=vectorizer.get_feature_names_out())
+                sklearn_df = pd.DataFrame(
+                    data=X.toarray(), columns=vectorizer.get_feature_names_out()
+                )
 
                 # Extract words based on the given percentage
                 percentage = 80
@@ -130,18 +145,23 @@ class ProcessLibraryFiles(GenericAPIView):
                     min_value = (max_value * (100 - percentage)) / 100
                     min_value -= 1e-13
                     max_value += 1e-13
-                    words_in_range = sklearn_df.columns[(sklearn_df.iloc[i] >= min_value) & (sklearn_df.iloc[i] <= max_value)]
+                    words_in_range = sklearn_df.columns[
+                        (sklearn_df.iloc[i] >= min_value)
+                        & (sklearn_df.iloc[i] <= max_value)
+                    ]
                     final_words_for_lib.extend(list(words_in_range))
 
                 unique_final_words_for_lib = np.unique(np.array(final_words_for_lib))
                 generated_words[lib_file.filename] = list(unique_final_words_for_lib)
-                
+
                 # Update the related_terms_library_b field in the Group model
                 group = lib_file.group
                 if group.related_terms_library_b is None:
                     group.related_terms_library_b = []
                 group.related_terms_library_b.extend(unique_final_words_for_lib)
-                group.related_terms_library_b = list(np.unique(np.array(group.related_terms_library_b)))  # Remove duplicates
+                group.related_terms_library_b = list(
+                    np.unique(np.array(group.related_terms_library_b))
+                )  # Remove duplicates
                 group.save()
 
                 # Update the is_synchronize field
@@ -149,15 +169,18 @@ class ProcessLibraryFiles(GenericAPIView):
                 lib_file.save()
                 processed_files.append(lib_file.filename)
 
-        return JsonResponse({
-            'processed_files': processed_files,
-            'generated_words': generated_words,
-            'message': 'TF-IDF processing completed successfully'
-        }, status=status.HTTP_200_OK)
+        return JsonResponse(
+            {
+                "processed_files": processed_files,
+                "generated_words": generated_words,
+                "message": "TF-IDF processing completed successfully",
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
+# list all groups a user is the group leader
 
-#list all groups a user is the group leader 
 
 class GroupLeaderListView(generics.ListAPIView):
     serializer_class = GroupGroupLeaderSerializer
@@ -166,7 +189,7 @@ class GroupLeaderListView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         return Group.objects.filter(leader__user=user)
-    
+
 
 class GroupLibrariesRetrieveView(generics.GenericAPIView):
     queryset = Group.objects.all()
@@ -174,16 +197,19 @@ class GroupLibrariesRetrieveView(generics.GenericAPIView):
     serializer_class = GroupLibrariesSerializer
     pagination_class = CustomPagination
 
-
     @extend_schema(
         parameters=[
-            OpenApiParameter(name='library', type=str, description='Specify the library to retrieve (a or b)', required=True)
+            OpenApiParameter(
+                name="library",
+                type=str,
+                description="Specify the library to retrieve (a or b)",
+                required=True,
+            )
         ]
     )
-
     def get(self, request, *args, **kwargs):
-        group_id = self.kwargs.get('group_id')
-        library = request.query_params.get('library')
+        group_id = self.kwargs.get("group_id")
+        library = request.query_params.get("library")
 
         try:
             group = Group.objects.get(id=group_id)
@@ -192,19 +218,33 @@ class GroupLibrariesRetrieveView(generics.GenericAPIView):
 
         # Check if the user is a group leader
         if not GroupLeader.objects.filter(user=request.user, group=group).exists():
-            return Response({"detail": "You do not have permission to perform this action because you are not a group leader "}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {
+                    "detail": "You do not have permission to perform this action because you are not a group leader "
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
-        if library == 'a':
+        if library == "a":
             terms = group.related_terms if group.related_terms is not None else []
-            library_name = 'Library A'
-        elif library == 'b':
-            terms = group.related_terms_library_b if group.related_terms_library_b is not None else []
-            library_name = 'Library B'
+            library_name = "Library A"
+        elif library == "b":
+            terms = (
+                group.related_terms_library_b
+                if group.related_terms_library_b is not None
+                else []
+            )
+            library_name = "Library B"
         else:
-            return Response({"detail": "Invalid library"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Invalid library"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         if not terms:
-            return Response({"detail": f"{library_name} is empty", "results": []}, status=status.HTTP_200_OK)
+            return Response(
+                {"detail": f"{library_name} is empty", "results": []},
+                status=status.HTTP_200_OK,
+            )
 
         # return self.paginate_results(terms)
 
@@ -229,38 +269,28 @@ class AddWordsToLibraryView(generics.GenericAPIView):
 
     @extend_schema(
         parameters=[
-            OpenApiParameter(name='library', type=str, description='Specify the library to add words to (a or b)', required=True)
+            OpenApiParameter(
+                name="library",
+                type=str,
+                description="Specify the library to add words to (a or b)",
+                required=True,
+            )
         ],
         request={
-            'application/json': {
-                'type': 'object',
-                'properties': {
-                    'words': {
-                        'type': 'array',
-                        'items': {
-                            'type': 'string'
-                        }
-                    }
-                },
-                'required': ['words']
+            "application/json": {
+                "type": "object",
+                "properties": {"words": {"type": "array", "items": {"type": "string"}}},
+                "required": ["words"],
             }
         },
         responses={
-            200: {
-                'type': 'object',
-                'properties': {
-                    'detail': {
-                        'type': 'string'
-                    }
-                }
-            }
-        }
+            200: {"type": "object", "properties": {"detail": {"type": "string"}}}
+        },
     )
-
     def post(self, request, *args, **kwargs):
-        group_id = self.kwargs.get('group_id')
-        library = request.query_params.get('library')
-        new_words = request.data.get('words', [])
+        group_id = self.kwargs.get("group_id")
+        library = request.query_params.get("library")
+        new_words = request.data.get("words", [])
 
         try:
             group = Group.objects.get(id=group_id)
@@ -269,27 +299,40 @@ class AddWordsToLibraryView(generics.GenericAPIView):
 
         # Check if the user is a group leader
         if not GroupLeader.objects.filter(user=request.user, group=group).exists():
-            return Response({"detail": "You do not have permission to perform this action because you are not a group leader"}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {
+                    "detail": "You do not have permission to perform this action because you are not a group leader"
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         if not isinstance(new_words, list):
-            return Response({"detail": "Words should be provided as a list"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Words should be provided as a list"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        if library == 'a':
+        if library == "a":
             if group.related_terms is None:
                 group.related_terms = []
             group.related_terms.extend(new_words)
             group.related_terms = list(set(group.related_terms))  # Remove duplicates
-        elif library == 'b':
+        elif library == "b":
             if group.related_terms_library_b is None:
                 group.related_terms_library_b = []
             group.related_terms_library_b.extend(new_words)
-            group.related_terms_library_b = list(set(group.related_terms_library_b))  # Remove duplicates
+            group.related_terms_library_b = list(
+                set(group.related_terms_library_b)
+            )  # Remove duplicates
         else:
-            return Response({"detail": "Invalid library"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Invalid library"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         group.save()
-        return Response({"detail": "Words added successfully"}, status=status.HTTP_200_OK)
-    
+        return Response(
+            {"detail": "Words added successfully"}, status=status.HTTP_200_OK
+        )
 
 
 class DeleteWordsFromLibraryView(generics.GenericAPIView):
@@ -298,21 +341,44 @@ class DeleteWordsFromLibraryView(generics.GenericAPIView):
 
     @extend_schema(
         parameters=[
-            OpenApiParameter(name='group_id', type=int, location=OpenApiParameter.PATH),
-            OpenApiParameter(name='library', type=str, description='Specify the library to delete words from (a or b)', required=True, location=OpenApiParameter.QUERY),
-            OpenApiParameter(name='word', type=str, description='Word to delete from the specified library', required=True, location=OpenApiParameter.QUERY),
+            OpenApiParameter(name="group_id", type=int, location=OpenApiParameter.PATH),
+            OpenApiParameter(
+                name="library",
+                type=str,
+                description="Specify the library to delete words from (a or b)",
+                required=True,
+                location=OpenApiParameter.QUERY,
+            ),
+            OpenApiParameter(
+                name="words",
+                type=str,
+                description="Comma-separated words to delete from the specified library",
+                required=True,
+                location=OpenApiParameter.QUERY,
+            ),
         ],
         responses={
-            200: {'description': 'Words deleted successfully', 'content': {'application/json': {'schema': {'type': 'object', 'properties': {'detail': {'type': 'string'}}}}}},
-            400: {'description': 'Invalid library or word'},
-            403: {'description': 'You do not have permission to perform this action because you are not a group leader'}
+            200: {
+                "description": "Words deleted successfully",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {"detail": {"type": "string"}},
+                        }
+                    }
+                },
+            },
+            400: {"description": "Invalid library or word"},
+            403: {
+                "description": "You do not have permission to perform this action because you are not a group leader"
+            },
         },
     )
-
     def delete(self, request, *args, **kwargs):
-        group_id = self.kwargs.get('group_id')
-        library = request.query_params.get('library')
-        words_to_delete = request.query_params.get('words', [])
+        group_id = self.kwargs.get("group_id")
+        library = request.query_params.get("library")
+        words_to_delete = request.query_params.get("words", "")
 
         try:
             group = Group.objects.get(id=group_id)
@@ -321,21 +387,36 @@ class DeleteWordsFromLibraryView(generics.GenericAPIView):
 
         # Check if the user is a group leader
         if not GroupLeader.objects.filter(user=request.user, group=group).exists():
-            return Response({"detail": "You do not have permission to perform this action because you are not a group leader"}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {
+                    "detail": "You do not have permission to perform this action because you are not a group leader"
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
-        if not isinstance(words_to_delete, list):
-            return Response({"detail": "Words should be provided as a list"}, status=status.HTTP_400_BAD_REQUEST)
+        # Convert the words_to_delete from string to list
+        words_to_delete = words_to_delete.split(",")
 
-        if library == 'a':
+        if library == "a":
             if group.related_terms is None:
                 group.related_terms = []
-            group.related_terms = [word for word in group.related_terms if word not in words_to_delete]
-        elif library == 'b':
+            group.related_terms = [
+                word for word in group.related_terms if word not in words_to_delete
+            ]
+        elif library == "b":
             if group.related_terms_library_b is None:
                 group.related_terms_library_b = []
-            group.related_terms_library_b = [word for word in group.related_terms_library_b if word not in words_to_delete]
+            group.related_terms_library_b = [
+                word
+                for word in group.related_terms_library_b
+                if word not in words_to_delete
+            ]
         else:
-            return Response({"detail": "Invalid library"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Invalid library"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         group.save()
-        return Response({"detail": "Words deleted successfully"}, status=status.HTTP_200_OK)
+        return Response(
+            {"detail": "Words deleted successfully"}, status=status.HTTP_200_OK
+        )
