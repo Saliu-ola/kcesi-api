@@ -69,6 +69,18 @@ def fetch_related_terms(description):
         return []
     return related_terms_list
 
+
+def fetch_update_related_terms(description):
+    prompt = f"description: '{description}'. Fetch at least 50 unique related terms for a given description, and return them as cleaned and lemmatized words as a list. Format should be [term,term,term]."
+    response = model.generate_content(prompt)
+    result = response.text
+    related_terms_list = result.split(",")
+    if not related_terms_list:
+        print("No related terms were found.")
+        return []
+    return related_terms_list
+
+
 def check_percentage_relevance_of_uncommon_words(uncommon_words,description):
     prompt = f" for description: '{description}', what is the percentage relevance or relation of the words '{uncommon_words}',return only the percentage digits, e.g 24.55 in 2d.p,if the words are not relevant return 0.00 "
     response = model.generate_content(prompt)
@@ -146,8 +158,7 @@ def clean(text):
 #     return speech_with_predicted_model
 
 
-
-#hate speech model
+# hate speech model
 
 # data = pd.read_csv("labeled_data2.csv")
 # data["labels"] = data["class"].map(
@@ -166,12 +177,7 @@ def clean(text):
 
 
 # joblib.dump(model, 'trained_model.pkl')
-# joblib.dump(cv, 'vectorizer.pkl') 
-
-
-
-
-
+# joblib.dump(cv, 'vectorizer.pkl')
 
 
 # print(get_bad_word_from_prediction_model("You are stupid"))
