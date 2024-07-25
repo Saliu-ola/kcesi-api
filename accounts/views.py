@@ -102,7 +102,15 @@ class UserViewSets(
         elif self.request.user.role_id == self.ADMIN_ROLE_ID:
             return self.queryset.filter(organization_id=self.request.user.organization_id)
         elif self.request.user.role_id == self.USER_ROLE_ID:
-            return self.queryset.filter(pk=self.request.user.pk)
+            # Regular user can see users in their groups
+            user_groups = UserGroup.objects.filter(user=self.request.user).values_list(
+                "groups", flat=True
+            )
+            users_in_same_groups = UserGroup.objects.filter(
+                groups__in=user_groups
+            ).values_list("user", flat=True)
+            return self.queryset.filter(pk__in=users_in_same_groups)
+
         else:
             raise ValueError("Role id not present")
 
@@ -854,55 +862,65 @@ class UserViewSets(
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                'group', description='group', type=OpenApiTypes.STR, location=OpenApiParameter.QUERY
+                "group",
+                description="group",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
             ),
             OpenApiParameter(
-                'organization_id',
-                description='organization_id',
+                "organization_id",
+                description="organization_id",
                 type=OpenApiTypes.STR,
                 location=OpenApiParameter.QUERY,
             ),
         ]
     )
     @action(
-        methods=['GET'],
+        methods=["GET"],
         detail=False,
         permission_classes=[IsAuthenticated],
         serializer_class=ListUserSerializer,
-        url_path='list-users-to-chat-with',
+        url_path="list-users-to-chat-with",
     )
     def get_list_of_users_to_chat_with(self, request, pk=None):
         group = request.query_params.get("group")
         organization_id = request.query_params.get("organization_id")
+        current_user = request.user
 
-        if self.request.user.role_id == 1 and self.request.user.is_superuser:
-            queryset = self.get_queryset()
-            return Response(
-                {
-                    "success": True,
-                    "count": queryset.count(),
-                    "data": self.get_serializer(queryset, many=True).data,
-                },
-                status=status.HTTP_200_OK,
+        # Start with all users in the same organization
+        if organization_id:
+            users_in_organization = self.get_queryset().filter(
+                organization_id=organization_id
             )
         else:
-            users_in_organization = self.get_queryset().filter(organization_id=organization_id)
-            qs = users_in_organization
-
-            if group is not None and group != '':
-                users_in_group = UserGroup.objects.filter(
-                    user__in=users_in_organization, groups=group
-                ).values("user__pk")
-                qs = self.get_queryset().filter(pk__in=users_in_group)
-
-            return Response(
-                {
-                    "success": True,
-                    "count": qs.count(),
-                    "data": self.get_serializer(qs, many=True).data,
-                },
-                status=status.HTTP_200_OK,
+            users_in_organization = self.get_queryset().filter(
+                organization_id=current_user.organization_id
             )
+
+        # Filter further by group if provided
+        if group:
+            users_in_group = UserGroup.objects.filter(groups=group).values_list(
+                "user__pk", flat=True
+            )
+            queryset = users_in_organization.filter(pk__in=users_in_group)
+        else:
+            # Get the groups of the requesting user
+            user_groups = UserGroup.objects.filter(user=current_user).values_list(
+                "groups", flat=True
+            )
+            users_in_same_groups = UserGroup.objects.filter(
+                groups__in=user_groups
+            ).values_list("user__pk", flat=True)
+            queryset = users_in_organization.filter(pk__in=users_in_same_groups)
+
+        return Response(
+            {
+                "success": True,
+                "count": queryset.count(),
+                "data": self.get_serializer(queryset, many=True).data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class UserSignUpView(generics.GenericAPIView):
@@ -1068,8 +1086,6 @@ class LoginView(generics.GenericAPIView):
                     data={"message": "Invalid email or password"},
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
-            
-
 
 
 class BulkUserCSVUploadView(APIView):
