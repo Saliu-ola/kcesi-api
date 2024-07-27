@@ -21,6 +21,7 @@ import spacy
 from rest_framework.exceptions import NotFound
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from simpleblog.pagination import CustomPagination
+from .permissions import IsGroupLeaderPermission, IsLeaderOfAnyGroup
 
 
 class GroupLeaderListCreateView(generics.ListCreateAPIView):
@@ -70,6 +71,15 @@ class LibraryFileRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView
         group_id = self.kwargs["group_id"]
         libraryfile_id = self.kwargs["libraryfile_id"]
         return get_object_or_404(LibraryFile, group=group_id, pk=libraryfile_id)
+    
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        # Check if the user is a group leader for this specific group
+        if not IsGroupLeaderPermission().has_permission(request, self):
+            self.permission_denied(
+                request,
+                message="You do not have permission to perform this action.",
+            )
 
 
 # Ensure NLTK data files are downloaded
@@ -90,7 +100,7 @@ def stop_word_removal(text, stop_word_corpus, punct_str):
 
 
 class ProcessLibraryFiles(GenericAPIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsGroupLeaderPermission]
     serializer_class = SyncLibraryFileSerializer
 
     def get(self, request, *args, **kwargs):
