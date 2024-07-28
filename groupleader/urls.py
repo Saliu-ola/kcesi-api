@@ -10,8 +10,8 @@ urlpatterns = [
     path('group-leader/<int:group_id>/', GroupLeaderRetrieveUpdateDestroyView.as_view(), name='group-leader-detail'),
     path('library-options/', LibraryOptionListCreateView.as_view(), name='library-option-list-create'),
     path('library-options/<int:group_id>/', LibraryOptionRetrieveUpdateDestroyView.as_view(), name='library-option-detail'),
-    path('library-files/', LibraryFileListCreateView.as_view(), name='library-file-list-create'),
-    path('library-files/<int:group_id>/file/<int:libraryfile_id>', LibraryFileRetrieveUpdateDestroyView.as_view(), name='library-file-detail'),
+    path('library-files/<int:group_id>/', LibraryFileListCreateView.as_view(), name='library-file-list-create'),
+    path('library-files/<int:group_id>/file/<int:libraryfile_id>/', LibraryFileRetrieveUpdateDestroyView.as_view(), name='library-file-detail'),
 
     path('process-library-files/<int:group_id>/', ProcessLibraryFiles.as_view(), name='process-library-files'),
 

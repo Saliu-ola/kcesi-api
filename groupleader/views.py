@@ -20,8 +20,9 @@ from rest_framework.generics import GenericAPIView
 import spacy
 from rest_framework.exceptions import NotFound
 from drf_spectacular.utils import extend_schema, OpenApiParameter
+from rest_framework.exceptions import PermissionDenied
 from simpleblog.pagination import CustomPagination
-from .permissions import IsGroupLeaderPermission, IsLeaderOfAnyGroup
+from .permissions import IsGroupLeaderPermission, CanChangeFileStatusPermission
 
 
 class GroupLeaderListCreateView(generics.ListCreateAPIView):
@@ -61,25 +62,80 @@ class LibraryFileListCreateView(generics.ListCreateAPIView):
     serializer_class = LibraryFileSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        group_id = self.kwargs.get('group_id')
+        if not group_id:
+            return LibraryFile.objects.none()
+
+        group = get_object_or_404(Group, id=group_id)
+        is_group_leader = GroupLeader.objects.filter(user=self.request.user, group=group).exists()
+
+        if is_group_leader:
+            return LibraryFile.objects.filter(group=group)
+        else:
+            return LibraryFile.objects.filter(group=group, user=self.request.user)
+        
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(self.add_is_group_leader(serializer.data))
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(self.add_is_group_leader(serializer.data))
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        # headers = self.get_success_headers(serializer.data)
+        return Response(self.add_is_group_leader([serializer.data])[0], status=status.HTTP_201_CREATED)#, headers=headers)
+
+    def perform_create(self, serializer):
+        group_id = self.kwargs.get('group_id')
+        group = get_object_or_404(Group, id=group_id)
+        serializer.save(user=self.request.user, group=group)
+
+    def add_is_group_leader(self, data):
+        group_id = self.kwargs.get('group_id')
+        is_group_leader = GroupLeader.objects.filter(user=self.request.user, group_id=group_id).exists() if group_id else False
+        for item in data:
+            item['is_group_leader'] = is_group_leader
+        return data
+
+
 
 class LibraryFileRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = LibraryFile.objects.all()
     serializer_class = LibraryFileSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, CanChangeFileStatusPermission]
 
     def get_object(self):
         group_id = self.kwargs["group_id"]
         libraryfile_id = self.kwargs["libraryfile_id"]
         return get_object_or_404(LibraryFile, group=group_id, pk=libraryfile_id)
     
-    def check_permissions(self, request):
-        super().check_permissions(request)
-        # Check if the user is a group leader for this specific group
-        if not IsGroupLeaderPermission().has_permission(request, self):
-            self.permission_denied(
-                request,
-                message="You do not have permission to perform this action.",
-            )
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        
+        if 'status' in request.data:
+            # Check if user is a group leader
+            if not GroupLeader.objects.filter(user=request.user, group=instance.group).exists():
+                raise PermissionDenied("Only group leaders can change the status.")
+
+  
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+    
+
 
 
 # Ensure NLTK data files are downloaded
@@ -104,7 +160,18 @@ class ProcessLibraryFiles(GenericAPIView):
     serializer_class = SyncLibraryFileSerializer
 
     def get(self, request, *args, **kwargs):
-        library_files = LibraryFile.objects.filter(is_synchronize=False)
+        group_id = self.kwargs.get('group_id')
+        
+        # Ensure the group exists
+        group = get_object_or_404(Group, id=group_id)
+        
+        # Filter LibraryFiles by group and is_synchronize flag
+        library_files = LibraryFile.objects.filter(
+            group=group,
+            is_synchronize=False
+        )
+        # print('filtered by group id')
+        # library_files = LibraryFile.objects.filter(is_synchronize=False)/
         processed_files = []
         generated_words = {}
 

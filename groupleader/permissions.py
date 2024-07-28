@@ -28,3 +28,10 @@ class IsLeaderOfAnyGroup(BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return GroupLeader.objects.filter(user=request.user).exists()
+    
+
+class CanChangeFileStatusPermission(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.method in ['PUT', 'PATCH'] and 'status' in request.data:
+            return GroupLeader.objects.filter(user=request.user, group=obj.group).exists()
+        return True

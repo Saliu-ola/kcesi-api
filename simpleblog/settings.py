@@ -77,6 +77,10 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+
+
+    #This is for updating d hatespeech library periodically(7days)
+    "hate_speech.middleware.UpdateRelatedTermsMiddleware"
 ]
 
 ROOT_URLCONF = "simpleblog.urls"
