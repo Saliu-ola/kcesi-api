@@ -1,85 +1,83 @@
-from decimal import Decimal, ROUND_DOWN
+from decimal import Decimal, ROUND_DOWN, DivisionUndefined
+import decimal
 
 
-def calculate_ai_division(ai_score,count):
+def calculate_ai_division(ai_score, count):
     try:
-        result = Decimal(ai_score / count)
-    except ZeroDivisionError:
-        result = Decimal('0.00')
-
+        ai_score = Decimal(ai_score)
+        count = Decimal(count)
+        if count == 0:
+            return Decimal("0.00")
+        result = ai_score / count
+    except (ZeroDivisionError, DivisionUndefined, decimal.InvalidOperation):
+        result = Decimal("0.00")
     return result
 
 
 def calculate_category_score(constants, tallies):
-    score =  ( sum(constants[key] * tallies[key] for key in constants))
-
+    score = sum(Decimal(constants[key]) * Decimal(tallies[key]) for key in constants)
     return score
 
 
 def calculate_total_engagement_score(sec, eec, cec, iec):
+    sec = Decimal(sec)
+    eec = Decimal(eec)
+    cec = Decimal(cec)
+    iec = Decimal(iec)
     tes = sec + eec + cec + iec
-
     return tes
 
 
-def calculate_percentage(score, tes):
-    percentage = (score / tes) * 100 if tes != 0 else 0
+# def calculate_total_engagement_score(sec, eec, cec, iec):
+#     tes = sec + eec + cec + iec
 
+#     return tes
+
+
+def calculate_percentage(score, tes):
+    percentage = (Decimal(score) / Decimal(tes)) * 100 if tes != 0 else 0
     return percentage
 
 
 def calculate_engagement_scores(tallies):
-    # Define the constants for each engagement category
     socialization_constants = {
-        "post_blog": 0.5,
-        "send_chat_message": 0.01,
-        "post_forum": 0.25,
-        "image_sharing": 0.002,
-        "video_sharing": 0.002,
-        "text_resource_sharing": 0.002,
-        "created_topic": 0.025,
+        "post_blog": Decimal("0.5"),
+        "send_chat_message": Decimal("0.01"),
+        "post_forum": Decimal("0.25"),
+        "image_sharing": Decimal("0.002"),
+        "video_sharing": Decimal("0.002"),
+        "text_resource_sharing": Decimal("0.002"),
+        "created_topic": Decimal("0.025"),
     }
 
     externalization_constants = {
-        "post_blog": 0.5,
-        "send_chat_message": 0.001,
-        "post_forum": 0.25,
-        "created_topic": 0.025,
-        "comment": 0.002,
+        "post_blog": Decimal("0.5"),
+        "send_chat_message": Decimal("0.001"),
+        "post_forum": Decimal("0.25"),
+        "created_topic": Decimal("0.025"),
+        "comment": Decimal("0.002"),
     }
 
     combination_constants = {
-        "created_topic": 0.025,
-        "post_blog": 0.5,
+        "created_topic": Decimal("0.025"),
+        "post_blog": Decimal("0.5"),
     }
 
     internalization_constants = {
-        "used_in_app_browser": 0.001,
-        "read_blog": 0.001,
-        "read_forum": 0.001,
-        "recieve_chat_message": 0.001,
-        "download_resources": 0.001,
+        "used_in_app_browser": Decimal("0.001"),
+        "read_blog": Decimal("0.001"),
+        "read_forum": Decimal("0.001"),
+        "recieve_chat_message": Decimal("0.001"),
+        "download_resources": Decimal("0.001"),
     }
 
-    # Print values for debugging
-    # print("Tallies:", tallies)
-
-    # Calculate Socialization Engagement Score (SEC)
     sec = calculate_category_score(socialization_constants, tallies)
-
-    # Calculate Externalization Engagement Score (EEC)
     eec = calculate_category_score(externalization_constants, tallies)
-
-    # Calculate Combination Engagement Score (CEC)
     cec = calculate_category_score(combination_constants, tallies)
-
-    # Calculate Internalization Engagement Score (IEC)
     iec = calculate_category_score(internalization_constants, tallies)
 
-    # Calculate Total Engagement Score (TES)
     tes = calculate_total_engagement_score(sec, eec, cec, iec)
 
-    # Calculate engagement percentages for each category
     socialization_percentage = calculate_percentage(sec, tes)
     externalization_percentage = calculate_percentage(eec, tes)
     combination_percentage = calculate_percentage(cec, tes)

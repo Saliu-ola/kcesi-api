@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.contrib.auth import authenticate
 from django.shortcuts import render
 from rest_framework import generics, status, viewsets, filters
@@ -433,15 +434,17 @@ class UserViewSets(
             organization=organization, group=group.pk, created_at__range=date_range
         ).count()
 
-        post_blog_ai_score =  self.get_aggregated_score(Blog,organization,group,date_range)
+        post_blog_ai_score = Decimal(
+            self.get_aggregated_score(Blog, organization, group, date_range)
+        )
         post_blog = calculate_ai_division(post_blog_ai_score, post_blog_count)
 
         send_chat_message_count = InAppChat.objects.filter(
             organization=organization, group=group.pk, created_at__range=date_range
         ).count()
 
-        send_chat_message_ai_score = self.get_aggregated_score(
-            InAppChat, organization, group, date_range
+        send_chat_message_ai_score = Decimal(
+            self.get_aggregated_score(InAppChat, organization, group, date_range)
         )
         send_chat_message = calculate_ai_division(
             send_chat_message_ai_score, send_chat_message_count
@@ -451,8 +454,8 @@ class UserViewSets(
             organization=organization, group=group.pk, created_at__range=date_range
         ).count()
 
-        post_forum_ai_score = self.get_aggregated_score(
-            Forum, organization, group, date_range
+        post_forum_ai_score = Decimal(
+            self.get_aggregated_score(Forum, organization, group, date_range)
         )
         post_forum = calculate_ai_division(post_forum_ai_score, post_forum_count)
 
@@ -491,18 +494,11 @@ class UserViewSets(
 
         total_comment_count = comment_for_blog_count + comment_for_forum_count
 
-        comment_for_blog_ai_score = self.get_aggregated_score(
-            Comment,
-            organization,
-            group,
-            date_range,
+        comment_for_blog_ai_score = Decimal(
+            self.get_aggregated_score(Comment, organization, group, date_range)
         )
-        comment_for_forum_ai_score = self.get_aggregated_score(
-            ForumComment,
-            organization,
-            group,
-            date_range,
-
+        comment_for_forum_ai_score = Decimal(
+            self.get_aggregated_score(ForumComment, organization, group, date_range)
         )
 
         total_comment_ai_score = comment_for_blog_ai_score + comment_for_forum_ai_score
