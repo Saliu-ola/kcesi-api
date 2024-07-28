@@ -88,9 +88,8 @@ class LibraryFileListCreateView(generics.ListCreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
-        # headers = self.get_success_headers(serializer.data)
-        return Response(self.add_is_group_leader([serializer.data])[0], status=status.HTTP_201_CREATED)#, headers=headers)
-
+        return Response(self.add_is_group_leader([serializer.data])[0], status=status.HTTP_201_CREATED)
+    
     def perform_create(self, serializer):
         group_id = self.kwargs.get('group_id')
         group = get_object_or_404(Group, id=group_id)
@@ -125,7 +124,6 @@ class LibraryFileRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView
         instance = self.get_object()
         
         if 'status' in request.data:
-            # Check if user is a group leader
             if not GroupLeader.objects.filter(user=request.user, group=instance.group).exists():
                 raise PermissionDenied("Only group leaders can change the status.")
 
@@ -162,7 +160,7 @@ class ProcessLibraryFiles(GenericAPIView):
     def get(self, request, *args, **kwargs):
         group_id = self.kwargs.get('group_id')
         
-        # Ensure the group exists
+        # Ensures d grup exists
         group = get_object_or_404(Group, id=group_id)
         
         # Filter LibraryFiles by group and is_synchronize flag
