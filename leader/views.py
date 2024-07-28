@@ -335,7 +335,7 @@ class SocializationViewSets(BaseViewSet):
             tes = organization_activity_scores["tes"]
 
             socialization_instance = organization_activity_scores["socialization_instance"]
-
+            
             socialization_percentage = round(
                 socialization_instance.calculate_socialization_percentage(sec, tes), 2
             )
