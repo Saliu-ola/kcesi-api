@@ -37,7 +37,7 @@ act_type = {
 
 class FlagSerializer(serializers.ModelSerializer):
     flagged_by = serializers.CharField(source='flagged_by.username', read_only=True)
-    author_name = serializers.SerializerMethodField()
+    author_id = serializers.SerializerMethodField()
     # group_id = serializers.SerializerMethodField()
     activity_type = serializers.SerializerMethodField()
 
@@ -45,7 +45,7 @@ class FlagSerializer(serializers.ModelSerializer):
         model = Activity_flag
         fields = '__all__'
 
-    def get_author_name(self, obj)-> str:
+    def get_author_id(self, obj)-> str:
         return User.objects.get(pk=obj.author_id).username
 
     # def get_group_id(self, obj):
