@@ -186,7 +186,7 @@ class BaseViewSet(viewsets.ModelViewSet):
             {'user': user},
         )
 
-        total_comment_ai_score = comment_for_blog_ai_score + comment_for_forum_ai_score
+        total_comment_ai_score = Decimal(comment_for_blog_ai_score) + Decimal(comment_for_forum_ai_score)
 
         comment = calculate_ai_division(total_comment_ai_score, total_comment_count)
 
