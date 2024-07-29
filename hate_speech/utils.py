@@ -2,7 +2,6 @@ import json, os
 from datetime import datetime
 from django.core.exceptions import ValidationError
 from pathlib import Path
-from celery import shared_task
 from .models import BadWord
 from django.conf import settings
 
