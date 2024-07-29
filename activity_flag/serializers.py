@@ -45,13 +45,13 @@ class FlagSerializer(serializers.ModelSerializer):
         model = Activity_flag
         fields = '__all__'
 
-    def get_author_id(self, obj):
+    def get_author_id(self, obj)-> str:
         return User.objects.get(pk=obj.author_id).username
 
     # def get_group_id(self, obj):
     #     return Group.objects.get(pk=obj.group_id).name
 
-    def get_activity_type(self, obj):
+    def get_activity_type(self, obj)-> str:
         return act_type.get(obj.activity_type_id)
 
 

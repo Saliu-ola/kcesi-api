@@ -54,6 +54,7 @@ class LibraryOptionSerializer(serializers.ModelSerializer):
 
 
 class LibraryFileSerializer(serializers.ModelSerializer):
+    is_group_leader = serializers.BooleanField(read_only=True)
     group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
     status = serializers.ChoiceField(choices=LibraryFile.STATUS_CHOICES)
@@ -63,16 +64,17 @@ class LibraryFileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LibraryFile
-        fields = '__all__'
+        fields = ['id', 'group', 'group_name', 'filename', 'user_name', 'full_name', 'filedescription', 'user', 'status', 'datetime', 'file_url', 'is_synchronize', 'is_group_leader']
+        # fields = '__all__'
 
 
-    def get_group_name(self, obj):
+    def get_group_name(self, obj)-> str:
         return obj.group.title
 
-    def get_user_name(self, obj):
+    def get_user_name(self, obj)-> str:
         return obj.user.username
     
-    def get_full_name(self, obj):
+    def get_full_name(self, obj)-> str:
         return f"{obj.user.first_name} {obj.user.last_name}"
 
     def validate(self, data):
