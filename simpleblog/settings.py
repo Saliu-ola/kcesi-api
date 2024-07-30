@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     # third-party-apps
     "rest_framework",
     "corsheaders",
+    'django_filters',
     "rest_framework.authtoken",
     'drf_spectacular',
     "debug_toolbar",
