@@ -76,6 +76,10 @@ class LibraryFileSerializer(serializers.ModelSerializer):
     
     def get_full_name(self, obj)-> str:
         return f"{obj.user.first_name} {obj.user.last_name}"
+    
+    def validate_file_url(self, value):
+         if not value.lower().endswith('.pdf'):
+            raise serializers.ValidationError("File URL must point to a PDF file.")
 
     def validate(self, data):
         group = data.get('group')
