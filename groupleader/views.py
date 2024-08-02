@@ -156,7 +156,7 @@ class ProcessLibraryFiles(GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         group_id = self.kwargs.get('group_id')
-        
+
         # Ensures d grup exists
         group = get_object_or_404(Group, id=group_id)
         
@@ -165,6 +165,8 @@ class ProcessLibraryFiles(GenericAPIView):
             group=group,
             is_synchronize=False
         )
+        if not library_files.exists():
+            return response ({'message':'Up to date, no file to synchronize.'}, status = status.HTTP_200_OK)
         # print('filtered by group id')
         # library_files = LibraryFile.objects.filter(is_synchronize=False)/
         processed_files = []
