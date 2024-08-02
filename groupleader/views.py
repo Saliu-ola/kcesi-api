@@ -103,7 +103,6 @@ class LibraryFileListCreateView(generics.ListCreateAPIView):
         return data
 
 
-
 class LibraryFileRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = LibraryFile.objects.all()
     serializer_class = LibraryFileSerializer
@@ -132,8 +131,6 @@ class LibraryFileRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
-    
-
 
 
 # Ensure NLTK data files are downloaded
@@ -302,6 +299,7 @@ class GroupLibrariesRetrieveView(generics.GenericAPIView):
 
         if library == "a":
             terms = group.related_terms if group.related_terms is not None else []
+            terms = sorted(terms)
             library_name = "Library A"
         elif library == "b":
             terms = (
@@ -309,6 +307,7 @@ class GroupLibrariesRetrieveView(generics.GenericAPIView):
                 if group.related_terms_library_b is not None
                 else []
             )
+            terms = sorted(terms)
             library_name = "Library B"
         else:
             return Response(

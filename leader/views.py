@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, mixins, status
 from rest_framework.decorators import APIView, api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny ,IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from .models import Socialization, Internalization, Externalization, Combination
@@ -289,9 +289,9 @@ class SocializationViewSets(BaseViewSet):
         ],
     )
     @action(
-        methods=['GET'],
+        methods=["GET"],
         detail=False,
-        permission_classes=[IsAdminOrUser],
+        permission_classes=[IsSuperAdminOrAdmin],
         serializer_class=None,
     )
     def get_organization_socialization_activity_scores(self, request, pk=None):
@@ -335,7 +335,7 @@ class SocializationViewSets(BaseViewSet):
             tes = organization_activity_scores["tes"]
 
             socialization_instance = organization_activity_scores["socialization_instance"]
-            
+
             socialization_percentage = round(
                 socialization_instance.calculate_socialization_percentage(sec, tes), 2
             )
@@ -343,7 +343,7 @@ class SocializationViewSets(BaseViewSet):
             user, percentage = user, socialization_percentage
 
             leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
-        
+
         leaders_sorted = calculate_categorized_percentage(leaders)
         return Response(
             {
@@ -425,9 +425,9 @@ class ExternalizationViewSets(BaseViewSet):
         ],
     )
     @action(
-        methods=['GET'],
+        methods=["GET"],
         detail=False,
-        permission_classes=[IsAdminOrUser],
+        permission_classes=[IsSuperAdminOrAdmin],
         serializer_class=None,
     )
     def get_organization_externalization_activity_scores(self, request, pk=None):
@@ -477,7 +477,7 @@ class ExternalizationViewSets(BaseViewSet):
             user, percentage = user, externalization_percentage
 
             leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
-        
+
         leaders_sorted = calculate_categorized_percentage(leaders)
         return Response(
             {
@@ -559,9 +559,9 @@ class CombinationViewSets(BaseViewSet):
         ],
     )
     @action(
-        methods=['GET'],
+        methods=["GET"],
         detail=False,
-        permission_classes=[IsAdminOrUser],
+        permission_classes=[IsSuperAdminOrAdmin],
         serializer_class=None,
     )
     def get_organization_combination_activity_scores(self, request, pk=None):
@@ -613,7 +613,7 @@ class CombinationViewSets(BaseViewSet):
             user, percentage = user, combination_percentage
 
             leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
-        
+
         leaders_sorted=calculate_categorized_percentage(leaders)
 
         return Response(
@@ -696,9 +696,9 @@ class InternalizationViewSets(BaseViewSet):
         ],
     )
     @action(
-        methods=['GET'],
+        methods=["GET"],
         detail=False,
-        permission_classes=[IsAdminOrUser],
+        permission_classes=[IsSuperAdminOrAdmin],
         serializer_class=None,
     )
     def get_organization_internalization_activity_scores(self, request, pk=None):
@@ -750,7 +750,7 @@ class InternalizationViewSets(BaseViewSet):
             user, percentage = user, internalization_percentage
 
             leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
-        
+
         leaders_sorted = calculate_categorized_percentage(leaders)
         return Response(
             {
