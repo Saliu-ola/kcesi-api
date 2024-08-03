@@ -23,6 +23,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.exceptions import PermissionDenied
 from simpleblog.pagination import CustomPagination
 from .permissions import IsGroupLeaderPermission, CanChangeFileStatusPermission
+from rest_framework.exceptions import ValidationError
 
 
 class GroupLeaderListCreateView(generics.ListCreateAPIView):
@@ -65,7 +66,7 @@ class LibraryFileListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         group_id = self.kwargs.get('group_id')
         if not group_id:
-            return ValueError("Ensure you pick a group")
+            raise ValidationError("Ensure you pick a group")
 
         group = get_object_or_404(Group, id=group_id)
         is_group_leader = GroupLeader.objects.filter(user=self.request.user, group=group).exists()
