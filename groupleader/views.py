@@ -162,7 +162,7 @@ class ProcessLibraryFiles(GenericAPIView):
         
         # Filter LibraryFiles by group and is_synchronize flag
         library_files = LibraryFile.objects.filter(
-            group=group,
+            group=group,status='approved',
             is_synchronize=False
         )
         if not library_files.exists():
