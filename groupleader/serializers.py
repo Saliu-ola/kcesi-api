@@ -78,7 +78,7 @@ class LibraryFileSerializer(serializers.ModelSerializer):
         return f"{obj.user.first_name} {obj.user.last_name}"
     
     def validate_file_url(self, value):
-         if not value.lower().endswith('.pdf'):
+         if value and not value.lower().endswith('.pdf'):
             raise serializers.ValidationError("File URL must point to a PDF file.")
 
     def validate(self, data):
