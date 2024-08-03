@@ -162,8 +162,11 @@ class ProcessLibraryFiles(GenericAPIView):
 
         # Filter LibraryFiles by group and is_synchronize flag
         library_files = LibraryFile.objects.filter(
-            group=group, is_synchronize=False
+            group=group,status='approved',
+            is_synchronize=False
         )
+        if not library_files.exists():
+            return Response ({'message':'Up to date, no file to synchronize.'}, status = status.HTTP_200_OK)
         # print('filtered by group id')
         # library_files = LibraryFile.objects.filter(is_synchronize=False)/
         processed_files = []
