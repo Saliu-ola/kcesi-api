@@ -40,6 +40,8 @@ class GroupLeaderSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("This user is already a leader of the group.")
         
         return data
+    
+
 
 
 class LibraryOptionSerializer(serializers.ModelSerializer):
@@ -48,6 +50,7 @@ class LibraryOptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = LibraryOption
         fields = ['id', 'library_type' , 'group']
+
 
 
 class LibraryFileSerializer(serializers.ModelSerializer):
@@ -64,34 +67,32 @@ class LibraryFileSerializer(serializers.ModelSerializer):
         fields = ['id', 'group', 'group_name', 'filename', 'user_name', 'full_name', 'filedescription', 'user', 'status', 'datetime', 'file_url', 'is_synchronize', 'is_group_leader']
         # fields = '__all__'
 
+
     def get_group_name(self, obj)-> str:
         return obj.group.title
 
     def get_user_name(self, obj)-> str:
         return obj.user.username
-
+    
     def get_full_name(self, obj)-> str:
         return f"{obj.user.first_name} {obj.user.last_name}"
-
-    # def validate_file_url(self, value):
-    #      if not value.lower().endswith('.pdf'):
-    #         raise serializers.ValidationError("File URL must point to a PDF file.")
-
+    
     def validate_file_url(self, value):
-        if value and not value.lower().endswith(".pdf"):
+        if value and not value.lower().endswith('.pdf'):
             raise serializers.ValidationError("File URL must point to a PDF file.")
+        
         return value
 
-    # def validate(self, data):
-    #     group = data.get('group')
-    #     user = data.get('user')
-
-    #     # Custom validation: Ensure the user is a member of the group
-    #     if not UserGroup.objects.filter(user=user, groups=group).exists():
-    #         raise serializers.ValidationError("The user is not a member of the group.")
-
-    #     return data
-
+    def validate(self, data):
+        group = data.get('group')
+        user = data.get('user')
+        
+        # Custom validation: Ensure the user is a member of the group
+        if not UserGroup.objects.filter(user=user, groups=group).exists():
+            raise serializers.ValidationError("The user is not a member of the group.")
+        
+        return data
+    
 class SyncLibraryFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = LibraryFile
