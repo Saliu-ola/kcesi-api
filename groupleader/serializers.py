@@ -80,6 +80,8 @@ class LibraryFileSerializer(serializers.ModelSerializer):
     def validate_file_url(self, value):
         if value and not value.lower().endswith('.pdf'):
             raise serializers.ValidationError("File URL must point to a PDF file.")
+        
+        return value
 
     def validate(self, data):
         group = data.get('group')
