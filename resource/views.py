@@ -15,6 +15,7 @@ from rest_framework.parsers import MultiPartParser
 from accounts.permissions import IsSuperAdmin
 from .serializers import ResourceFileSizeSerializer
 from .models import ResourceFileSize
+from cloudinary.exceptions import Error as CloudinaryError
 
 
 class ResourcesViewSets(viewsets.ModelViewSet):
@@ -239,5 +240,10 @@ class ResourceDeleteView(generics.DestroyAPIView):
     lookup_url_kwarg = 'id'
 
     def perform_destroy(self, instance):
-        cloudinary.uploader.destroy(instance.cloud_id)
+        if instance.cloud_id:
+            try:
+                cloudinary.uploader.destroy(instance.cloud_id)
+            except CloudinaryError:
+                pass
+            # cloudinary.uploader.destroy(instance.cloud_id)
         instance.delete()
