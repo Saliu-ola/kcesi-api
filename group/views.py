@@ -97,7 +97,7 @@ class GroupViewSets(viewsets.ModelViewSet):
 
             # so i fetch the updated one along
             relevant_percentage = get_percentage_relevancy(new_content, existing_text)
-            relevant_percentage = float(relevant_percentage)
+            relevant_percentage = float(relevant_percentage) *2
 
             rating = "Very Bad"
             if relevant_percentage > 59:

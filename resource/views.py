@@ -229,3 +229,15 @@ class FileSizeListView(generics.ListAPIView):
     permission_classes = [IsSuperAdmin]
     queryset = ResourceFileSize.objects.all()
     serializer_class = ResourceFileSizeSerializer
+
+
+class ResourceDeleteView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = Resources.objects.all()
+    serializer_class = ResourcesSerializer
+    lookup_field = 'id'
+    lookup_url_kwarg = 'id'
+
+    def perform_destroy(self, instance):
+        cloudinary.uploader.destroy(instance.cloud_id)
+        instance.delete()
