@@ -65,7 +65,7 @@ class LibraryFileListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         group_id = self.kwargs.get('group_id')
         if not group_id:
-            return LibraryFile.objects.none()
+            return ValueError("Ensure you pick a group")
 
         group = get_object_or_404(Group, id=group_id)
         is_group_leader = GroupLeader.objects.filter(user=self.request.user, group=group).exists()
@@ -156,14 +156,13 @@ class ProcessLibraryFiles(GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         group_id = self.kwargs.get('group_id')
-        
+
         # Ensures d grup exists
         group = get_object_or_404(Group, id=group_id)
-        
+
         # Filter LibraryFiles by group and is_synchronize flag
         library_files = LibraryFile.objects.filter(
-            group=group,
-            is_synchronize=False
+            group=group, is_synchronize=False
         )
         # print('filtered by group id')
         # library_files = LibraryFile.objects.filter(is_synchronize=False)/
@@ -171,7 +170,11 @@ class ProcessLibraryFiles(GenericAPIView):
         generated_words = {}
 
         for lib_file in library_files:
-            response = requests.get(lib_file.file_url)
+            file_url = lib_file.file_url
+            if not file_url:
+                continue
+            # response = requests.get(lib_file.file_url)
+            response = requests.get(file_url)
             if response.status_code == 200:
                 with open("temp.pdf", "wb") as f:
                     f.write(response.content)
