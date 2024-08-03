@@ -82,15 +82,15 @@ class LibraryFileSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("File URL must point to a PDF file.")
         return value
 
-    def validate(self, data):
-        group = data.get('group')
-        user = data.get('user')
+    # def validate(self, data):
+    #     group = data.get('group')
+    #     user = data.get('user')
 
-        # Custom validation: Ensure the user is a member of the group
-        if not UserGroup.objects.filter(user=user, groups=group).exists():
-            raise serializers.ValidationError("The user is not a member of the group.")
+    #     # Custom validation: Ensure the user is a member of the group
+    #     if not UserGroup.objects.filter(user=user, groups=group).exists():
+    #         raise serializers.ValidationError("The user is not a member of the group.")
 
-        return data
+    #     return data
 
 class SyncLibraryFileSerializer(serializers.ModelSerializer):
     class Meta:
