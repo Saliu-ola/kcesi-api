@@ -13,6 +13,7 @@ from .serializers import (
     UserGroupListSerializer,
     UserGroupCreateSerializer,
     UpdateUserGroupSerializer,
+    UsersInGroupListSerializer
 )
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
@@ -200,3 +201,13 @@ class UserGroupsViewSets(viewsets.ModelViewSet):
         else:
             return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response(UserGroupCreateSerializer(user_group_instance).data)
+
+
+
+class UsersInGroupView(generics.ListAPIView):
+    serializer_class = UsersInGroupListSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        group_id = self.kwargs.get('group_id')
+        return UserGroup.objects.filter(groups__id=group_id)#.values('user')

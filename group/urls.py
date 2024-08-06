@@ -12,5 +12,7 @@ router.register('', GroupViewSets)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('get-user-in-group/<int:group_id>/', UsersInGroupView.as_view(), name = 'view-users-in-a-group'),
+    
     
 ]

@@ -10,7 +10,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
-import cloudinary.uploader
+from cloudinary import uploader
 from rest_framework.parsers import MultiPartParser
 from accounts.permissions import IsSuperAdmin
 from .serializers import ResourceFileSizeSerializer
@@ -30,7 +30,7 @@ class ResourcesViewSets(viewsets.ModelViewSet):
     parser_classes = [MultiPartParser]
 
     def perform_destroy(self, instance):
-        cloudinary.uploader.destroy(instance.cloud_id)
+        uploader.destroy(instance.cloud_id)
         instance.delete()
     
     ADMIN_ROLE_ID = 2
@@ -242,8 +242,15 @@ class ResourceDeleteView(generics.DestroyAPIView):
     def perform_destroy(self, instance):
         if instance.cloud_id:
             try:
-                cloudinary.uploader.destroy(instance.cloud_id)
-            except CloudinaryError:
+                uploader.destroy(instance.cloud_id)
+            except Exception as e:
                 pass
-            # cloudinary.uploader.destroy(instance.cloud_id)
+                # print(f"Error deleting resource from Cloudinary: {e}")
+
+        # Delete the instance from the database
         instance.delete()
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)

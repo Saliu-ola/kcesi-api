@@ -25,11 +25,26 @@ from simpleblog.pagination import CustomPagination
 from .permissions import IsGroupLeaderPermission, CanChangeFileStatusPermission
 from rest_framework.exceptions import ValidationError
 
-
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name='organization_id',
+            description="Optional parameter to filter GroupLeaders by organization ID",
+            required=False,
+            type=str
+        ),
+    ]
+)
 class GroupLeaderListCreateView(generics.ListCreateAPIView):
-    queryset = GroupLeader.objects.all()
     serializer_class = GroupLeaderSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = GroupLeader.objects.all()
+        organization_id = self.request.query_params.get('organization_id')
+        if organization_id:
+            queryset = queryset.filter(group__organization_id=organization_id)
+        return queryset
 
 
 class GroupLeaderRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
@@ -397,7 +412,7 @@ class AddWordsToLibraryView(generics.GenericAPIView):
         if not GroupLeader.objects.filter(user=request.user, group=group).exists():
             return Response(
                 {
-                    "detail": "You do not have permission to perform this action because you are not a group leader"
+                    "detail": "You do not have permission to perform this action because you are not the group leader"
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -406,7 +421,7 @@ class AddWordsToLibraryView(generics.GenericAPIView):
             return Response(
                 {"detail": "Words should be provided as a list"},
                 status=status.HTTP_400_BAD_REQUEST,
-            )
+            )    
 
         if library == "a":
             if group.related_terms is None:
@@ -419,7 +434,7 @@ class AddWordsToLibraryView(generics.GenericAPIView):
             group.related_terms_library_b.extend(new_words)
             group.related_terms_library_b = list(
                 set(group.related_terms_library_b)
-            )  # Remove duplicates
+            )  # Remove duplicates, 
         else:
             return Response(
                 {"detail": "Invalid library"}, status=status.HTTP_400_BAD_REQUEST
@@ -467,7 +482,7 @@ class DeleteWordsFromLibraryView(generics.GenericAPIView):
             },
             400: {"description": "Invalid library or word"},
             403: {
-                "description": "You do not have permission to perform this action because you are not a group leader"
+                "description": "You do not have permission to perform this action because you are not the group leader"
             },
         },
     )
@@ -485,7 +500,7 @@ class DeleteWordsFromLibraryView(generics.GenericAPIView):
         if not GroupLeader.objects.filter(user=request.user, group=group).exists():
             return Response(
                 {
-                    "detail": "You do not have permission to perform this action because you are not a group leader"
+                    "detail": "You do not have permission to perform this action because you are not the group leader"
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -515,4 +530,90 @@ class DeleteWordsFromLibraryView(generics.GenericAPIView):
         group.save()
         return Response(
             {"detail": "Words deleted successfully"}, status=status.HTTP_200_OK
+        )
+
+
+class EditWordInLibraryView(generics.GenericAPIView):
+    queryset = Group.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="library",
+                type=str,
+                description="Specify the library to edit words in (a or b)",
+                required=True,
+            ),
+        ],
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "old_word": {"type": "string"},
+                    "new_word": {"type": "string"},
+                },
+                "required": ["old_word", "new_word"],
+            },
+        },
+        responses={
+            200: {"type": "object", "properties": {"detail": {"type": "string"}}}
+        },
+    )
+    def post(self, request, *args, **kwargs):
+        group_id = self.kwargs.get("group_id")
+        library = request.query_params.get("library")
+        old_word = request.data.get("old_word")
+        new_word = request.data.get("new_word")
+
+        try:
+            group = Group.objects.get(id=group_id)
+        except Group.DoesNotExist:
+            raise NotFound("Group not found")
+
+        # Check if the user is a group leader
+        if not GroupLeader.objects.filter(user=request.user, group=group).exists():
+            return Response(
+                {"detail": "You do not have permission to perform this action because you are not the group leader"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if library == "a":
+            if old_word not in group.related_terms:
+                return Response(
+                    {"detail": f"{old_word} not found in library a"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if new_word in group.related_terms:
+                return Response(
+                    {"detail": f"{new_word} already exists in library a"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            group.related_terms = [
+                new_word if word == old_word else word for word in group.related_terms
+            ]
+        elif library == "b":
+            if old_word not in group.related_terms_library_b:
+                return Response(
+                    {"detail": f"{old_word} not found in library b"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if new_word in group.related_terms_library_b:
+                return Response(
+                    {"detail": f"{new_word} already exists in library b"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            group.related_terms_library_b = [
+                new_word if word == old_word else word for word in group.related_terms_library_b
+            ]
+        else:
+            return Response(
+                {"detail": "Invalid library"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        group.save()
+        return Response(
+            {"detail": "Word edited successfully"},
+            status=status.HTTP_200_OK
         )
