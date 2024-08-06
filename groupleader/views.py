@@ -380,7 +380,9 @@ class AddWordsToLibraryView(generics.GenericAPIView):
             }
         },
         responses={
-            200: {"type": "object", "properties": {"detail": {"type": "string"}}}
+            200: {"type": "object", "properties": {"detail": {"type": "string"}}},
+            400: {"type": "object", "properties": {"detail": {"type": "string"}}},
+            409: {"type": "object", "properties": {"detail": {"type": "string"}}},
         },
     )
     def post(self, request, *args, **kwargs):
@@ -408,22 +410,35 @@ class AddWordsToLibraryView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        existing_words = set()
         if library == "a":
             if group.related_terms is None:
                 group.related_terms = []
-            group.related_terms.extend(new_words)
-            group.related_terms = list(set(group.related_terms))  # Remove duplicates
+            existing_words = set(group.related_terms)
         elif library == "b":
             if group.related_terms_library_b is None:
                 group.related_terms_library_b = []
-            group.related_terms_library_b.extend(new_words)
-            group.related_terms_library_b = list(
-                set(group.related_terms_library_b)
-            )  # Remove duplicates
+            existing_words = set(group.related_terms_library_b)
         else:
             return Response(
                 {"detail": "Invalid library"}, status=status.HTTP_400_BAD_REQUEST
             )
+
+        for word in new_words:
+            if word in existing_words:
+                return Response(
+                    {"detail": f"The word '{word}' already exists in the library"},
+                    status=status.HTTP_409_CONFLICT,
+                )
+
+        if library == "a":
+            group.related_terms.extend(new_words)
+            group.related_terms = list(set(group.related_terms))  # Remove duplicates
+        elif library == "b":
+            group.related_terms_library_b.extend(new_words)
+            group.related_terms_library_b = list(
+                set(group.related_terms_library_b)
+            )  # Remove duplicates
 
         group.save()
         return Response(
