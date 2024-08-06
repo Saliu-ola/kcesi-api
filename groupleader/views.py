@@ -395,7 +395,9 @@ class AddWordsToLibraryView(generics.GenericAPIView):
             }
         },
         responses={
-            200: {"type": "object", "properties": {"detail": {"type": "string"}}}
+            200: {"type": "object", "properties": {"detail": {"type": "string"}}},
+            400: {"type": "object", "properties": {"detail": {"type": "string"}}},
+            409: {"type": "object", "properties": {"detail": {"type": "string"}}},
         },
     )
     def post(self, request, *args, **kwargs):
@@ -423,22 +425,35 @@ class AddWordsToLibraryView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )    
 
+        existing_words = set()
         if library == "a":
             if group.related_terms is None:
                 group.related_terms = []
-            group.related_terms.extend(new_words)
-            group.related_terms = list(set(group.related_terms))  # Remove duplicates
+            existing_words = set(group.related_terms)
         elif library == "b":
             if group.related_terms_library_b is None:
                 group.related_terms_library_b = []
-            group.related_terms_library_b.extend(new_words)
-            group.related_terms_library_b = list(
-                set(group.related_terms_library_b)
-            )  # Remove duplicates, 
+            existing_words = set(group.related_terms_library_b)
         else:
             return Response(
                 {"detail": "Invalid library"}, status=status.HTTP_400_BAD_REQUEST
             )
+
+        for word in new_words:
+            if word in existing_words:
+                return Response(
+                    {"detail": f"The word '{word}' already exists in the library"},
+                    status=status.HTTP_409_CONFLICT,
+                )
+
+        if library == "a":
+            group.related_terms.extend(new_words)
+            group.related_terms = list(set(group.related_terms))  # Remove duplicates
+        elif library == "b":
+            group.related_terms_library_b.extend(new_words)
+            group.related_terms_library_b = list(
+                set(group.related_terms_library_b)
+            )  # Remove duplicates
 
         group.save()
         return Response(
@@ -533,7 +548,7 @@ class DeleteWordsFromLibraryView(generics.GenericAPIView):
         )
 
 
-class EditWordInLibraryView(generics.GenericAPIView):
+class EditWordsInLibraryView(generics.GenericAPIView):
     queryset = Group.objects.all()
     permission_classes = [IsAuthenticated]
 
@@ -544,27 +559,27 @@ class EditWordInLibraryView(generics.GenericAPIView):
                 type=str,
                 description="Specify the library to edit words in (a or b)",
                 required=True,
-            ),
+            )
         ],
         request={
             "application/json": {
                 "type": "object",
                 "properties": {
-                    "old_word": {"type": "string"},
-                    "new_word": {"type": "string"},
+                    "old_words": {"type": "array", "items": {"type": "string"}},
+                    "new_words": {"type": "array", "items": {"type": "string"}},
                 },
-                "required": ["old_word", "new_word"],
-            },
+                "required": ["old_words", "new_words"],
+            }
         },
         responses={
             200: {"type": "object", "properties": {"detail": {"type": "string"}}}
         },
     )
-    def post(self, request, *args, **kwargs):
+    def put(self, request, *args, **kwargs):
         group_id = self.kwargs.get("group_id")
         library = request.query_params.get("library")
-        old_word = request.data.get("old_word")
-        new_word = request.data.get("new_word")
+        old_words = request.data.get("old_words", [])
+        new_words = request.data.get("new_words", [])
 
         try:
             group = Group.objects.get(id=group_id)
@@ -574,46 +589,42 @@ class EditWordInLibraryView(generics.GenericAPIView):
         # Check if the user is a group leader
         if not GroupLeader.objects.filter(user=request.user, group=group).exists():
             return Response(
-                {"detail": "You do not have permission to perform this action because you are not the group leader"},
+                {
+                    "detail": "You do not have permission to perform this action because you are not a group leader"
+                },
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        if not isinstance(old_words, list) or not isinstance(new_words, list):
+            return Response(
+                {"detail": "Old words and new words should be provided as lists"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         if library == "a":
-            if old_word not in group.related_terms:
-                return Response(
-                    {"detail": f"{old_word} not found in library a"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            if new_word in group.related_terms:
-                return Response(
-                    {"detail": f"{new_word} already exists in library a"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            group.related_terms = [
-                new_word if word == old_word else word for word in group.related_terms
-            ]
+            if group.related_terms is None:
+                group.related_terms = []
+            for old_word, new_word in zip(old_words, new_words):
+                if old_word in group.related_terms:
+                    group.related_terms[group.related_terms.index(old_word)] = new_word
+            group.related_terms = list(set(group.related_terms))  # Remove duplicates
         elif library == "b":
-            if old_word not in group.related_terms_library_b:
-                return Response(
-                    {"detail": f"{old_word} not found in library b"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            if new_word in group.related_terms_library_b:
-                return Response(
-                    {"detail": f"{new_word} already exists in library b"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            group.related_terms_library_b = [
-                new_word if word == old_word else word for word in group.related_terms_library_b
-            ]
+            if group.related_terms_library_b is None:
+                group.related_terms_library_b = []
+            for old_word, new_word in zip(old_words, new_words):
+                if old_word in group.related_terms_library_b:
+                    group.related_terms_library_b[
+                        group.related_terms_library_b.index(old_word)
+                    ] = new_word
+            group.related_terms_library_b = list(
+                set(group.related_terms_library_b)
+            )  # Remove duplicates
         else:
             return Response(
-                {"detail": "Invalid library"},
-                status=status.HTTP_400_BAD_REQUEST,
+                {"detail": "Invalid library"}, status=status.HTTP_400_BAD_REQUEST
             )
 
         group.save()
         return Response(
-            {"detail": "Word edited successfully"},
-            status=status.HTTP_200_OK
+            {"detail": "Words edited successfully"}, status=status.HTTP_200_OK
         )
