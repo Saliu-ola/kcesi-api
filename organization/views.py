@@ -1,11 +1,12 @@
 from rest_framework.request import Request
 from rest_framework.response import Response
 from .models import Organization
-from .serializers import OrganizationSerializer
+from .serializers import OrganizationSerializer , UserSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
 from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
+from accounts.models import User
 
 
 class OrganizationViewSets(viewsets.ModelViewSet):
@@ -41,3 +42,12 @@ class OrganizationViewSets(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+
+class UserListByOrganization(generics.ListAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsAdmin]
+
+    def get_queryset(self):
+        organization_id = self.kwargs["organization_id"]
+        return User.objects.filter(organization_id=organization_id)

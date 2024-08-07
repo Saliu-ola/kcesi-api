@@ -9,8 +9,7 @@ router.register('user-groups', UserGroupsViewSets)
 router.register('', GroupViewSets)
 
 
-
 urlpatterns = [
-    path('', include(router.urls)),
-    
+    path("", include(router.urls)),
+    path("all-user-groups/<int:user_id>/groups/", UserGroupsView.as_view(), name="user-groups"),
 ]
