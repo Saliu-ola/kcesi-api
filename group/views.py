@@ -13,7 +13,7 @@ from .serializers import (
     UserGroupListSerializer,
     UserGroupCreateSerializer,
     UpdateUserGroupSerializer,
-    UsersInGroupListSerializer
+    UserGroupSerializer,
 )
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
@@ -29,7 +29,7 @@ from simpleblog.ai import (
 )
 
 from groupleader.models import *
-
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 class GroupViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
@@ -203,11 +203,10 @@ class UserGroupsViewSets(viewsets.ModelViewSet):
         return Response(UserGroupCreateSerializer(user_group_instance).data)
 
 
-
-class UsersInGroupView(generics.ListAPIView):
-    serializer_class = UsersInGroupListSerializer
-    permission_classes = [IsAuthenticated]
+class UserGroupsView(generics.ListAPIView):
+    serializer_class = UserGroupSerializer
+    permission_classes = [IsAdmin]
 
     def get_queryset(self):
-        group_id = self.kwargs.get('group_id')
-        return UserGroup.objects.filter(groups__id=group_id)#.values('user')
+        user_id = self.kwargs["user_id"]
+        return UserGroup.objects.filter(user_id=user_id ).prefetch_related("groups")

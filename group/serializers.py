@@ -159,3 +159,17 @@ class UpdateUserGroupSerializer(serializers.ModelSerializer):
             )
 
         return data
+
+
+class GrouppSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Group
+        fields = ["id", "title", "organization_id"]
+
+
+class UserGroupSerializer(serializers.ModelSerializer):
+    groups = GrouppSerializer(many=True)
+
+    class Meta:
+        model = UserGroup
+        fields = "__all__"
