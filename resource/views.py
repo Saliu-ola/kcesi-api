@@ -242,7 +242,8 @@ class ResourceDeleteView(generics.DestroyAPIView):
     def perform_destroy(self, instance):
         if instance.cloud_id:
             try:
-                uploader.destroy(instance.cloud_id)
+                uploader.destroy(public_id=instance.cloud_id, resource_type="raw")
+                # print("OK, deleted resource from Cloudinary")
             except Exception as e:
                 pass
                 # print(f"Error deleting resource from Cloudinary: {e}")
