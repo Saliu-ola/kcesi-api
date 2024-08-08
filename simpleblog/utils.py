@@ -14,8 +14,15 @@ def calculate_ai_division(ai_score, count):
     return result
 
 
+# def calculate_category_score(constants, tallies):
+#     score = sum(Decimal(constants[key]) * Decimal(tallies[key]) for key in constants)
+#     return score
+
+
 def calculate_category_score(constants, tallies):
-    score = sum(Decimal(constants[key]) * Decimal(tallies[key]) for key in constants)
+    score = sum(
+        Decimal(constants[key]) * Decimal(tallies.get(key, 0)) for key in constants
+    )
     return score
 
 

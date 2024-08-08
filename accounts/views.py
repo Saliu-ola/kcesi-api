@@ -599,19 +599,26 @@ class UserViewSets(
                 required=True,
                 type=OpenApiTypes.STR,
             ),
+            OpenApiParameter(
+                name="group_id",
+                description="group_id",
+                required=False,
+                type=OpenApiTypes.STR,
+            ),
         ],
     )
     @action(
-        methods=['GET'],
+        methods=["GET"],
         detail=False,
         serializer_class=None,
-        url_path='get-user-seci-details',
+        url_path="get-user-seci-details",
         permission_classes=[IsAdminOrUser],
     )
     def get_user_seci_details(self, request, pk=None):
         """Get seci detail"""
 
         user_id = request.query_params["user_id"]
+        group_id = request.query_params.get("group_id")
 
         try:
             user = User.objects.get(pk=user_id)
@@ -633,8 +640,13 @@ class UserViewSets(
         end_date = datetime.strptime(request.query_params["end_date"], "%Y-%m-%dT%H:%M:%S.%fZ")
 
         date_range = (start_date, end_date)
+        if group_id:
+            user_groups = UserGroup.objects.filter(user=user,groups=group_id).values_list("groups", flat=True)
 
-        user_groups = UserGroup.objects.filter(user=user).values_list("groups", flat=True)
+        else:
+            user_groups = UserGroup.objects.filter(user=user).values_list(
+                "groups", flat=True
+            )
 
         if not user_groups:
             return Response(
