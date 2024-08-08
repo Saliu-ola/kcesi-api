@@ -12,7 +12,7 @@ urlpatterns = [
     path('', include(router.urls)),
 
     path('filesize/create/', FileSizeCreateView.as_view(), name='filesize-create'),
-    path('delete/<int:id>/', ResourceDeleteView.as_view(), name='resource-delete'),
+    path('delete/<int:id>/', ResourceDeleteView.as_view(), name='resource-destroy-view'),
     path('filesize/update/', FileSizeUpdateView.as_view(), name='filesize-update'),
     path('filesize/<str:file_type>/', FileSizeRetrieveView.as_view(), name='filesize-retrieve'),
     path('filesizes/list/', FileSizeListView.as_view(), name='filesize-list'),

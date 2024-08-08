@@ -25,11 +25,26 @@ from simpleblog.pagination import CustomPagination
 from .permissions import IsGroupLeaderPermission, CanChangeFileStatusPermission
 from rest_framework.exceptions import ValidationError
 
-
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name='organization_id',
+            description="Optional parameter to filter GroupLeaders by organization ID",
+            required=False,
+            type=str
+        ),
+    ]
+)
 class GroupLeaderListCreateView(generics.ListCreateAPIView):
-    queryset = GroupLeader.objects.all()
     serializer_class = GroupLeaderSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = GroupLeader.objects.all()
+        organization_id = self.request.query_params.get('organization_id')
+        if organization_id:
+            queryset = queryset.filter(group__organization_id=organization_id)
+        return queryset
 
 
 class GroupLeaderRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
@@ -399,7 +414,7 @@ class AddWordsToLibraryView(generics.GenericAPIView):
         if not GroupLeader.objects.filter(user=request.user, group=group).exists():
             return Response(
                 {
-                    "detail": "You do not have permission to perform this action because you are not a group leader"
+                    "detail": "You do not have permission to perform this action because you are not the group leader"
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -408,7 +423,7 @@ class AddWordsToLibraryView(generics.GenericAPIView):
             return Response(
                 {"detail": "Words should be provided as a list"},
                 status=status.HTTP_400_BAD_REQUEST,
-            )
+            )    
 
         existing_words = set()
         if library == "a":
@@ -482,7 +497,7 @@ class DeleteWordsFromLibraryView(generics.GenericAPIView):
             },
             400: {"description": "Invalid library or word"},
             403: {
-                "description": "You do not have permission to perform this action because you are not a group leader"
+                "description": "You do not have permission to perform this action because you are not the group leader"
             },
         },
     )
@@ -500,7 +515,7 @@ class DeleteWordsFromLibraryView(generics.GenericAPIView):
         if not GroupLeader.objects.filter(user=request.user, group=group).exists():
             return Response(
                 {
-                    "detail": "You do not have permission to perform this action because you are not a group leader"
+                    "detail": "You do not have permission to perform this action because you are not the group leader"
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )

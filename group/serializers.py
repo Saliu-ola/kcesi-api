@@ -84,6 +84,19 @@ class UserGroupListSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+
+class UsersInGroupListSerializer(serializers.ModelSerializer):
+    username = serializers.StringRelatedField(source="user.username")
+    full_name = serializers.StringRelatedField(source="user.full_name")
+    organization_name = serializers.StringRelatedField(source="user.organization_name")
+    organization_id = serializers.StringRelatedField(source="user.organization_id")
+
+    class Meta:
+        model = UserGroup
+        fields = ['user', 'organization_id', 'organization_name', 'username', 'full_name']
+
+
+
 class UserGroupCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserGroup

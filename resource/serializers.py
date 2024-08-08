@@ -80,7 +80,7 @@ class CreateResourcesSerializer(serializers.ModelSerializer):
 
         if file:
             # Delete the old file in Cloudinary
-            cloudinary.uploader.destroy(instance.cloud_id)
+            cloudinary.uploader.destroy(public_id=instance.cloud_id, resource_type="raw")
 
             # Upload the new file to Cloudinary or your desired storage
             upload_result = cloudinary.uploader.upload(file, resource_type='raw')
