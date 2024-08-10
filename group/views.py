@@ -14,6 +14,7 @@ from .serializers import (
     UserGroupCreateSerializer,
     UpdateUserGroupSerializer,
     UserGroupSerializer,
+    UsersInGroupListSerializer
 )
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
@@ -210,3 +211,13 @@ class UserGroupsView(generics.ListAPIView):
     def get_queryset(self):
         user_id = self.kwargs["user_id"]
         return UserGroup.objects.filter(user_id=user_id ).prefetch_related("groups")
+    
+
+
+class UsersInGroupView(generics.ListAPIView):
+    serializer_class = UsersInGroupListSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        group_id = self.kwargs.get('group_id')
+        return UserGroup.objects.filter(groups__id=group_id)
