@@ -11,7 +11,7 @@ from rest_framework.validators import UniqueTogetherValidator
 from django.db.models import Q
 from simpleblog.ai import get_cleaned_and_lematized_terms
 from django.db import transaction, IntegrityError
-
+from django.core.exceptions import ObjectDoesNotExist
 
 class GroupSerializer(serializers.ModelSerializer):
     organization_name = serializers.SerializerMethodField(
@@ -173,3 +173,29 @@ class UserGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserGroup
         fields = "__all__"
+
+
+class UsersInGroupListSerializer(serializers.ModelSerializer):
+    username = serializers.StringRelatedField(source="user.username")
+    full_name = serializers.StringRelatedField(source="user.full_name")
+    organization_name = serializers.StringRelatedField(source="user.organization_name")
+    organization_id = serializers.StringRelatedField(source="user.organization_id")
+    # user_groups = serializers.SerializerMethodField(method_name='get_user_groups')
+
+    class Meta:
+        model = UserGroup
+        fields = ['user', 'organization_id', 'organization_name', 'username', 'full_name']#, 'user_groups']
+    
+    # def get_user_groups(self, instance):
+    #     try:
+    #         user_group_object =  UserGroupCreateSerializer(UserGroup.objects.get(user=instance.user)).data
+    #         data = [{
+            
+    #                 "group_id":group,
+    #                 "group_name":Group.objects.get(pk=group).title,
+    #         }  for group in user_group_object["groups"]]
+
+    #         return data
+             
+    #     except ObjectDoesNotExist:
+    #         return None
