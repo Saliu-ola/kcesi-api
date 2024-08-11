@@ -12,12 +12,14 @@ from django.db.models import Q
 from simpleblog.ai import get_cleaned_and_lematized_terms
 from django.db import transaction, IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
+from groupleader.models import GroupLeader
 
 class GroupSerializer(serializers.ModelSerializer):
     organization_name = serializers.SerializerMethodField(
         read_only=True, method_name="get_organization_name"
     )
     related_terms = serializers.JSONField(read_only=True)
+    group_leader = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
@@ -62,6 +64,20 @@ class GroupSerializer(serializers.ModelSerializer):
 
     def get_organization_name(self, instance):
         return Organization.objects.get(organization_id=instance.organization_id).name
+    
+    def get_group_leader(self, instance):
+        try:
+            group_leader = GroupLeader.objects.get(group=instance)
+            return {
+                'id': group_leader.user.id,
+                'username': group_leader.user.username,
+                'email': group_leader.user.email,
+                'first_name': group_leader.user.first_name,
+                'last_name': group_leader.user.last_name,
+                'assigned_at': group_leader.assigned_at
+            }
+        except GroupLeader.DoesNotExist:
+            return None
 
 
 class GroupAISerializer(serializers.ModelSerializer):
