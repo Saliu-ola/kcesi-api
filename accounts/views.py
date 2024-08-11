@@ -1100,7 +1100,17 @@ class BulkUserCSVUploadView(APIView):
     permission_classes = [IsSuperAdminOrAdmin]
 
     def post(self, request):
+        requesting_user = request.user
+        if not requesting_user.organization_id or not requesting_user.organization_name:
+                return Response(
+                    {"error": "This admin has incomplete organization details."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        organization_id = requesting_user.organization_id
+        organization_name = requesting_user.organization_name
+
         serializer = UserRegCSVUploadSerializer(data=request.data)
+
         if serializer.is_valid():
             # file_url = serializer.validated_data['file_url']
             csv_file = serializer.validated_data['file']
@@ -1143,8 +1153,9 @@ class BulkUserCSVUploadView(APIView):
                     last_name=last_name,
                     username=username,
                     email=email,
-                    role_id=role_id
-
+                    role_id=role_id,
+                    organization_id=organization_id,
+                    organization_name=organization_name
                     )
 
                     user.set_password(password)
