@@ -4,6 +4,7 @@ from rest_framework.decorators import APIView, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 
 from organization.models import Organization
 from .models import Group, UserGroup
@@ -221,3 +222,50 @@ class UsersInGroupView(generics.ListAPIView):
     def get_queryset(self):
         group_id = self.kwargs.get('group_id')
         return UserGroup.objects.filter(groups__id=group_id)
+
+
+
+
+
+class SearchGroupRelatedTermsView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='library_type', description='Type of library (a or b)', required=True, type=str),
+            OpenApiParameter(name='term', description='Search term for related words', required=True, type=str),
+        ],
+        responses={200: dict, 404: dict, 400: dict, 500: dict},
+        description='Search for related terms in a specific Group and library type'
+    )
+    def get(self, request, group_id):
+        library_type = request.query_params.get('library_type')
+        search_term = request.query_params.get('term', '').lower()
+
+        if not library_type or not search_term:
+            return Response({'error': 'Missing required parameters'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            group = Group.objects.get(id=group_id)
+            
+            if library_type == 'a':
+                related_terms = group.related_terms
+            elif library_type == 'b':
+                related_terms = group.related_terms_library_b
+            else:
+                return Response({'error': 'Invalid library type'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if not related_terms:
+                return Response({'error': 'No related terms found for this group and library type'}, status=status.HTTP_404_NOT_FOUND)
+
+            matching_terms = [term for term in related_terms if search_term in term.lower()]
+
+            paginator = PageNumberPagination()
+            paginated_terms = paginator.paginate_queryset(matching_terms, request)
+            
+            return paginator.get_paginated_response({'results': paginated_terms})
+        
+        except Group.DoesNotExist:
+            return Response({'error': 'Group not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
