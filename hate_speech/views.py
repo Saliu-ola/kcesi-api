@@ -4,10 +4,13 @@ from rest_framework.response import Response
 from .models import BadWord
 from .serializers import BadWordSerializer, HateSpeechCheckerSerializer
 from rest_framework import generics, status, viewsets, filters
+from rest_framework.views import APIView
 from rest_framework.decorators import action
 from simpleblog.ai import clean_data_and_lemmatize
+from rest_framework.pagination import PageNumberPagination
 import joblib
 from simpleblog.pagination import CustomPagination
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 model = joblib.load("trained_model.pkl")
 cv = joblib.load("vectorizer.pkl")
@@ -155,3 +158,42 @@ class BadWordsViewSets(
             return Response(status=200, data={"message": predicted_text})
 
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+from rest_framework import serializers
+
+class BadWordSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BadWord
+        fields = ['related_terms']
+
+
+
+
+class SearchBadWordRelatedTermsView(APIView):
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get']
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='term', description='Search term in bad words', required=True, type=str)
+        ],
+        responses={200: list, 404: dict, 500: dict},
+        description='Search for terms in the BadWord collection'
+    )
+    def get(self, request):
+        search_term = request.query_params.get('term', '').lower()
+        
+        try:
+            bad_word = BadWord.objects.first()
+            if not bad_word or not bad_word.related_terms:
+                return Response({'error': 'No related terms found'}, status=status.HTTP_404_NOT_FOUND)
+            
+            related_terms = bad_word.related_terms
+            matching_terms = [term for term in related_terms if search_term in term.lower()]
+
+            paginator = PageNumberPagination()
+            paginated_terms = paginator.paginate_queryset(matching_terms, request)
+            
+            return paginator.get_paginated_response({'results': paginated_terms})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
