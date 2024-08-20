@@ -19,4 +19,8 @@ class BadWordSerializer(serializers.ModelSerializer):
 
 class HateSpeechCheckerSerializer(serializers.Serializer):
     text = serializers.CharField(max_length=None)
-    
+
+
+class EditWordsSerializer(serializers.Serializer):
+    old_word = serializers.CharField(help_text="The word you want to edit.")
+    new_word = serializers.CharField(help_text="The new word to replace the old word.")
