@@ -2,7 +2,7 @@ from rest_framework import generics, mixins, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from .models import BadWord
-from .serializers import BadWordSerializer, HateSpeechCheckerSerializer
+from .serializers import BadWordSerializer, HateSpeechCheckerSerializer ,EditWordsSerializer
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.views import APIView
 from rest_framework.decorators import action
@@ -22,6 +22,12 @@ def get_bad_word_prediction_score_using_model(new_text):
     return speech_with_predicted_model
 
 
+class CustomPageNumberPagination(PageNumberPagination):
+    page_size = 10  # Default page size
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
 class BadWordsViewSets(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -31,7 +37,6 @@ class BadWordsViewSets(
     serializer_class = BadWordSerializer
     permission_classes = [AllowAny]
     queryset = BadWord.objects.all()
-    pagination_class = CustomPagination
 
     def create(self, request, *args, **kwargs):
         if BadWord.objects.exists():
@@ -45,19 +50,21 @@ class BadWordsViewSets(
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
+        if queryset.exists():
+            bad_word = queryset.first()
+            related_terms = bad_word.related_terms or []
 
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            for obj in page:
-                obj.related_terms = sorted(obj.related_terms)
-            return self.get_paginated_response(
-                self.get_serializer(page, many=True).data
-            )
+            related_terms = sorted(related_terms)
+            # Paginate related_terms list
+            paginator = CustomPageNumberPagination()
+            page = paginator.paginate_queryset(related_terms, request)
+            if page is not None:
+                return paginator.get_paginated_response(page)
 
-        for obj in queryset:
-            obj.related_terms = sorted(obj.related_terms)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+            # If no pagination is needed, return all related_terms
+            return Response({"count": len(related_terms), "results": related_terms})
+
+        return Response({"count": 0, "results": []})
 
     @action(
         methods=["POST"],
@@ -111,6 +118,50 @@ class BadWordsViewSets(
             return Response(status=200, data={"message": "words removed successfully"})
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    # Edit words endpoint
+    @action(
+        methods=["POST"],
+        detail=False,
+        permission_classes=[AllowAny],
+        serializer_class=EditWordsSerializer,
+        url_path="edit-words",
+    )
+    def edit_words(self, request, pk=None):
+        obj = self.get_queryset().first()
+        if obj is None:
+            return Response(
+                {"error": "No BadWord instance found. Ensure to create an instance"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = EditWordsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        old_word = serializer.validated_data["old_word"]
+        new_word = serializer.validated_data["new_word"]
+
+        related_terms = obj.related_terms or []
+
+        # Update the word in the list
+        if old_word in related_terms:
+            index = related_terms.index(old_word)
+            related_terms[index] = new_word
+            obj.related_terms = sorted(set(related_terms))
+            obj.save()
+
+            return Response(
+                {
+                    "message": f"'{old_word}' has been updated to '{new_word}'"
+                    
+                },
+                status=status.HTTP_200_OK,
+            )
+        else:
+            return Response(
+                {"error": f"'{old_word}' not found in the list of related terms."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
     @action(
         methods=["POST"],
         detail=False,
@@ -160,14 +211,12 @@ class BadWordsViewSets(
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-from rest_framework import serializers
+# from rest_framework import serializers
 
-class BadWordSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = BadWord
-        fields = ['related_terms']
-
-
+# class BadWordSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = BadWord
+#         fields = ['related_terms']
 
 
 class SearchBadWordRelatedTermsView(APIView):
