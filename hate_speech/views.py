@@ -22,12 +22,6 @@ def get_bad_word_prediction_score_using_model(new_text):
     return speech_with_predicted_model
 
 
-class CustomPageNumberPagination(PageNumberPagination):
-    page_size = 10  # Default page size
-    page_size_query_param = "page_size"
-    max_page_size = 100
-
-
 class BadWordsViewSets(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -56,7 +50,7 @@ class BadWordsViewSets(
 
             related_terms = sorted(related_terms)
             # Paginate related_terms list
-            paginator = CustomPageNumberPagination()
+            paginator = CustomPagination()
             page = paginator.paginate_queryset(related_terms, request)
             if page is not None:
                 return paginator.get_paginated_response(page)
