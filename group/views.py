@@ -4,7 +4,7 @@ from rest_framework.decorators import APIView, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.pagination import PageNumberPagination
+from simpleblog.pagination import CustomPagination
 
 from organization.models import Organization
 from .models import Group, UserGroup
@@ -260,7 +260,7 @@ class SearchGroupRelatedTermsView(APIView):
 
             matching_terms = [term for term in related_terms if search_term in term.lower()]
 
-            paginator = PageNumberPagination()
+            paginator = CustomPagination()
             paginated_terms = paginator.paginate_queryset(matching_terms, request)
             
             return paginator.get_paginated_response({'results': paginated_terms})

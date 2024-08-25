@@ -234,7 +234,7 @@ class SearchBadWordRelatedTermsView(APIView):
             related_terms = bad_word.related_terms
             matching_terms = [term for term in related_terms if search_term in term.lower()]
 
-            paginator = PageNumberPagination()
+            paginator = CustomPagination()
             paginated_terms = paginator.paginate_queryset(matching_terms, request)
             
             return paginator.get_paginated_response({'results': paginated_terms})
