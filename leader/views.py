@@ -291,7 +291,7 @@ class SocializationViewSets(BaseViewSet):
     @action(
         methods=["GET"],
         detail=False,
-        permission_classes=[IsSuperAdminOrAdmin],
+        permission_classes=[IsAuthenticated],
         serializer_class=None,
     )
     def get_organization_socialization_activity_scores(self, request, pk=None):
