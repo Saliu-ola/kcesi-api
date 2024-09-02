@@ -370,7 +370,7 @@ class SocializationViewSets(BaseViewSet):
     @action(
         methods=['POST'],
         detail=False,
-        permission_classes=[IsAdminOrUser],
+        permission_classes=[IsAdminOrUser], ### Note!!!  y or user here
         serializer_class=SocializationUpdaterSerializer,
         url_path="set-general-socialization-activities-score",
     )
@@ -427,7 +427,7 @@ class ExternalizationViewSets(BaseViewSet):
     @action(
         methods=["GET"],
         detail=False,
-        permission_classes=[IsSuperAdminOrAdmin],
+        permission_classes=[IsAuthenticated],
         serializer_class=None,
     )
     def get_organization_externalization_activity_scores(self, request, pk=None):
@@ -561,7 +561,7 @@ class CombinationViewSets(BaseViewSet):
     @action(
         methods=["GET"],
         detail=False,
-        permission_classes=[IsSuperAdminOrAdmin],
+        permission_classes=[IsAuthenticated],
         serializer_class=None,
     )
     def get_organization_combination_activity_scores(self, request, pk=None):
@@ -698,7 +698,7 @@ class InternalizationViewSets(BaseViewSet):
     @action(
         methods=["GET"],
         detail=False,
-        permission_classes=[IsSuperAdminOrAdmin],
+        permission_classes=[IsAuthenticated],
         serializer_class=None,
     )
     def get_organization_internalization_activity_scores(self, request, pk=None):
