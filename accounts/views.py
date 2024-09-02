@@ -364,7 +364,7 @@ class UserViewSets(
         detail=False,
         serializer_class=None,
         url_path='get-group-seci-details',
-        permission_classes=[IsSuperAdminOrAdmin],
+        permission_classes=[IsAdminOrUser],
     )
     def get_group_seci_details(self, request, pk=None):
         """Get seci detail"""
