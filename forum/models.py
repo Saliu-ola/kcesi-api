@@ -8,6 +8,7 @@ from resource.models import Resources
 from django.core.validators import MinValueValidator
 
 
+
 class Forum(models.Model):
     topic = models.CharField(max_length=225, null=True)
     content = models.TextField(null=True)
@@ -35,8 +36,11 @@ class Forum(models.Model):
     def __str__(self) -> str:
         return f"{self.topic}"
 
+
     class Meta:
         ordering = ["-created_at"]
+
+
 
 
 class ForumComment(models.Model):
@@ -61,6 +65,7 @@ class ForumComment(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
 
 
 class CommentReplies(models.Model):
