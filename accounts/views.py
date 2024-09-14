@@ -1,4 +1,5 @@
 from decimal import Decimal
+import decimal
 from django.contrib.auth import authenticate
 from django.shortcuts import render
 from rest_framework import generics, status, viewsets, filters
@@ -782,7 +783,9 @@ class UserViewSets(
 
             comment_for_forum_ai_score = forum_comment_agrregate.get("total_score") or 0.00
 
-            total_comment_ai_score = comment_for_blog_ai_score + comment_for_forum_ai_score
+            # total_comment_ai_score = comment_for_blog_ai_score + comment_for_forum_ai_score
+            # total_comment_ai_score = float(comment_for_blog_ai_score) + float(comment_for_forum_ai_score)
+            total_comment_ai_score = decimal.Decimal(comment_for_blog_ai_score) + decimal.Decimal(comment_for_forum_ai_score)
 
             comment = calculate_ai_division(total_comment_ai_score, total_comment_count)
 
