@@ -6,7 +6,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from .models import Blog, Comment,BlogCommentReplies
 from organization.models import Organization
-from group.models import Group
+from group.models import Group, UserGroup
 from .serializers import BlogCreateSerializer, CommentSerializer, BlogListSerializer,BlogCommentReplySerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
@@ -14,7 +14,7 @@ from rest_framework.decorators import action
 from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
-from django.db.models import F, Value, CharField
+from django.db.models import F, Value, CharField, Q
 from django.db.models.functions import Concat
 import cloudinary.uploader
 
@@ -45,12 +45,25 @@ class BlogViewSets(viewsets.ModelViewSet):
     USER_ROLE_ID = 3
 
     def get_queryset(self):
+        user = self.request.user
         if self.request.user.role_id == self.SUPER_ADMIN_ROLE_ID:
             return self.queryset
-        elif self.request.user.role_id in [self.ADMIN_ROLE_ID,self.USER_ROLE_ID]:
-            organization_id = self.request.user.organization_id
-            organization = Organization.objects.filter(organization_id=organization_id).first()
-            return self.queryset.filter(organization=organization)
+        
+        elif user.role_id == self.ADMIN_ROLE_ID:
+            return self.queryset.filter(organization_id=user.organization_id)
+        
+        elif user.role_id == self.USER_ROLE_ID:
+            user_groups = UserGroup.objects.filter(user=user).values_list('groups', flat=True)
+            
+            return self.queryset.filter(
+                Q(organization_id=user.organization_id, group_id__in=user_groups) |
+                Q(author_id=user.id)
+            ).distinct()
+
+        # elif self.request.user.role_id in [self.ADMIN_ROLE_ID,self.USER_ROLE_ID]:
+        #     organization_id = self.request.user.organization_id
+        #     organization = Organization.objects.filter(organization_id=organization_id).first()
+        #     return self.queryset.filter(organization=organization)
         
         else:
             raise ValueError("Role id not present")
