@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "hate_speech",
     "groupleader",
     "activity_flag",
+    "activity_log",
     # third-party-apps
     "rest_framework",
     "corsheaders",

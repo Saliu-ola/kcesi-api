@@ -1,5 +1,6 @@
 from decimal import Decimal
 import decimal
+from activity_log.models import ActivityLog
 from django.contrib.auth import authenticate
 from django.shortcuts import render
 from rest_framework import generics, status, viewsets, filters
@@ -1082,6 +1083,9 @@ class LoginView(generics.GenericAPIView):
                 if user.is_verified:
                     tokens = create_jwt_pair_for_user(user)
 
+                    ActivityLog.objects.create(user=user, action_user=user, action='login_success', content_type='authentication')
+
+
                     response = {
                         "message": "Login Successful",
                         "tokens": tokens,
@@ -1089,12 +1093,21 @@ class LoginView(generics.GenericAPIView):
                     }
 
                     return Response(data=response, status=status.HTTP_200_OK)
+                
                 else:
+                    ActivityLog.objects.create(user=user, action_user=user, action='login_failed', content_type='authentication')
+
                     return Response(
                         data={"message": "User account not verified"},
                         status=status.HTTP_401_UNAUTHORIZED,
                     )
             else:
+                ActivityLog.objects.create(
+                    user=None, 
+                    action_user=None, 
+                    action='login_failed',
+                    content_type= f'authentication for {email}',
+                )
                 return Response(
                     data={"message": "Invalid email or password"},
                     status=status.HTTP_401_UNAUTHORIZED,
