@@ -46,17 +46,19 @@ class BlogViewSets(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        organization_id = self.request.user.organization_id
+        organization = Organization.objects.filter(organization_id=organization_id).first()
         if self.request.user.role_id == self.SUPER_ADMIN_ROLE_ID:
             return self.queryset
         
         elif user.role_id == self.ADMIN_ROLE_ID:
-            return self.queryset.filter(organization_id=user.organization_id)
+            return self.queryset.filter(organization=organization)
         
         elif user.role_id == self.USER_ROLE_ID:
             user_groups = UserGroup.objects.filter(user=user).values_list('groups', flat=True)
             
             return self.queryset.filter(
-                Q(organization_id=user.organization_id, group_id__in=user_groups) |
+                Q(organization=organization, group_id__in=user_groups) |
                 Q(author_id=user.id)
             ).distinct()
 
