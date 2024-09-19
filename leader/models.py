@@ -129,7 +129,7 @@ class Combination(models.Model):
     def calculate_combination_score(self, tallies):
         constants = {
             'created_topic': self.created_topic,
-            'post_blog': self.post_blog,
+            # 'post_blog': self.post_blog,
         }
         return calculate_category_score(constants, tallies)
 

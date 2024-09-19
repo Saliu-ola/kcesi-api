@@ -41,7 +41,7 @@ from in_app_chat.models import InAppChat
 from resource.models import Resources
 from browser_history.models import BrowserHistory
 from forum.models import Forum, ForumComment
-from topics.models import Topic
+from topics.models import Topic, ForumTopic, BlogTopic
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from rest_framework import mixins
@@ -482,10 +482,19 @@ class UserViewSets(
             created_at__range=date_range,
         ).count()
 
-        created_topic = Topic.objects.filter(
+        # created_topic = Topic.objects.filter(
+        #     organization=organization, group=group.pk, created_at__range=date_range
+        # ).count()
+
+        created_blog_topic = BlogTopic.objects.filter(
             organization=organization, group=group.pk, created_at__range=date_range
         ).count()
 
+        created_forum_topic = ForumTopic.objects.filter(
+            organization=organization, group=group.pk, created_at__range=date_range
+        ).count()
+
+        created_topic = created_blog_topic + created_forum_topic
         comment_for_blog_count = Comment.objects.filter(
             organization=organization, group=group.pk, created_at__range=date_range
         ).count()
@@ -524,8 +533,9 @@ class UserViewSets(
             "image_sharing": image_sharing,
             "video_sharing": video_sharing,
             "text_resource_sharing": text_resource_sharing,
-            # "created_topic": created_topic,
-            "created_topic": post_forum,
+            "created_topic": created_topic,
+            # "created_blog_topic": created_blog_topic,
+            # "created_forum_topic": created_forum_topic,
             "comment": comment,
             "used_in_app_browser": used_in_app_browser,
             "read_blog": 0,
