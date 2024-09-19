@@ -30,7 +30,7 @@ from in_app_chat.models import InAppChat
 from resource.models import Resources
 from browser_history.models import BrowserHistory
 from forum.models import Forum, ForumComment
-from topics.models import Topic
+from topics.models import Topic, BlogTopic, ForumTopic
 from django.utils import timezone
 from simpleblog.utils import (
     calculate_total_engagement_score,
@@ -150,9 +150,20 @@ class BaseViewSet(viewsets.ModelViewSet):
             date_range,
             {'type': 'DOCUMENT', 'sender': user},
         )
-        created_topic = self.get_count_model_instances(
-            Topic, organization, group, date_range, {'author': user}
+        
+        # created_topic = self.get_count_model_instances(
+        #     Topic, organization, group, date_range, {'author': user}
+        # )
+
+        created_blog_topic = self.get_count_model_instances(
+            BlogTopic, organization, group, date_range, {'author': user}
         )
+
+        created_forum_topic = self.get_count_model_instances(
+            ForumTopic, organization, group, date_range, {'author': user}
+        )
+
+        created_topic = created_blog_topic + created_forum_topic
 
         comment_for_blog_count = self.get_count_model_instances(
             Comment,
