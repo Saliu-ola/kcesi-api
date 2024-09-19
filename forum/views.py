@@ -13,8 +13,10 @@ from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 import cloudinary.uploader
+from django.db.models import F, Value, CharField, Q
 from organization.models import Organization
-
+from topics.serializers import ForumTopicSerializer
+from group.models import Group, UserGroup
 
 class ForumViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
@@ -35,15 +37,56 @@ class ForumViewSets(viewsets.ModelViewSet):
     USER_ROLE_ID = 3
 
     def get_queryset(self):
+        user = self.request.user
+        organization_id = self.request.user.organization_id
+        organization = Organization.objects.filter(organization_id=organization_id).first()
         if self.request.user.role_id == self.SUPER_ADMIN_ROLE_ID:
             return self.queryset
-        elif self.request.user.role_id in [self.ADMIN_ROLE_ID, self.USER_ROLE_ID]:
-            organization_id = self.request.user.organization_id
-            organization = Organization.objects.filter(organization_id=organization_id).first()
+        
+        elif user.role_id == self.ADMIN_ROLE_ID:
             return self.queryset.filter(organization=organization)
+        
+        elif user.role_id == self.USER_ROLE_ID:
+            user_groups = UserGroup.objects.filter(user=user).values_list('groups', flat=True)
+            
+            return self.queryset.filter(
+                Q(organization=organization, group_id__in=user_groups) |
+                Q(user_id=user.id)
+            ).distinct()
 
         else:
             raise ValueError("Role id not present")
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(user=user)
+
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        try:
+            result = serializer.save()
+            forum = result['forum']
+            forum_topic = result['forum_topic']
+            forum_topic_created = result['forum_topic_created']
+
+            response_data = {
+                'success': True,
+                'message': 'Forum created successfully',
+                'forum': ForumCreateSerializer(forum,  context={'request': request}).data,
+                'forum_topic': ForumTopicSerializer(forum_topic).data,
+                # 'forum_topic': forum_topic,
+                'forum_topic_created': forum_topic_created
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f'Error occurred: {str(e)}',
+            }, status=status.HTTP_400_BAD_REQUEST)
+
 
     def perform_destroy(self, instance):
 

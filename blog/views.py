@@ -17,6 +17,7 @@ from drf_spectacular.types import OpenApiTypes
 from django.db.models import F, Value, CharField, Q
 from django.db.models.functions import Concat
 import cloudinary.uploader
+from topics.serializers import BlogTopicSerializer
 
 class BlogViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
@@ -92,6 +93,31 @@ class BlogViewSets(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        try:
+            result = serializer.save(author=request.user)
+            blog = result['blog']
+            blog_topic = result['blog_topic']
+            blog_topic_created = result['blog_topic_created']
+
+            response_data = {
+                'success': True,
+                'message': 'Blog and BlogTopic created successfully',
+                'blog': BlogCreateSerializer(blog, context={'request': request}).data,
+                # 'blog_topic': blog_topic,
+                'blog_topic': BlogTopicSerializer(blog_topic).data,
+                'blog_topic_created': blog_topic_created
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f'Error occurred: {str(e)}',
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
         parameters=[
