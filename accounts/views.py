@@ -776,9 +776,20 @@ class UserViewSets(
                     created_at__range=date_range,
                 ).count()
 
-            created_topic = Topic.objects.filter(
+            # created_topic = Topic.objects.filter(
+            #         author=user, created_at__range=date_range
+            #     ).count()
+
+            created_blog_topic = BlogTopic.objects.filter(
                     author=user, created_at__range=date_range
                 ).count()
+
+            created_forum_topic = ForumTopic.objects.filter(
+                    author=user, created_at__range=date_range
+                ).count()
+
+
+            created_topic = created_blog_topic + created_forum_topic
 
             comment_for_blog_count = Comment.objects.filter(user=user, created_at__range=date_range).count()
 
