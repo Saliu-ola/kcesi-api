@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from topics.models import BlogTopic
 from django.db import transaction
-from .models import Blog, Comment, BlogCommentReplies
+from .models import Blog, Comment, BlogCommentReplies, BlogRead
 
 
 class BlogListSerializer(serializers.ModelSerializer):
@@ -89,3 +89,17 @@ class BlogCommentReplySerializer(serializers.ModelSerializer):
     class Meta:
         model = BlogCommentReplies
         fields = "__all__"
+
+
+class BlogReadListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BlogRead
+        fields = ['id', 'user', 'blog', 'group', 'organization', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class BlogReadCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BlogRead
+        fields = ['id', 'blog', 'group', 'organization']
+        read_only_fields = ['id']
