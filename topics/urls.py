@@ -5,7 +5,7 @@ from .views import *
 app_name = 'topics'
 
 router = DefaultRouter()
-router.register('', TopicViewSets)
+# router.register('', TopicViewSets)
 router.register(r'blog-topics', BlogTopicViewSet, basename='blog-topic')
 router.register(r'forum-topics', ForumTopicViewSet, basename='forum-topic')
 

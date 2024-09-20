@@ -8,12 +8,12 @@ from rest_framework.decorators import action
 from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
-
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 class TopicViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
     serializer_class = TopicSerializer
-    permission_classes = [IsSuperAdminOrAdmin]
+    permission_classes = [IsAuthenticated]
     queryset = Topic.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['name', 'author', 'platform', 'organization', 'group']
@@ -118,8 +118,8 @@ class TopicViewSets(viewsets.ModelViewSet):
 
 class BlogTopicViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
-    serializer_class = BlogTopicSerializer  # You'll need to create this serializer
-    permission_classes = [IsSuperAdminOrAdmin]
+    serializer_class = BlogTopicSerializer  
+    permission_classes = [IsAuthenticated]
     queryset = BlogTopic.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['title', 'author', 'blog', 'organization', 'group']
@@ -149,9 +149,9 @@ class BlogTopicViewSet(viewsets.ModelViewSet):
         methods=['GET'],
         detail=False,
         serializer_class=None,
-        url_path='get-total-topics-by-organization',
+        url_path='get-total-blogtopics-by-organization',
     )
-    def get_total_topics_by_organization(self, request, pk=None):
+    def get_total_blogtopics_by_organization(self, request, pk=None):
         """Get total blog topics for an organization"""
         organization = request.query_params["organization"]
         output = BlogTopic.objects.filter(organization=organization).count()
@@ -169,9 +169,9 @@ class BlogTopicViewSet(viewsets.ModelViewSet):
         methods=['GET'],
         detail=False,
         serializer_class=None,
-        url_path='get-total-topics',
+        url_path='get-total-blogtopics',
     )
-    def get_total_topics(self, request, pk=None):
+    def get_total_blogtopics(self, request, pk=None):
         """get total blog topics in the app"""
         output = BlogTopic.objects.count()
         if not output:
@@ -198,9 +198,9 @@ class BlogTopicViewSet(viewsets.ModelViewSet):
         methods=['GET'],
         detail=False,
         serializer_class=None,
-        url_path='get-total-topics-by-group',
+        url_path='get-total-blogtopics-by-group',
     )
-    def get_total_topics_by_group(self, request, pk=None):
+    def get_total_blogtopics_by_group(self, request, pk=None):
         """Get total blog topics for an organization by groups"""
         group = request.query_params["group"]
         output = BlogTopic.objects.filter(group=group).count()
@@ -214,10 +214,12 @@ class BlogTopicViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
+
+
 class ForumTopicViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
-    serializer_class = ForumTopicSerializer  # You'll need to create this serializer
-    permission_classes = [IsSuperAdminOrAdmin]
+    serializer_class = ForumTopicSerializer  
+    permission_classes = [IsAuthenticated]
     queryset = ForumTopic.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['title', 'author', 'forum', 'organization', 'group']
@@ -247,9 +249,9 @@ class ForumTopicViewSet(viewsets.ModelViewSet):
         methods=['GET'],
         detail=False,
         serializer_class=None,
-        url_path='get-total-topics-by-organization',
+        url_path='get-total-forumtopics-by-organization',
     )
-    def get_total_topics_by_organization(self, request, pk=None):
+    def get_total_forumtopics_by_organization(self, request, pk=None):
         """Get total forum topics for an organization"""
         organization = request.query_params["organization"]
         output = ForumTopic.objects.filter(organization=organization).count()
@@ -267,9 +269,9 @@ class ForumTopicViewSet(viewsets.ModelViewSet):
         methods=['GET'],
         detail=False,
         serializer_class=None,
-        url_path='get-total-topics',
+        url_path='get-total-forumtopics',
     )
-    def get_total_topics(self, request, pk=None):
+    def get_total_forumtopics(self, request, pk=None):
         """get total forum topics in the app"""
         output = ForumTopic.objects.count()
         if not output:
@@ -296,9 +298,9 @@ class ForumTopicViewSet(viewsets.ModelViewSet):
         methods=['GET'],
         detail=False,
         serializer_class=None,
-        url_path='get-total-topics-by-group',
+        url_path='get-total-forumtopics-by-group',
     )
-    def get_total_topics_by_group(self, request, pk=None):
+    def get_total_forumtopics_by_group(self, request, pk=None):
         """Get total forum topics for an organization by groups"""
         group = request.query_params["group"]
         output = ForumTopic.objects.filter(group=group).count()
