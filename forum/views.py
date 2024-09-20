@@ -235,7 +235,7 @@ class ReplyViewSets(viewsets.ModelViewSet):
 
 
 class ForumReadViewSet(viewsets.ModelViewSet):
-    http_method_names = ["get", "post", "delete"]
+    http_method_names = ["get", "patch", "post", "put", "delete"]
     serializer_class = ForumReadSerializer
     permission_classes = [IsAuthenticated]
     queryset = (

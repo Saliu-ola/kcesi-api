@@ -1,12 +1,12 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ResourcesViewSets, ResourceDeleteView, FileSizeCreateView, FileSizeListView, FileSizeRetrieveView, FileSizeUpdateView
+from .views import ResourceDownloadViewSet, ResourcesViewSets, ResourceDeleteView, FileSizeCreateView, FileSizeListView, FileSizeRetrieveView, FileSizeUpdateView
 
 app_name = 'resource'
 
 router = DefaultRouter()
 router.register('', ResourcesViewSets)
-
+router.register(r'resource-downloads', ResourceDownloadViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

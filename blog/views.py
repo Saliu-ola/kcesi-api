@@ -245,7 +245,7 @@ class ReplyViewSets(viewsets.ModelViewSet):
 
 
 class BlogReadViewSet(viewsets.ModelViewSet):
-    http_method_names = ["get", "post", "delete"]
+    http_method_names = ["get", "patch", "post", "put", "delete"]
     serializer_class = BlogReadListSerializer
     queryset = BlogRead.objects.all().select_related('user', 'blog', 'group', 'organization')
     permission_classes = [IsAuthenticated]
