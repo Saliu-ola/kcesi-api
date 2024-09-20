@@ -284,7 +284,16 @@ class BlogReadViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+    
+        user = request.user
+        blog = serializer.validated_data['blog']
+
+        if BlogRead.objects.filter(user=user, blog=blog).exists():
+            return Response({
+                'success': True,
+                'message': 'User has already read this blog.'
+            }, status=status.HTTP_200_OK)
+  
         try:
             blog_read = serializer.save(user=request.user)
             response_data = {

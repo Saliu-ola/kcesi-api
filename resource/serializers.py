@@ -122,7 +122,7 @@ class ResourceFileSizeSerializer(serializers.ModelSerializer):
 
 
 class ResourceDownloadSerializer(serializers.ModelSerializer):
-    resource_name = serializers.CharField(source='resource.name', read_only=True)  # Assuming Resource has a 'name' field
+    resource_name = serializers.CharField(source='resource.title', read_only=True)  
     username = serializers.CharField(source='user.username', read_only=True)
 
     class Meta:

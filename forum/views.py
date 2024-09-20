@@ -254,7 +254,7 @@ class ForumReadViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         organization_id = user.organization_id
-        organization = Organization.objects.filter(id=organization_id).first()
+        organization = Organization.objects.filter(organization_id=organization_id).first()
 
         if user.role_id == self.SUPER_ADMIN_ROLE_ID:
             return self.queryset
@@ -264,7 +264,7 @@ class ForumReadViewSet(viewsets.ModelViewSet):
             user_groups = UserGroup.objects.filter(user=user).values_list('groups', flat=True)
             return self.queryset.filter(
                 Q(organization=organization, group_id__in=user_groups) |
-                Q(user_id=user.id)
+                Q(user=user)
             ).distinct()
         else:
             raise ValueError("Role id not present")
@@ -275,6 +275,15 @@ class ForumReadViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        forum = serializer.validated_data['forum']
+
+        if ForumRead.objects.filter(user=user, forum=forum).exists():
+            return Response({
+                'success': True,
+                'message': 'User has already read this forum.'
+            }, status=status.HTTP_200_OK)
         
         try:
             forum_read = serializer.save()

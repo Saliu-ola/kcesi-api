@@ -17,8 +17,8 @@ class ActivityLog(models.Model):
         ('delete', 'Delete'),
     )
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='activity_logs')
-    action_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='performed_actions')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='activity_logs', null = True, blank = True)
+    action_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank = True, related_name='performed_actions')
     action = models.CharField(max_length=50, choices=ACTION_CHOICES)
     object_id = models.PositiveIntegerField(null=True, blank=True)
     content_type = models.CharField(max_length=100, null=True, blank=True)

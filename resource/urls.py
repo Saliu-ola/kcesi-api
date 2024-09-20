@@ -5,8 +5,10 @@ from .views import ResourceDownloadViewSet, ResourcesViewSets, ResourceDeleteVie
 app_name = 'resource'
 
 router = DefaultRouter()
-router.register('', ResourcesViewSets)
+
+# router.register('', ResourceDownloadViewSet)
 router.register(r'resource-downloads', ResourceDownloadViewSet)
+router.register('', ResourcesViewSets)
 
 urlpatterns = [
     path('', include(router.urls)),
