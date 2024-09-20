@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.db import transaction
-from .models import Forum, ForumComment,CommentReplies
+from .models import Forum, ForumComment,CommentReplies, ForumRead
 from topics.models import ForumTopic
 
 class ForumSerializer(serializers.ModelSerializer):
@@ -91,3 +91,24 @@ class CommentReplySerializer(serializers.ModelSerializer):
     class Meta:
         model = CommentReplies
         fields = "__all__"
+
+
+
+class ForumReadSerializer(serializers.ModelSerializer):
+    forum_topic = serializers.CharField(source='forum.topic', read_only=True)
+    username = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = ForumRead
+        fields = ['id', 'user', 'username', 'forum', 'forum_topic', 'group', 'organization', 'created_at', 'updated_at']
+        read_only_fields = ['user', 'created_at', 'updated_at']
+
+class ForumReadCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ForumRead
+        fields = ['forum', 'group', 'organization']
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        validated_data['user'] = user
+        return super().create(validated_data)
