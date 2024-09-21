@@ -36,11 +36,11 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from group.models import Group
 from simpleblog.utils import calculate_engagement_scores
-from blog.models import Blog, Comment
+from blog.models import Blog, Comment, BlogRead
 from in_app_chat.models import InAppChat
-from resource.models import Resources
+from resource.models import Resources, ResourceDownload
 from browser_history.models import BrowserHistory
-from forum.models import Forum, ForumComment
+from forum.models import Forum, ForumComment, ForumRead
 from topics.models import Topic, ForumTopic, BlogTopic
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
@@ -524,6 +524,18 @@ class UserViewSets(
             organization=organization, group=group.pk, created_at__range=date_range
         ).count()
 
+        read_blog = BlogRead.objects.filter(
+            organization=organization, group=group.pk, created_at__range=date_range
+        ).count()
+
+        read_forum = ForumRead.objects.filter(
+            organization=organization, group=group.pk, created_at__range=date_range
+        ).count()
+
+        download_resources = ResourceDownload.objects.filter(
+            organization=organization, group=group.pk, created_at__range=date_range
+        ).count()
+
         # Todo download_resource,read_blog,read_forum
 
         tallies = {
@@ -538,10 +550,10 @@ class UserViewSets(
             # "created_forum_topic": created_forum_topic,
             "comment": comment,
             "used_in_app_browser": used_in_app_browser,
-            "read_blog": 0,
-            "read_forum": 0,
+            "read_blog": read_blog,
+            "read_forum": read_forum,
             "recieve_chat_message": recieve_chat_message,
-            "download_resources": 0,
+            "download_resources": download_resources,
         }
 
         sec = socialization_instance.calculate_socialization_score(tallies)
@@ -820,6 +832,15 @@ class UserViewSets(
                 ).count()
 
             # # Todo download_resource,read_blog,read_forum
+            read_blog = BlogRead.objects.filter(
+                    user=user, created_at__range=date_range
+                ).count()
+            read_forum = ForumRead.objects.filter(
+                    user=user, created_at__range=date_range
+                ).count()
+            download_resources = ResourceDownload.objects.filter(
+                    user=user, created_at__range=date_range
+                ).count()
 
             tallies = {
                 "post_blog": post_blog,
@@ -832,10 +853,10 @@ class UserViewSets(
                 # "created_topic": created_topic,
                 "comment": comment,
                 "used_in_app_browser": used_in_app_browser,
-                "read_blog": 0,
-                "read_forum": 0,
+                    "read_blog": read_blog,
+                "read_forum": read_forum,
                 "recieve_chat_message": recieve_chat_message,
-                "download_resources": 0,
+                "download_resources": download_resources,
             }
 
             sec = socialization_instance.calculate_socialization_score(tallies)
