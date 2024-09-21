@@ -28,7 +28,7 @@ class ForumViewSets(viewsets.ModelViewSet):
         .select_related('user', 'organization', 'group', 'category')
     )
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category', 'user', 'organization', 'group', "start_time", "end_time"]
+    filterset_fields = ['category', 'category__name','organization__name','user', 'organization', 'group', "start_time", "end_time"]
     search_fields = ['topic']
     ordering_fields = ['created_at']
 
