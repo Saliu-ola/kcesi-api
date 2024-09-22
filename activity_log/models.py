@@ -6,11 +6,16 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+
+
 class ActivityLog(models.Model):
     
     ACTION_CHOICES = (
         ('login_success', 'Login Successful'),
-        ('login_failed', 'Login Failed'),
+        ('login_failed_unverified', 'Login Failed Unverified'),
+        ('login_failed_credentials', 'Login Failed Credentials'),
+        ('reset_password', 'Reset Password'),
+        ('changed_password', 'Changed Password'),
         ('logout', 'Logout'),
         ('create', 'Create'),
         ('update', 'Update'),

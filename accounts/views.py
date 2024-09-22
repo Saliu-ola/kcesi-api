@@ -849,8 +849,8 @@ class UserViewSets(
                 "image_sharing": image_sharing,
                 "video_sharing": video_sharing,
                 "text_resource_sharing": text_resource_sharing,
-                "created_topic": post_forum,
-                # "created_topic": created_topic,
+                # "created_topic": post_forum,
+                "created_topic": created_topic,
                 "comment": comment,
                 "used_in_app_browser": used_in_app_browser,
                     "read_blog": read_blog,
@@ -1072,6 +1072,7 @@ class PasswordResetRequestView(APIView):
 
             token.generate_random_token()
             reset_url = f"{settings.CLIENT_URL}/auth/password-reset/?token={token.token}"
+            print(reset_url)
 
             email_data = {
                 "email": user.email,
@@ -1102,6 +1103,10 @@ class PasswordResetConfirmView(APIView):
                     {"error": "token not found or Invalid token"}, status=status.HTTP_404_NOT_FOUND
                 )
             user_token.reset_user_password(new_password)
+            user = user_token.user
+
+            ActivityLog.objects.create(user=user, action_user=user, action='reset_password', content_type='authentication')
+            
             return Response({"message": "Password reset successfully"}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -1137,7 +1142,7 @@ class LoginView(generics.GenericAPIView):
                     return Response(data=response, status=status.HTTP_200_OK)
                 
                 else:
-                    ActivityLog.objects.create(user=user, action_user=user, action='login_failed', content_type='authentication')
+                    ActivityLog.objects.create(user=user, action_user=user, action='login_failed_unverified', content_type='authentication')
 
                     return Response(
                         data={"message": "User account not verified"},
@@ -1147,7 +1152,7 @@ class LoginView(generics.GenericAPIView):
                 ActivityLog.objects.create(
                     user=None, 
                     action_user=None, 
-                    action='login_failed',
+                    action='login_failed_credentials',
                     content_type= f'authentication for {email}',
                 )
                 return Response(
