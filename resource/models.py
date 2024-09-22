@@ -15,8 +15,6 @@ RESOURCE_TYPES = (
 )
 
 
-
-
 class Resources(models.Model):
     title = models.CharField(max_length=50, null=True)
     size = models.IntegerField(null=True)
@@ -50,11 +48,6 @@ class Resources(models.Model):
 
 
 
-
-
-
-
-
 class ResourceFileSize(models.Model):
 
     file_type = models.CharField(max_length=10, choices=RESOURCE_TYPES, unique=True)
@@ -62,3 +55,20 @@ class ResourceFileSize(models.Model):
 
     def __str__(self):
         return f"{self.max_size} Megabyte"
+
+
+
+class ResourceDownload(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="resource_downloads")
+    resource = models.ForeignKey(Resources, on_delete=models.CASCADE, related_name="downloads")
+    resource_type = models.CharField(max_length=8, choices=RESOURCE_TYPES)
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="org_resource_downloads")
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_resource_downloads")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['user', 'resource']
+
+    def __str__(self):
+        return f"{self.user} downloaded {self.resource}"

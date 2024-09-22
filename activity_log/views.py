@@ -13,8 +13,8 @@ class ActivityLogListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsSuperAdmin]
 
     def perform_create(self, serializer):
-        # user = self.request.user if self.request.user.is_authenticated else None
-        instance = serializer.save(action_user=self.request.user)
+        user = self.request.user if self.request.user.is_authenticated else None
+        instance = serializer.save(action_user=user)
 
 
 class ActivityLogRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):

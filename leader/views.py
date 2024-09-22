@@ -25,12 +25,12 @@ from organization.models import Organization
 from group.models import Group, UserGroup
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
-from blog.models import Blog, Comment
+from blog.models import Blog, Comment, BlogRead
 from in_app_chat.models import InAppChat
-from resource.models import Resources
+from resource.models import Resources, ResourceDownload
 from browser_history.models import BrowserHistory
-from forum.models import Forum, ForumComment
-from topics.models import Topic
+from forum.models import Forum, ForumComment, ForumRead
+from topics.models import Topic, BlogTopic, ForumTopic
 from django.utils import timezone
 from simpleblog.utils import (
     calculate_total_engagement_score,
@@ -150,9 +150,20 @@ class BaseViewSet(viewsets.ModelViewSet):
             date_range,
             {'type': 'DOCUMENT', 'sender': user},
         )
-        created_topic = self.get_count_model_instances(
-            Topic, organization, group, date_range, {'author': user}
+        
+        # created_topic = self.get_count_model_instances(
+        #     Topic, organization, group, date_range, {'author': user}
+        # )
+
+        created_blog_topic = self.get_count_model_instances(
+            BlogTopic, organization, group, date_range, {'author': user}
         )
+
+        created_forum_topic = self.get_count_model_instances(
+            ForumTopic, organization, group, date_range, {'author': user}
+        )
+
+        created_topic = created_blog_topic + created_forum_topic
 
         comment_for_blog_count = self.get_count_model_instances(
             Comment,
@@ -204,6 +215,27 @@ class BaseViewSet(viewsets.ModelViewSet):
             date_range,
             {'receiver': user},
         )
+        read_blog = self.get_count_model_instances(
+            BlogRead,
+            organization,
+            group,
+            date_range,
+            {'user': user},
+        )
+        read_forum = self.get_count_model_instances(
+            ForumRead,
+            organization,
+            group,
+            date_range,
+            {'user': user},
+        )
+        download_resources = self.get_count_model_instances(
+            ResourceDownload,
+            organization,
+            group,
+            date_range,
+            {'user': user},
+        )
 
         tallies = {
             "post_blog": post_blog,
@@ -216,10 +248,10 @@ class BaseViewSet(viewsets.ModelViewSet):
             # "created_topic": created_topic,
             "comment": comment,
             "used_in_app_browser": used_in_app_browser,
-            "read_blog": 0,
-            "read_forum": 0,
+            "read_blog": read_blog,
+            "read_forum": read_forum,
             "recieve_chat_message": recieve_chat_message,
-            "download_resources": 0,
+            "download_resources": download_resources,
         }
 
         socialization_instance = self.receive_model_instance(

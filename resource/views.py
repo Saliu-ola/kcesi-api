@@ -1,9 +1,9 @@
 from rest_framework.request import Request
 from rest_framework.response import Response
-
+from group.models import Group, UserGroup
 from organization.models import Organization
 from .models import Resources
-from .serializers import ResourcesSerializer, CreateResourcesSerializer
+from .serializers import *
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
@@ -16,7 +16,7 @@ from accounts.permissions import IsSuperAdmin
 from .serializers import ResourceFileSizeSerializer
 from .models import ResourceFileSize
 from cloudinary.exceptions import Error as CloudinaryError
-
+from django.db.models import F, Value, CharField, Q
 
 class ResourcesViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
@@ -255,3 +255,133 @@ class ResourceDeleteView(generics.DestroyAPIView):
         instance = self.get_object()
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ResourceDownloadViewSet(viewsets.ModelViewSet):
+    http_method_names = ["get", "patch", "post", "put", "delete"]
+    serializer_class = ResourceDownloadSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = (
+        ResourceDownload.objects.all()
+        .select_related('user', 'resource', 'group', 'organization')
+    )
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['user', 'resource', 'resource_type', 'group', 'organization']
+    search_fields = ['resource__title']
+    ordering_fields = ['created_at']
+
+    ADMIN_ROLE_ID = 2
+    SUPER_ADMIN_ROLE_ID = 1
+    USER_ROLE_ID = 3
+
+    def get_queryset(self):
+        user = self.request.user
+        organization_id = user.organization_id
+        organization = Organization.objects.filter(organization_id=organization_id).first()
+
+        if user.role_id == self.SUPER_ADMIN_ROLE_ID:
+            return self.queryset
+        elif user.role_id == self.ADMIN_ROLE_ID:
+            return self.queryset.filter(organization=organization)
+        elif user.role_id == self.USER_ROLE_ID:
+            user_groups = UserGroup.objects.filter(user=user).values_list('groups', flat=True)
+            return self.queryset.filter(
+                Q(organization=organization, group_id__in=user_groups) |
+                Q(user=user)
+            ).distinct()
+        else:
+            raise ValueError("Role id not present")
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        resource = serializer.validated_data['resource']
+
+        if ResourceDownload.objects.filter(user=user, resource=resource).exists():
+            return Response({
+                'success': True,
+                'message': 'User has already downloaded this resoruce.'
+            }, status=status.HTTP_200_OK)
+        
+        try:
+            resource_download = serializer.save()
+            response_data = {
+                'success': True,
+                'message': 'Resource download record created successfully',
+                'resource_download': ResourceDownloadSerializer(resource_download, context={'request': request}).data,
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f'Error occurred: {str(e)}',
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+    def get_serializer_class(self):
+        if self.action in ["create"]:
+            return ResourceDownloadCreateSerializer
+        return ResourceDownloadSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="organization",
+                description="organization",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+        ],
+        responses={200: None},
+    )
+    @action(
+        methods=['GET'],
+        detail=False,
+        url_path='get-total-downloads-by-organization',
+    )
+    def get_total_downloads_by_organization(self, request):
+        organization = request.query_params.get("organization")
+        output = ResourceDownload.objects.filter(organization_id=organization).count()
+        return Response(
+            {"success": True, "total_downloads": output},
+            status=status.HTTP_200_OK,
+        )
+
+    @action(
+        methods=['GET'],
+        detail=False,
+        url_path='get-total-downloads',
+    )
+    def get_total_downloads(self, request):
+        output = ResourceDownload.objects.count()
+        return Response(
+            {"success": True, "total_downloads": output},
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="group",
+                description="group",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+        ],
+    )
+    @action(
+        methods=['GET'],
+        detail=False,
+        url_path='get-total-downloads-by-group',
+    )
+    def get_total_downloads_by_group(self, request):
+        group = request.query_params.get("group")
+        output = ResourceDownload.objects.filter(group_id=group).count()
+        return Response(
+            {"success": True, "total_downloads": output},
+            status=status.HTTP_200_OK,
+        )

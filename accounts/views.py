@@ -36,12 +36,12 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from group.models import Group
 from simpleblog.utils import calculate_engagement_scores
-from blog.models import Blog, Comment
+from blog.models import Blog, Comment, BlogRead
 from in_app_chat.models import InAppChat
-from resource.models import Resources
+from resource.models import Resources, ResourceDownload
 from browser_history.models import BrowserHistory
-from forum.models import Forum, ForumComment
-from topics.models import Topic
+from forum.models import Forum, ForumComment, ForumRead
+from topics.models import Topic, ForumTopic, BlogTopic
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from rest_framework import mixins
@@ -482,10 +482,19 @@ class UserViewSets(
             created_at__range=date_range,
         ).count()
 
-        created_topic = Topic.objects.filter(
+        # created_topic = Topic.objects.filter(
+        #     organization=organization, group=group.pk, created_at__range=date_range
+        # ).count()
+
+        created_blog_topic = BlogTopic.objects.filter(
             organization=organization, group=group.pk, created_at__range=date_range
         ).count()
 
+        created_forum_topic = ForumTopic.objects.filter(
+            organization=organization, group=group.pk, created_at__range=date_range
+        ).count()
+
+        created_topic = created_blog_topic + created_forum_topic
         comment_for_blog_count = Comment.objects.filter(
             organization=organization, group=group.pk, created_at__range=date_range
         ).count()
@@ -515,6 +524,18 @@ class UserViewSets(
             organization=organization, group=group.pk, created_at__range=date_range
         ).count()
 
+        read_blog = BlogRead.objects.filter(
+            organization=organization, group=group.pk, created_at__range=date_range
+        ).count()
+
+        read_forum = ForumRead.objects.filter(
+            organization=organization, group=group.pk, created_at__range=date_range
+        ).count()
+
+        download_resources = ResourceDownload.objects.filter(
+            organization=organization, group=group.pk, created_at__range=date_range
+        ).count()
+
         # Todo download_resource,read_blog,read_forum
 
         tallies = {
@@ -524,14 +545,15 @@ class UserViewSets(
             "image_sharing": image_sharing,
             "video_sharing": video_sharing,
             "text_resource_sharing": text_resource_sharing,
-            # "created_topic": created_topic,
-            "created_topic": post_forum,
+            "created_topic": created_topic,
+            # "created_blog_topic": created_blog_topic,
+            # "created_forum_topic": created_forum_topic,
             "comment": comment,
             "used_in_app_browser": used_in_app_browser,
-            "read_blog": 0,
-            "read_forum": 0,
+            "read_blog": read_blog,
+            "read_forum": read_forum,
             "recieve_chat_message": recieve_chat_message,
-            "download_resources": 0,
+            "download_resources": download_resources,
         }
 
         sec = socialization_instance.calculate_socialization_score(tallies)
@@ -766,9 +788,20 @@ class UserViewSets(
                     created_at__range=date_range,
                 ).count()
 
-            created_topic = Topic.objects.filter(
+            # created_topic = Topic.objects.filter(
+            #         author=user, created_at__range=date_range
+            #     ).count()
+
+            created_blog_topic = BlogTopic.objects.filter(
                     author=user, created_at__range=date_range
                 ).count()
+
+            created_forum_topic = ForumTopic.objects.filter(
+                    author=user, created_at__range=date_range
+                ).count()
+
+
+            created_topic = created_blog_topic + created_forum_topic
 
             comment_for_blog_count = Comment.objects.filter(user=user, created_at__range=date_range).count()
 
@@ -799,6 +832,15 @@ class UserViewSets(
                 ).count()
 
             # # Todo download_resource,read_blog,read_forum
+            read_blog = BlogRead.objects.filter(
+                    user=user, created_at__range=date_range
+                ).count()
+            read_forum = ForumRead.objects.filter(
+                    user=user, created_at__range=date_range
+                ).count()
+            download_resources = ResourceDownload.objects.filter(
+                    user=user, created_at__range=date_range
+                ).count()
 
             tallies = {
                 "post_blog": post_blog,
@@ -807,14 +849,14 @@ class UserViewSets(
                 "image_sharing": image_sharing,
                 "video_sharing": video_sharing,
                 "text_resource_sharing": text_resource_sharing,
-                "created_topic": post_forum,
-                # "created_topic": created_topic,
+                # "created_topic": post_forum,
+                "created_topic": created_topic,
                 "comment": comment,
                 "used_in_app_browser": used_in_app_browser,
-                "read_blog": 0,
-                "read_forum": 0,
+                    "read_blog": read_blog,
+                "read_forum": read_forum,
                 "recieve_chat_message": recieve_chat_message,
-                "download_resources": 0,
+                "download_resources": download_resources,
             }
 
             sec = socialization_instance.calculate_socialization_score(tallies)
@@ -1030,6 +1072,7 @@ class PasswordResetRequestView(APIView):
 
             token.generate_random_token()
             reset_url = f"{settings.CLIENT_URL}/auth/password-reset/?token={token.token}"
+            print(reset_url)
 
             email_data = {
                 "email": user.email,
@@ -1060,6 +1103,10 @@ class PasswordResetConfirmView(APIView):
                     {"error": "token not found or Invalid token"}, status=status.HTTP_404_NOT_FOUND
                 )
             user_token.reset_user_password(new_password)
+            user = user_token.user
+
+            ActivityLog.objects.create(user=user, action_user=user, action='reset_password', content_type='authentication')
+            
             return Response({"message": "Password reset successfully"}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -1095,7 +1142,7 @@ class LoginView(generics.GenericAPIView):
                     return Response(data=response, status=status.HTTP_200_OK)
                 
                 else:
-                    ActivityLog.objects.create(user=user, action_user=user, action='login_failed', content_type='authentication')
+                    ActivityLog.objects.create(user=user, action_user=user, action='login_failed_unverified', content_type='authentication')
 
                     return Response(
                         data={"message": "User account not verified"},
@@ -1105,7 +1152,7 @@ class LoginView(generics.GenericAPIView):
                 ActivityLog.objects.create(
                     user=None, 
                     action_user=None, 
-                    action='login_failed',
+                    action='login_failed_credentials',
                     content_type= f'authentication for {email}',
                 )
                 return Response(
