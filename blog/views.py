@@ -33,6 +33,7 @@ class BlogViewSets(viewsets.ModelViewSet):
         'category',
         'category__name',
         'author',
+        'author__email',
         'organization',
         'organization__name',
         'group',
