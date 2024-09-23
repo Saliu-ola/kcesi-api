@@ -150,6 +150,7 @@ class UserGroupsViewSets(viewsets.ModelViewSet):
         filters.OrderingFilter,
     ]
     filterset_fields = ["user", "user__organization_name", "groups"]
+    search_fields = ['groups__title']
     ordering_fields = ["created_at"]
 
     def get_serializer_class(self):

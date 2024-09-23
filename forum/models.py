@@ -92,3 +92,19 @@ class CommentReplies(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+
+
+class ForumRead(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="forum_reads")
+    forum = models.ForeignKey(Forum, on_delete=models.CASCADE, related_name="reads")
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_forum_reads")
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="org_forum_reads")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['user', 'forum']
+
+    def __str__(self):
+        return f"{self.user} read {self.forum}"

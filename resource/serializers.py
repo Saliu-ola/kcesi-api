@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Resources
+from .models import Resources, ResourceDownload
 import cloudinary.uploader
 from organization.models import Organization
 from group.models import Group
@@ -118,3 +118,26 @@ class ResourceFileSizeSerializer(serializers.ModelSerializer):
         if value < 1 or value > 1024:
             raise serializers.ValidationError("Max size must be between 1 MB and 1024 MB (1 GB).")
         return value
+
+
+
+class ResourceDownloadSerializer(serializers.ModelSerializer):
+    resource_name = serializers.CharField(source='resource.title', read_only=True)  
+    username = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = ResourceDownload
+        fields = ['id', 'user', 'username', 'resource', 'resource_name', 'resource_type', 'group', 'organization', 'created_at', 'updated_at']
+        read_only_fields = ['user', 'created_at', 'updated_at']
+
+
+
+class ResourceDownloadCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ResourceDownload
+        fields = ['resource', 'resource_type', 'group', 'organization']
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        validated_data['user'] = user
+        return super().create(validated_data)

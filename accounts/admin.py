@@ -9,6 +9,7 @@ class UserAdmin(BaseUserAdmin):
     search_fields = ('email',)
     list_display = [
         'email',
+        'username',
         'first_name',
         'last_name',
         'role_id',
