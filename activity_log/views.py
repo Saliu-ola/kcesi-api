@@ -5,11 +5,13 @@ from accounts.permissions import IsSuperAdmin
 from rest_framework import generics
 # Create your views here.
 
-
+from django_filters.rest_framework import DjangoFilterBackend
 
 class ActivityLogListCreateView(generics.ListCreateAPIView):
     queryset = ActivityLog.objects.all()
     serializer_class = ActivityLogSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['user', 'action_user', 'action', 'content_type', 'date']
     permission_classes = [IsSuperAdmin]
 
     def perform_create(self, serializer):
@@ -26,13 +28,13 @@ class ActivityLogRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView
         instance = serializer.save()
         
         # Log the update of an ActivityLog
-        ActivityLog.objects.create(
-            user=instance.user,
-            action_user=self.request.user,
-            action='update',
-            object_id=instance.id,
-            content_type='Activity-Log',
-        )
+        # ActivityLog.objects.create(
+        #     user=instance.user,
+        #     action_user=self.request.user,
+        #     action='update',
+        #     object_id=instance.id,
+        #     content_type='Activity-Log',
+        # )
 
     def perform_destroy(self, instance):
         # Log the deletion of an ActivityLog
