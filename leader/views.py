@@ -201,13 +201,19 @@ class BaseViewSet(viewsets.ModelViewSet):
 
         comment = calculate_ai_division(total_comment_ai_score, total_comment_count)
 
-        used_in_app_browser = self.get_count_model_instances(
-            BrowserHistory,
-            organization,
-            group,
-            date_range,
-            {'user': user},
-        )
+        used_in_app_browser = BrowserHistory.objects.filter(
+            organization=organization, group=group.pk, user = user, created_at__range=date_range
+        ).aggregate(total_minutes=Sum('time_spent'))['total_minutes'] or 0
+
+        used_in_app_browser = round(used_in_app_browser)
+
+        # used_in_app_browser = self.get_count_model_instances(
+        #     BrowserHistory,
+        #     organization,
+        #     group,
+        #     date_range,
+        #     {'user': user},
+        # )
         recieve_chat_message = self.get_count_model_instances(
             InAppChat,
             organization,
