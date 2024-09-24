@@ -516,9 +516,15 @@ class UserViewSets(
 
         comment = calculate_ai_division(total_comment_ai_score, total_comment_count)
 
+        # used_in_app_browser = BrowserHistory.objects.filter(
+        #     organization=organization, group=group.pk, created_at__range=date_range
+        # ).count()
+
         used_in_app_browser = BrowserHistory.objects.filter(
             organization=organization, group=group.pk, created_at__range=date_range
-        ).count()
+        ).aggregate(total_minutes=Sum('time_spent'))['total_minutes'] or 0
+
+        used_in_app_browser = round(used_in_app_browser)
 
         recieve_chat_message = InAppChat.objects.filter(
             organization=organization, group=group.pk, created_at__range=date_range
@@ -823,9 +829,15 @@ class UserViewSets(
 
             comment = calculate_ai_division(total_comment_ai_score, total_comment_count)
 
+            # used_in_app_browser = BrowserHistory.objects.filter(
+            #         user=user, created_at__range=date_range
+            #     ).count()
+
             used_in_app_browser = BrowserHistory.objects.filter(
-                    user=user, created_at__range=date_range
-                ).count()
+                user=user, created_at__range=date_range
+            ).aggregate(total_minutes=Sum('time_spent'))['total_minutes'] or 0
+
+            used_in_app_browser = round(used_in_app_browser)
 
             recieve_chat_message = InAppChat.objects.filter(
                     receiver=user, created_at__range=date_range
@@ -853,7 +865,7 @@ class UserViewSets(
                 "created_topic": created_topic,
                 "comment": comment,
                 "used_in_app_browser": used_in_app_browser,
-                    "read_blog": read_blog,
+                "read_blog": read_blog,
                 "read_forum": read_forum,
                 "recieve_chat_message": recieve_chat_message,
                 "download_resources": download_resources,
