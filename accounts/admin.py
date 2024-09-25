@@ -21,7 +21,7 @@ class UserAdmin(BaseUserAdmin):
         (None, {'fields': ('email', 'password')}),
         (
             _('Personal Info'),
-            {'fields': ('last_name', 'first_name', 'phone', 'role_id', 'image_url')},
+            {'fields': ('username', 'first_name', 'last_name', 'phone', 'role_id', 'image_url')},
         ),
         (_('Permissions'), {'fields': ('is_active', 'is_staff', 'is_superuser', 'is_verified')}),
         (_('Important Info'), {'fields': ('last_login',)}),
@@ -33,6 +33,7 @@ class UserAdmin(BaseUserAdmin):
                 'classes': ('wide',),
                 'fields': (
                     'email',
+                    'username',
                     'last_name',
                     'first_name',
                     'role_id',

@@ -56,7 +56,7 @@ class CustomUserManager(BaseUserManager):
 # Define the columns here and set their properties
 class User(AbstractUser):
     email = models.EmailField(_('email address'), null=True, blank=True, unique=True)
-    username = models.CharField(max_length=45, null=True)
+    username = models.CharField(max_length=45, null=True, unique=True)
     first_name = models.CharField(max_length=45, null=True)
     last_name = models.CharField(max_length=45, null=True)
     date_of_birth = models.DateField(null=True)

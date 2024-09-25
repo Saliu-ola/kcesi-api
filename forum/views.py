@@ -28,8 +28,8 @@ class ForumViewSets(viewsets.ModelViewSet):
         .select_related('user', 'organization', 'group', 'category')
     )
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category', 'category__name','organization__name','user', 'user__email', 'organization', 'group', "start_time", "end_time"]
-    search_fields = ['topic']
+    filterset_fields = ['category', 'category__name','organization__name','user', 'user__email', 'user__username', 'organization', 'group', "start_time", "end_time"]
+    search_fields = ['topic', 'user__username']
     ordering_fields = ['created_at']
 
     ADMIN_ROLE_ID = 2
@@ -243,8 +243,8 @@ class ForumReadViewSet(viewsets.ModelViewSet):
         .select_related('user', 'forum', 'group', 'organization')
     )
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['user', 'forum', 'group', 'organization']
-    search_fields = ['forum__topic']
+    filterset_fields = ['user', 'user__username', 'forum', 'group', 'organization']
+    search_fields = ['forum__topic', 'user__username']
     ordering_fields = ['created_at']
 
     ADMIN_ROLE_ID = 2
