@@ -524,7 +524,7 @@ class UserViewSets(
             organization=organization, group=group.pk, created_at__range=date_range
         ).aggregate(total_minutes=Sum('time_spent'))['total_minutes'] or 0
 
-        used_in_app_browser = round(used_in_app_browser)
+        used_in_app_browser = round(used_in_app_browser / 60, 2) 
 
         recieve_chat_message = InAppChat.objects.filter(
             organization=organization, group=group.pk, created_at__range=date_range
@@ -837,7 +837,7 @@ class UserViewSets(
                 user=user, created_at__range=date_range
             ).aggregate(total_minutes=Sum('time_spent'))['total_minutes'] or 0
 
-            used_in_app_browser = round(used_in_app_browser)
+            used_in_app_browser = round(used_in_app_browser / 60, 2)
 
             recieve_chat_message = InAppChat.objects.filter(
                     receiver=user, created_at__range=date_range

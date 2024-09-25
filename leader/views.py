@@ -205,7 +205,7 @@ class BaseViewSet(viewsets.ModelViewSet):
             organization=organization, group=group.pk, user = user, created_at__range=date_range
         ).aggregate(total_minutes=Sum('time_spent'))['total_minutes'] or 0
 
-        used_in_app_browser = round(used_in_app_browser)
+        used_in_app_browser = round(used_in_app_browser / 60, 2) 
 
         # used_in_app_browser = self.get_count_model_instances(
         #     BrowserHistory,

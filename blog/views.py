@@ -32,6 +32,7 @@ class BlogViewSets(viewsets.ModelViewSet):
     filterset_fields = [
         'category',
         'category__name',
+        'author__username',
         'author',
         'author__email',
         'organization',
@@ -39,7 +40,7 @@ class BlogViewSets(viewsets.ModelViewSet):
         'group',
         'group__title',
     ]
-    search_fields = ['topic']
+    search_fields = ['topic', 'author__username' ]
     ordering_fields = ['created_at']
 
     ADMIN_ROLE_ID = 2
@@ -251,8 +252,8 @@ class BlogReadViewSet(viewsets.ModelViewSet):
     queryset = BlogRead.objects.all().select_related('user', 'blog', 'group', 'organization')
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['user', 'blog', 'group', 'organization']
-    search_fields = ['blog__topic']
+    filterset_fields = ['user', 'user__username' 'blog', 'group', 'organization']
+    search_fields = ['blog__topic', 'user__username']
     ordering_fields = ['created_at']
 
     ADMIN_ROLE_ID = 2
