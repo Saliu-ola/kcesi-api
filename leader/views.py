@@ -207,13 +207,9 @@ class BaseViewSet(viewsets.ModelViewSet):
 
         used_in_app_browser = round(used_in_app_browser / 60, 2) 
 
-        # used_in_app_browser = self.get_count_model_instances(
-        #     BrowserHistory,
-        #     organization,
-        #     group,
-        #     date_range,
-        #     {'user': user},
-        # )
+        print('used_in_app_browser ', used_in_app_browser,user)
+
+
         recieve_chat_message = self.get_count_model_instances(
             InAppChat,
             organization,
@@ -228,6 +224,8 @@ class BaseViewSet(viewsets.ModelViewSet):
             date_range,
             {'user': user},
         )
+        # print('read_blog ',read_blog, user)
+
         read_forum = self.get_count_model_instances(
             ForumRead,
             organization,
@@ -250,8 +248,8 @@ class BaseViewSet(viewsets.ModelViewSet):
             "image_sharing": image_sharing,
             "video_sharing": video_sharing,
             "text_resource_sharing": text_resource_sharing,
-            "created_topic": post_forum,
-            # "created_topic": created_topic,
+            # "created_topic": post_forum,
+            "created_topic": created_topic,
             "comment": comment,
             "used_in_app_browser": used_in_app_browser,
             "read_blog": read_blog,
@@ -370,6 +368,7 @@ class SocializationViewSets(BaseViewSet):
             organization_activity_scores = self.get_organization_activity_scores(
                 organization_id, group.pk, user, date_range
             )
+            # print(organization_activity_scores, user)
             sec = organization_activity_scores["sec"]
             tes = organization_activity_scores["tes"]
 
