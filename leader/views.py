@@ -110,6 +110,7 @@ class BaseViewSet(viewsets.ModelViewSet):
         )
 
         post_blog = calculate_ai_division(post_blog_ai_score, post_blog_count)
+        # print("post_blog_ai_division", post_blog)
 
         send_chat_message_count = self.get_count_model_instances(
             InAppChat, organization, group, date_range, {'sender': user}
@@ -128,6 +129,7 @@ class BaseViewSet(viewsets.ModelViewSet):
             Forum, organization, group, date_range, {'user': user}
         )
         post_forum = calculate_ai_division(post_forum_ai_score , post_forum_count)
+        # print("post_forum_ai_division", post_forum)
 
         image_sharing = self.get_count_model_instances(
             Resources,

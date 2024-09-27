@@ -252,7 +252,7 @@ class BlogReadViewSet(viewsets.ModelViewSet):
     queryset = BlogRead.objects.all().select_related('user', 'blog', 'group', 'organization')
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['user', 'user__username' 'blog', 'group', 'organization']
+    filterset_fields = ['user', 'user__username', 'blog', 'group', 'organization']
     search_fields = ['blog__topic', 'user__username']
     ordering_fields = ['created_at']
 
