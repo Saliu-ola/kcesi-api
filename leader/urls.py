@@ -5,6 +5,7 @@ from .views import (
     InternalizationViewSets,
     SocializationViewSets,
     ExternalizationViewSets,
+    SECIActivityLeadersView,
 )
 
 app_name = 'leaders-table'
@@ -18,4 +19,5 @@ router.register('combination', CombinationViewSets)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('seci-activity-leaderss/', SECIActivityLeadersView.as_view(), name='activity-scores'),
 ]
