@@ -102,15 +102,19 @@ class BaseViewSet(viewsets.ModelViewSet):
         organization = get_object_or_404(Organization, organization_id=organization_id).pk
         group = get_object_or_404(Group, pk=group_pk)
 
+
         post_blog_count = self.get_count_model_instances(
             Blog, organization, group, date_range, {'author': user}
         )
+        # print("post_blog_ai_count", post_blog_count,user)
+
         post_blog_ai_score = self.get_aggregated_score(
             Blog, organization, group, date_range, {'author': user}
         )
+        # print("post_blog_ai_score", post_blog_ai_score,user)
 
         post_blog = calculate_ai_division(post_blog_ai_score, post_blog_count)
-        # print("post_blog_ai_division", post_blog)
+        # print("post_blog_ai_division", post_blog,user)
 
         send_chat_message_count = self.get_count_model_instances(
             InAppChat, organization, group, date_range, {'sender': user}
@@ -129,7 +133,7 @@ class BaseViewSet(viewsets.ModelViewSet):
             Forum, organization, group, date_range, {'user': user}
         )
         post_forum = calculate_ai_division(post_forum_ai_score , post_forum_count)
-        # print("post_forum_ai_division", post_forum)
+
 
         image_sharing = self.get_count_model_instances(
             Resources,
@@ -209,7 +213,6 @@ class BaseViewSet(viewsets.ModelViewSet):
 
         used_in_app_browser = round(used_in_app_browser / 60, 2) 
 
-        print('used_in_app_browser ', used_in_app_browser,user)
 
 
         recieve_chat_message = self.get_count_model_instances(
@@ -226,7 +229,6 @@ class BaseViewSet(viewsets.ModelViewSet):
             date_range,
             {'user': user},
         )
-        # print('read_blog ',read_blog, user)
 
         read_forum = self.get_count_model_instances(
             ForumRead,
@@ -276,11 +278,14 @@ class BaseViewSet(viewsets.ModelViewSet):
         )
 
         cec = combination_instance.calculate_combination_score(tallies)
+
         sec = socialization_instance.calculate_socialization_score(tallies)
+
         iec = internalization_instance.calculate_internalization_score(tallies)
         eec = externalization_instance.calculate_externalization_score(tallies)
 
         tes = calculate_total_engagement_score(sec, eec, cec, iec)
+
 
         return {
             "socialization_instance": socialization_instance,
@@ -365,30 +370,55 @@ class SocializationViewSets(BaseViewSet):
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
-        leaders = []
+        # leaders = []
+        user_sec_scores = [] 
+        total_sec = Decimal(0.00)
         for user in users_in_group:
             organization_activity_scores = self.get_organization_activity_scores(
                 organization_id, group.pk, user, date_range
             )
-            # print(organization_activity_scores, user)
+
             sec = organization_activity_scores["sec"]
             tes = organization_activity_scores["tes"]
 
-            socialization_instance = organization_activity_scores["socialization_instance"]
+            # socialization_instance = organization_activity_scores["socialization_instance"]
+            # my_percent = (sec/tes)*100
+            # socialization_percentage = round(
+            #     socialization_instance.calculate_socialization_percentage(sec, tes), 2
+            # )
 
-            socialization_percentage = round(
-                socialization_instance.calculate_socialization_percentage(sec, tes), 2
-            )
+            total_sec += sec
 
-            user, percentage = user, socialization_percentage
+            # user, percentage = user, socialization_percentage
 
-            leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
+            user_sec_scores.append({
+                "user": User.objects.get(pk=user).full_name,
+                "sec": sec,
+                "tes": tes
+            })
 
-        leaders_sorted = calculate_categorized_percentage(leaders)
+
+            # leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
+        
+        myleaders = []
+
+        for score in user_sec_scores:
+            percentage = (score['sec'] / total_sec) * 100 if total_sec > 0 else 0
+            myleaders.append({
+                "user": score['user'],
+                "percentage": round(percentage, 2),
+                "sec": score['sec']
+            })
+        
+
+        # leaders_sorted = calculate_categorized_percentage(leaders)
+        myleaders_sorted = sorted(myleaders, key=lambda x: x['percentage'], reverse=True)
+
         return Response(
             {
                 "success": True,
-                "leaders": leaders_sorted[:5],
+                # "leaders": leaders_sorted[:5],
+                "leaders": myleaders_sorted[:5],
                 "organization_id": organization_id,
                 "group": group.pk,
                 "start_date": start_date,
@@ -501,7 +531,10 @@ class ExternalizationViewSets(BaseViewSet):
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
-        leaders = []
+        
+        # leaders = []
+        user_eec_scores = [] 
+        total_eec = Decimal(0.00)
         for user in users_in_group:
             organization_activity_scores = self.get_organization_activity_scores(
                 organization_id, group.pk, user, date_range
@@ -509,20 +542,43 @@ class ExternalizationViewSets(BaseViewSet):
             eec = organization_activity_scores["eec"]
             tes = organization_activity_scores["tes"]
 
-            externalization_instance = organization_activity_scores["externalization_instance"]
-            externalization_percentage = round(
-                externalization_instance.calculate_externalization_percentage(eec, tes), 2
-            )
+            # externalization_instance = organization_activity_scores["externalization_instance"]
+            # externalization_percentage = round(
+            #     externalization_instance.calculate_externalization_percentage(eec, tes), 2
+            # )
+            
+            total_eec += eec
 
-            user, percentage = user, externalization_percentage
+            # user, percentage = user, externalization_percentage
 
-            leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
+            # leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
 
-        leaders_sorted = calculate_categorized_percentage(leaders)
+            user_eec_scores.append({
+                "user": User.objects.get(pk=user).full_name,
+                "eec": eec,
+                "tes": tes
+            })
+
+        myleaders = []
+
+        for score in user_eec_scores:
+            percentage = (score['eec'] / total_eec) * 100 if total_eec > 0 else 0
+            myleaders.append({
+                "user": score['user'],
+                "percentage": round(percentage, 2),
+                "eec": score['eec']
+            })
+            
+
+        # leaders_sorted = calculate_categorized_percentage(leaders)
+        myleaders_sorted = sorted(myleaders, key=lambda x: x['percentage'], reverse=True)
+
+        
         return Response(
             {
                 "success": True,
-                "leaders": leaders_sorted[:5],
+                # "leaders": leaders_sorted[:5],
+                "leaders": myleaders_sorted[:5],
                 "organization_id": organization_id,
                 "group": group.pk,
                 "start_date": start_date,
@@ -636,7 +692,10 @@ class CombinationViewSets(BaseViewSet):
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
-        leaders = []
+        
+        # leaders = []
+        user_cec_scores = [] 
+        total_cec = Decimal(0.00)
         for user in users_in_group:
             organization_activity_scores = self.get_organization_activity_scores(
                 organization_id, group.pk, user, date_range
@@ -644,22 +703,42 @@ class CombinationViewSets(BaseViewSet):
             cec = organization_activity_scores["cec"]
             tes = organization_activity_scores["tes"]
 
-            combination_instance = organization_activity_scores["combination_instance"]
+            # combination_instance = organization_activity_scores["combination_instance"]
 
-            combination_percentage = round(
-                combination_instance.calculate_combination_percentage(cec, tes), 2
-            )
+            # combination_percentage = round(
+            #     combination_instance.calculate_combination_percentage(cec, tes), 2
+            # )
+            total_cec += cec
 
-            user, percentage = user, combination_percentage
+            # user, percentage = user, combination_percentage
 
-            leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
+            user_cec_scores.append({
+                "user": User.objects.get(pk=user).full_name,
+                "cec": cec,
+                "tes": tes
+            })
 
-        leaders_sorted=calculate_categorized_percentage(leaders)
+            # leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
+
+        myleaders = []
+
+        for score in user_cec_scores:
+            percentage = (score['cec'] / total_cec) * 100 if total_cec > 0 else 0
+            myleaders.append({
+                "user": score['user'],
+                "percentage": round(percentage, 2),
+                "cec": score['cec']
+            })
+        
+        # leaders_sorted=calculate_categorized_percentage(leaders)
+        myleaders_sorted = sorted(myleaders, key=lambda x: x['percentage'], reverse=True)
+
 
         return Response(
             {
                 "success": True,
-                "leaders": leaders_sorted[:5],
+                # "leaders": leaders_sorted[:5],
+                "leaders": myleaders_sorted[:5],
                 "organization_id": organization_id,
                 "group": group.pk,
                 "start_date": start_date,
@@ -773,8 +852,10 @@ class InternalizationViewSets(BaseViewSet):
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
-        leaders = []
-
+        
+        # leaders = []
+        user_iec_scores = [] 
+        total_iec = Decimal(0.00)
         for user in users_in_group:
             organization_activity_scores = self.get_organization_activity_scores(
                 organization_id, group.pk, user, date_range
@@ -787,15 +868,37 @@ class InternalizationViewSets(BaseViewSet):
                 internalization_instance.calculate_internalization_percentage(iec, tes), 2
             )
 
-            user, percentage = user, internalization_percentage
+            total_iec += iec
 
-            leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
+            # user, percentage = user, internalization_percentage
 
-        leaders_sorted = calculate_categorized_percentage(leaders)
+            user_iec_scores.append({
+                "user": User.objects.get(pk=user).full_name,
+                "iec": iec,
+                "tes": tes
+            })
+
+            # leaders.append({"user": User.objects.get(pk=user).full_name, "percentage": percentage})
+        
+        myleaders = []
+
+        for score in user_iec_scores:
+            percentage = (score['iec'] / total_iec) * 100 if total_iec > 0 else 0
+            myleaders.append({
+                "user": score['user'],
+                "percentage": round(percentage, 2),
+                "iec": score['iec']
+            })
+
+    
+        # leaders_sorted = calculate_categorized_percentage(leaders)
+        myleaders_sorted = sorted(myleaders, key=lambda x: x['percentage'], reverse=True)
+
         return Response(
             {
                 "success": True,
-                "leaders": leaders_sorted[:5],
+                # "leaders": leaders_sorted[:5],
+                "leaders": myleaders_sorted[:5],
                 "organization_id": organization_id,
                 "group": group.pk,
                 "start_date": start_date,
