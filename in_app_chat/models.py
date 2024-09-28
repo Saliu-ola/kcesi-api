@@ -3,7 +3,7 @@ from accounts.models import User
 from group.models import Group
 from organization.models import Organization
 from django.core.validators import MinValueValidator
-
+from resource.models import Resources
 
 class InAppChat(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sender_chats")
@@ -20,6 +20,7 @@ class InAppChat(models.Model):
     score = models.DecimalField(
         default=0.00, decimal_places=2, max_digits=5, validators=[MinValueValidator(0.00)]
     )
+    resource = models.ForeignKey(Resources, on_delete=models.CASCADE, related_name="inappchat_resource", null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)

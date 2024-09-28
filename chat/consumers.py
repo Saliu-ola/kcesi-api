@@ -62,6 +62,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         from group.models import Group
         from accounts.models import User
         from in_app_chat.models import InAppChat
+        from resource.models import Resources
 
         if text_data:
             try:
@@ -74,6 +75,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 group_id = text_data_json.get("group")
                 unique_identifier = text_data_json.get("unique_identifier")
                 score = text_data_json.get("score")
+                resource_id = text_data_json.get("resource")
             except json.JSONDecodeError as e:
                 print(f"Invalid JSON format: {e}")
                 return
@@ -91,6 +93,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
             else:
                 group = None
 
+            if resource_id:
+                resource = await database_sync_to_async(Resources.objects.get)(pk = resource_id)
+            else:
+                resource = None
+
             created_at = int(time.time())
 
             # Create and save the InAppChat instance
@@ -103,6 +110,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 group=group,
                 unique_identifier=unique_identifier,
                 score=score,
+                resource=resource,
             )
             await database_sync_to_async(chat_message.save)()
 
@@ -119,6 +127,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "group": group.pk if group else None,  # Send None if group is None
                     "unique_identifier": unique_identifier,
                     "score": score,
+                    "resource": resource,
                     "created_at": created_at,
                 },
             )
@@ -133,6 +142,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         score = event["score"]
         group = event["group"]  # This will be None if group was not provided
         unique_identifier = event["unique_identifier"]
+        resource = event["resource"]
         created_at = event["created_at"]
 
         # Send the received message back to the client
@@ -147,6 +157,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "group": group,
                     "unique_identifier": unique_identifier,
                     "score": score,
+                    "resource": resource,
                     "created_at": created_at,
                 }
             )
