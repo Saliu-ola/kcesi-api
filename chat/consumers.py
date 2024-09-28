@@ -127,7 +127,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "group": group.pk if group else None,  # Send None if group is None
                     "unique_identifier": unique_identifier,
                     "score": score,
-                    "resource": resource,
+                    "resource": resource.pk if resource else None,
                     "created_at": created_at,
                 },
             )

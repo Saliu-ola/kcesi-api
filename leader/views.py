@@ -940,3 +940,273 @@ class InternalizationViewSets(BaseViewSet):
                 status=status.HTTP_200_OK,
             )
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+#Attempt to optimse leaders view and avoid calling this function: get_organization_activity_scores() 4 different times
+class SECIActivityLeadersView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="organization_id",
+                description="organization_id",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+            OpenApiParameter(
+                name="group_pk",
+                description="group_pk",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+            OpenApiParameter(
+                name="start_date",
+                description="Start date in the format 'YYYY-MM-DD'T'HH:mm:ss.SSS'Z'",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+            OpenApiParameter(
+                name="end_date",
+                description="End date in the format 'YYYY-MM-DD'T'HH:mm:ss.SSS'Z'",
+                required=True,
+                type=OpenApiTypes.STR,
+            ),
+        ],
+    )
+    def get(self, request):
+        organization_id = request.query_params["organization_id"]
+        group_pk = request.query_params["group_pk"]
+
+        start_date = datetime.strptime(request.query_params["start_date"], "%Y-%m-%dT%H:%M:%S.%fZ")
+        end_date = datetime.strptime(request.query_params["end_date"], "%Y-%m-%dT%H:%M:%S.%fZ")
+
+        date_range = (start_date, end_date)
+
+        try:
+            group = Group.objects.get(pk=group_pk)
+        except ObjectDoesNotExist:
+            return Response(
+                {
+                    'success': False,
+                    'message': "group not found",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        users_in_group = UserGroup.objects.filter(groups=group.pk).values_list("user", flat=True)
+
+        if not users_in_group:
+            return Response(
+                {
+                    'success': True,
+                    'message': f"{group.title} group has no member(s) attached",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        socialization_leaders = []
+        externalization_leaders = []
+        combination_leaders = []
+        internalization_leaders = []
+        
+        total_sec =  Decimal(0.00)
+        total_eec =  Decimal(0.00)
+        total_cec =  Decimal(0.00)
+        total_iec =  Decimal(0.00)
+        total_tes =  Decimal(0.00)
+
+        user_sec_scores = [] 
+        user_eec_scores = [] 
+        user_cec_scores = [] 
+        user_iec_scores = [] 
+
+        for user in users_in_group:
+            organization_activity_scores = self.get_organization_activity_scores(
+                organization_id, group.pk, user, date_range
+            )
+
+            sec = organization_activity_scores["sec"]
+            eec = organization_activity_scores["eec"]
+            cec = organization_activity_scores["cec"]
+            iec = organization_activity_scores["iec"]
+            tes = organization_activity_scores["tes"]
+
+            user_full_name = User.objects.get(pk=user).full_name
+
+            total_sec += sec
+            total_eec += eec
+            total_cec += cec
+            total_iec += iec
+            total_tes += tes
+            
+            user_sec_scores.append({
+                "user": user_full_name,
+                "sec": sec,
+                "tes": tes
+            })
+
+            user_eec_scores.append({
+                "user": user_full_name,
+                "eec": eec,
+                "tes": tes
+            })
+
+            user_cec_scores.append({
+                "user": user_full_name,
+                "cec": cec,
+                "tes": tes
+            })
+
+            user_iec_scores.append({
+                "user": user_full_name,
+                "iec": iec,
+                "tes": tes
+            })
+        
+        for score in user_sec_scores:
+            percentage = (score['sec'] / total_sec) * 100 if total_sec > 0 else 0
+            socialization_leaders.append({
+                "user": score['user'],
+                "percentage": round(percentage, 2),
+                "sec": score['sec']
+            }) 
+
+        for score in user_eec_scores:
+            percentage = (score['eec'] / total_eec) * 100 if total_eec > 0 else 0
+            externalization_leaders.append({
+                "user": score['user'],
+                "percentage": round(percentage, 2),
+                "eec": score['eec']
+            })
+            
+        for score in user_cec_scores:
+            percentage = (score['cec'] / total_cec) * 100 if total_cec > 0 else 0
+            combination_leaders.append({
+                "user": score['user'],
+                "percentage": round(percentage, 2),
+                "cec": score['cec']
+            })
+
+        for score in user_iec_scores:
+            percentage = (score['iec'] / total_iec) * 100 if total_iec > 0 else 0
+            internalization_leaders.append({
+                "user": score['user'],
+                "percentage": round(percentage, 2),
+                "iec": score['iec']
+            })
+        
+        socialization_leaders = sorted(socialization_leaders, key=lambda x: x['percentage'], reverse=True)
+        externalization_leaders = sorted(externalization_leaders, key=lambda x: x['percentage'], reverse=True)
+        combination_leaders = sorted(combination_leaders, key=lambda x: x['percentage'], reverse=True)
+        internalization_leaders = sorted(internalization_leaders, key=lambda x: x['percentage'], reverse=True)
+
+        return Response(
+            {
+                "success": True,
+                "organization_id": organization_id,
+                "group": group.pk,
+                "start_date": start_date,
+                "end_date": end_date,
+                "socialization_leaders": socialization_leaders[:5],
+                "externalization_leaders": externalization_leaders[:5],
+                "combination_leaders": combination_leaders[:5],
+                "internalization_leaders": internalization_leaders[:5],
+            },
+            status=status.HTTP_200_OK,
+        )
+    def get_organization_activity_scores(self, organization_id, group_pk, user, date_range):
+        organization = get_object_or_404(Organization, organization_id=organization_id).pk
+        group = get_object_or_404(Group, pk=group_pk)
+
+        def get_aggregated_score(model, filters):
+            aggregate_score = model.objects.filter(**filters).aggregate(total_score=Sum("score"))
+            return aggregate_score.get("total_score") or 0.00
+
+        def get_count_model_instances(model, filters):
+            return model.objects.filter(**filters).count()
+
+        base_filters = {'organization': organization, 'group': group.pk, 'created_at__range': date_range}
+
+        # Calculate scores and counts
+        post_blog_count = get_count_model_instances(Blog, {**base_filters, 'author': user})
+        post_blog_ai_score = get_aggregated_score(Blog, {**base_filters, 'author': user})
+        post_blog = calculate_ai_division(post_blog_ai_score, post_blog_count)
+
+        send_chat_message_count = get_count_model_instances(InAppChat, {**base_filters, 'sender': user})
+        send_chat_message_ai_score = get_aggregated_score(InAppChat, {**base_filters, 'sender': user})
+        send_chat_message = calculate_ai_division(send_chat_message_ai_score, send_chat_message_count)
+
+        post_forum_count = get_count_model_instances(Forum, {**base_filters, 'user': user})
+        post_forum_ai_score = get_aggregated_score(Forum, {**base_filters, 'user': user})
+        post_forum = calculate_ai_division(post_forum_ai_score, post_forum_count)
+
+        image_sharing = get_count_model_instances(Resources, {**base_filters, 'type': 'IMAGE', 'sender': user})
+        video_sharing = get_count_model_instances(Resources, {**base_filters, 'type': 'VIDEO', 'sender': user})
+        text_resource_sharing = get_count_model_instances(Resources, {**base_filters, 'type': 'DOCUMENT', 'sender': user})
+
+        created_blog_topic = get_count_model_instances(BlogTopic, {**base_filters, 'author': user})
+        created_forum_topic = get_count_model_instances(ForumTopic, {**base_filters, 'author': user})
+        created_topic = created_blog_topic + created_forum_topic
+
+        comment_for_blog_count = get_count_model_instances(Comment, {**base_filters, 'user': user})
+        comment_for_forum_count = get_count_model_instances(ForumComment, {**base_filters, 'user': user})
+        total_comment_count = comment_for_blog_count + comment_for_forum_count
+
+        comment_for_blog_ai_score = get_aggregated_score(Comment, {**base_filters, 'user': user})
+        comment_for_forum_ai_score = get_aggregated_score(ForumComment, {**base_filters, 'user': user})
+        total_comment_ai_score = Decimal(comment_for_blog_ai_score) + Decimal(comment_for_forum_ai_score)
+        comment = calculate_ai_division(total_comment_ai_score, total_comment_count)
+
+        used_in_app_browser = BrowserHistory.objects.filter(**base_filters, user=user).aggregate(total_minutes=Sum('time_spent'))['total_minutes'] or 0
+        used_in_app_browser = round(used_in_app_browser / 60, 2)
+
+        recieve_chat_message = get_count_model_instances(InAppChat, {**base_filters, 'receiver': user})
+        read_blog = get_count_model_instances(BlogRead, {**base_filters, 'user': user})
+        read_forum = get_count_model_instances(ForumRead, {**base_filters, 'user': user})
+        download_resources = get_count_model_instances(ResourceDownload, {**base_filters, 'user': user})
+
+        tallies = {
+            "post_blog": post_blog,
+            "send_chat_message": send_chat_message,
+            "post_forum": post_forum,
+            "image_sharing": image_sharing,
+            "video_sharing": video_sharing,
+            "text_resource_sharing": text_resource_sharing,
+            "created_topic": created_topic,
+            "comment": comment,
+            "used_in_app_browser": used_in_app_browser,
+            "read_blog": read_blog,
+            "read_forum": read_forum,
+            "recieve_chat_message": recieve_chat_message,
+            "download_resources": download_resources,
+        }
+
+        socialization_instance = get_object_or_404(Socialization, organization=organization, group=group.pk)
+        externalization_instance = get_object_or_404(Externalization, organization=organization, group=group.pk)
+        internalization_instance = get_object_or_404(Internalization, organization=organization, group=group.pk)
+        combination_instance = get_object_or_404(Combination, organization=organization, group=group.pk)
+
+        cec = combination_instance.calculate_combination_score(tallies)
+        sec = socialization_instance.calculate_socialization_score(tallies)
+        iec = internalization_instance.calculate_internalization_score(tallies)
+        eec = externalization_instance.calculate_externalization_score(tallies)
+
+        tes = calculate_total_engagement_score(sec, eec, cec, iec)
+
+        return {
+            "socialization_instance": socialization_instance,
+            "externalization_instance": externalization_instance,
+            "combination_instance": combination_instance,
+            "internalization_instance": internalization_instance,
+            "tes": tes,
+            "sec": sec,
+            "eec": eec,
+            "cec": cec,
+            "iec": iec,
+        }
+
+        
