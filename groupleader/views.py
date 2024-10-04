@@ -118,13 +118,30 @@ class LibraryFileListCreateView(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        return Response(self.add_is_group_leader([serializer.data])[0], status=status.HTTP_201_CREATED)
 
-    def perform_create(self, serializer):
-        group_id = self.kwargs.get('group_id')
-        group = get_object_or_404(Group, id=group_id)
-        serializer.save(user=self.request.user, group=group)
+        # Save the LibraryFile instance and associate it with multiple groups
+        library_file = serializer.save(user=self.request.user)  # Save the file without groups first
+        group_ids = request.data.get(
+            "group", []
+        )  # This assumes group IDs are sent as a list
+        if group_ids:
+            groups = Group.objects.filter(id__in=group_ids)  # Get the Group instances
+            library_file.group.set(groups)  # Set the ManyToMany relationship
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    # def perform_create(self, serializer):
+    #     group_id = self.kwargs.get('group_id')
+    #     group = get_object_or_404(Group, id=group_id)
+    #     serializer.save(user=self.request.user, group=group)
+
+    # def perform_create(self, request , serializer):
+    #     group_ids = [
+    #         int(group_id) for group_id in request.POST.getlist("group")
+    #     ]  # Convert strings to integers  # Access selected group IDs from POST data
+    #     for group_id in group_ids:
+    #         group = get_object_or_404(Group, id=group_id)
+    #         serializer.save(user=self.request.user, group=group)
 
     def add_is_group_leader(self, data):
         group_id = self.kwargs.get('group_id')
@@ -140,28 +157,40 @@ class LibraryFileRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView
     permission_classes = [IsAuthenticated, CanChangeFileStatusPermission]
 
     def get_object(self):
-        group_id = self.kwargs["group_id"]
         libraryfile_id = self.kwargs["libraryfile_id"]
-        return get_object_or_404(LibraryFile, group=group_id, pk=libraryfile_id)
-    
+        instance = get_object_or_404(LibraryFile, pk=libraryfile_id)
+        # Check if the library file is associated with the group
+        group_id = self.kwargs["group_id"]
+        if not instance.group.filter(id=group_id).exists():
+            raise PermissionDenied(
+                "You do not have permission to access this file in the specified group."
+            )
+        return instance
+
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
     def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
+        partial = kwargs.pop("partial", False)
         instance = self.get_object()
-        
-        if 'status' in request.data:
-            if not GroupLeader.objects.filter(user=request.user, group=instance.group).exists():
+
+        if "status" in request.data:
+            if not GroupLeader.objects.filter(
+                user=request.user, group__in=instance.group.all()
+            ).exists():
                 raise PermissionDenied("Only group leaders can change the status.")
 
-  
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # Ensure NLTK data files are downloaded

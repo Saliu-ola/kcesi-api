@@ -16,7 +16,6 @@ class GroupLeader(models.Model):
         ordering = ["-assigned_at"]
 
 
-
 LIBRARY_CHOICES = [
         ('AI', 'AI '),
         ('FILES', 'FILES'),
@@ -32,8 +31,6 @@ class LibraryOption(models.Model):
         return f"{self.group.title} - {self.library_type}"
 
 
-
-
 class LibraryFile(models.Model):
 
     STATUS_CHOICES = [
@@ -41,8 +38,11 @@ class LibraryFile(models.Model):
         ('rejected', 'Rejected'),
         ('pending', 'Pending'),
     ]
-     
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='library_files')
+
+    # group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='library_files')
+    group = models.ManyToManyField(
+        Group, related_name="library_files"
+    )  # Use ManyToManyField
     filename = models.CharField(max_length=255)
     filedescription = models.TextField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
