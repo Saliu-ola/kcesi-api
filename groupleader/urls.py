@@ -25,7 +25,7 @@ urlpatterns = [
         name="library-option-detail",
     ),
     path(
-        "library-files/<int:group_id>/",
+        "library-files/",
         LibraryFileListCreateView.as_view(),
         name="library-file-list-create",
     ),
