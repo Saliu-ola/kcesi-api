@@ -73,6 +73,28 @@ class LibraryOptionRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIVi
         return get_object_or_404(LibraryOption, group=group_id)
 
 
+class GetLibraryFileListView(generics.ListAPIView):
+    queryset = LibraryFile.objects.all()
+    serializer_class = LibraryFileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        group_id = self.kwargs.get("group_id")
+        if not group_id:
+            raise ValidationError("Ensure you pick a group")
+        
+        group = get_object_or_404(Group, id=group_id)
+        
+        is_group_leader = GroupLeader.objects.filter(
+            user=self.request.user, group=group
+        ).exists()
+
+        if is_group_leader:
+            return LibraryFile.objects.filter(group=group)
+        else:
+            return LibraryFile.objects.filter(group=group, user=self.request.user)
+
+
 class LibraryFileListCreateView(generics.ListCreateAPIView):
     queryset = LibraryFile.objects.all()
     serializer_class = LibraryFileSerializer
