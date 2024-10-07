@@ -5,9 +5,10 @@ from .models import Blog, Comment, BlogCommentReplies, BlogRead
 
 
 class BlogListSerializer(serializers.ModelSerializer):
-    author_name = serializers.StringRelatedField(
-        source='author.full_name',
-    )
+    # author_name = serializers.StringRelatedField(
+    #     source='author.full_name',
+    # )
+    author_name =serializers.SerializerMethodField()
     group_name = serializers.StringRelatedField(
         source='group.title',
     )
@@ -24,7 +25,9 @@ class BlogListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Blog
         fields = "__all__"
-
+    
+    def get_author_name(self,obj):
+        return f"{obj.author.first_name} "
 
 class BlogCreateSerializer(serializers.ModelSerializer):
     class Meta:
