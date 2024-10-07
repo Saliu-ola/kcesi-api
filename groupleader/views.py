@@ -25,13 +25,14 @@ from simpleblog.pagination import CustomPagination
 from .permissions import IsGroupLeaderPermission, CanChangeFileStatusPermission
 from rest_framework.exceptions import ValidationError
 
+
 @extend_schema(
     parameters=[
         OpenApiParameter(
-            name='organization_id',
+            name="organization_id",
             description="Optional parameter to filter GroupLeaders by organization ID",
             required=False,
-            type=str
+            type=str,
         ),
     ]
 )
@@ -41,7 +42,7 @@ class GroupLeaderListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         queryset = GroupLeader.objects.all()
-        organization_id = self.request.query_params.get('organization_id')
+        organization_id = self.request.query_params.get("organization_id")
         if organization_id:
             queryset = queryset.filter(group__organization_id=organization_id)
         return queryset
@@ -75,16 +76,16 @@ class LibraryOptionRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIVi
 
 class GetLibraryFileListView(generics.ListAPIView):
     queryset = LibraryFile.objects.all()
-    serializer_class = LibraryFileSerializer
+    serializer_class = GetLibraryFileSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         group_id = self.kwargs.get("group_id")
         if not group_id:
             raise ValidationError("Ensure you pick a group")
-        
+
         group = get_object_or_404(Group, id=group_id)
-        
+
         is_group_leader = GroupLeader.objects.filter(
             user=self.request.user, group=group
         ).exists()
@@ -101,12 +102,14 @@ class LibraryFileListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        group_id = self.kwargs.get('group_id')
+        group_id = self.kwargs.get("group_id")
         if not group_id:
             raise ValidationError("Ensure you pick a group")
 
         group = get_object_or_404(Group, id=group_id)
-        is_group_leader = GroupLeader.objects.filter(user=self.request.user, group=group).exists()
+        is_group_leader = GroupLeader.objects.filter(
+            user=self.request.user, group=group
+        ).exists()
 
         if is_group_leader:
             return LibraryFile.objects.filter(group=group)
@@ -142,7 +145,9 @@ class LibraryFileListCreateView(generics.ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
 
         # Save the LibraryFile instance and associate it with multiple groups
-        library_file = serializer.save(user=self.request.user)  # Save the file without groups first
+        library_file = serializer.save(
+            user=self.request.user
+        )  # Save the file without groups first
         group_ids = request.data.get(
             "group", []
         )  # This assumes group IDs are sent as a list
@@ -166,10 +171,16 @@ class LibraryFileListCreateView(generics.ListCreateAPIView):
     #         serializer.save(user=self.request.user, group=group)
 
     def add_is_group_leader(self, data):
-        group_id = self.kwargs.get('group_id')
-        is_group_leader = GroupLeader.objects.filter(user=self.request.user, group_id=group_id).exists() if group_id else False
+        group_id = self.kwargs.get("group_id")
+        is_group_leader = (
+            GroupLeader.objects.filter(
+                user=self.request.user, group_id=group_id
+            ).exists()
+            if group_id
+            else False
+        )
         for item in data:
-            item['is_group_leader'] = is_group_leader
+            item["is_group_leader"] = is_group_leader
         return data
 
 
@@ -237,18 +248,20 @@ class ProcessLibraryFiles(GenericAPIView):
     serializer_class = SyncLibraryFileSerializer
 
     def get(self, request, *args, **kwargs):
-        group_id = self.kwargs.get('group_id')
+        group_id = self.kwargs.get("group_id")
 
         # Ensures d grup exists
         group = get_object_or_404(Group, id=group_id)
 
         # Filter LibraryFiles by group and is_synchronize flag
         library_files = LibraryFile.objects.filter(
-            group=group,status='approved',
-            is_synchronize=False
+            group=group, status="approved", is_synchronize=False
         )
         if not library_files.exists():
-            return Response ({'message':'Up to date, no file to synchronize.'}, status = status.HTTP_200_OK)
+            return Response(
+                {"message": "Up to date, no file to synchronize."},
+                status=status.HTTP_200_OK,
+            )
         # print('filtered by group id')
         # library_files = LibraryFile.objects.filter(is_synchronize=False)/
         processed_files = []
@@ -474,7 +487,7 @@ class AddWordsToLibraryView(generics.GenericAPIView):
             return Response(
                 {"detail": "Words should be provided as a list"},
                 status=status.HTTP_400_BAD_REQUEST,
-            )    
+            )
 
         existing_words = set()
         if library == "a":
