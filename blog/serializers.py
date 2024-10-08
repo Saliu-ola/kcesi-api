@@ -27,7 +27,7 @@ class BlogListSerializer(serializers.ModelSerializer):
         fields = "__all__"
     
     def get_author_name(self,obj):
-        return f"{obj.author.first_name} "
+        return f"{obj.author.first_name} {obj.author.last_name} "
 
 class BlogCreateSerializer(serializers.ModelSerializer):
     class Meta:
