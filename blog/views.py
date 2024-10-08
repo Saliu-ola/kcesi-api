@@ -39,6 +39,7 @@ class BlogViewSets(viewsets.ModelViewSet):
         'organization__name',
         'group',
         'group__title',
+        'author__first_name'
     ]
     search_fields = ['topic', 'author__username' ]
     ordering_fields = ['created_at']
@@ -72,6 +73,8 @@ class BlogViewSets(viewsets.ModelViewSet):
         
         else:
             raise ValueError("Role id not present")
+        
+        
 
     def perform_destroy(self, instance):
 
