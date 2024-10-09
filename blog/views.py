@@ -18,6 +18,28 @@ from django.db.models import F, Value, CharField, Q
 from django.db.models.functions import Concat
 import cloudinary.uploader
 from topics.serializers import BlogTopicSerializer
+from django_filters import rest_framework as filterss
+
+class BlogFilter(filterss.FilterSet):
+    author_first_name = filterss.CharFilter(
+        field_name="author__first_name", lookup_expr="icontains"
+    )
+
+    class Meta:
+        model = Blog
+        fields = [
+            "category",
+            "category__name",
+            "author__username",
+            "author",
+            "author__email",
+            "author_first_name",  # Use custom field with icontains
+            "organization",
+            "organization__name",
+            "group",
+            "group__title",
+        ]
+
 
 class BlogViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
@@ -29,18 +51,19 @@ class BlogViewSets(viewsets.ModelViewSet):
     )
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = [
-        'category',
-        'category__name',
-        'author__username',
-        'author',
-        'author__email',
-        'organization',
-        'organization__name',
-        'group',
-        'group__title',
-        'author__first_name'
-    ]
+    # filterset_fields = [
+    #     'category',
+    #     'category__name',
+    #     'author__username',
+    #     'author',
+    #     'author__email',
+    #     'organization',
+    #     'organization__name',
+    #     'group',
+    #     'group__title',
+    #     'author__first_name'
+    # ]
+    filterset_class = BlogFilter
     search_fields = ['topic', 'author__username' ]
     ordering_fields = ['created_at']
 
@@ -54,13 +77,13 @@ class BlogViewSets(viewsets.ModelViewSet):
         organization = Organization.objects.filter(organization_id=organization_id).first()
         if self.request.user.role_id == self.SUPER_ADMIN_ROLE_ID:
             return self.queryset
-        
+
         elif user.role_id == self.ADMIN_ROLE_ID:
             return self.queryset.filter(organization=organization)
-        
+
         elif user.role_id == self.USER_ROLE_ID:
             user_groups = UserGroup.objects.filter(user=user).values_list('groups', flat=True)
-            
+
             return self.queryset.filter(
                 Q(organization=organization, group_id__in=user_groups) |
                 Q(author_id=user.id)
@@ -70,11 +93,9 @@ class BlogViewSets(viewsets.ModelViewSet):
         #     organization_id = self.request.user.organization_id
         #     organization = Organization.objects.filter(organization_id=organization_id).first()
         #     return self.queryset.filter(organization=organization)
-        
+
         else:
             raise ValueError("Role id not present")
-        
-        
 
     def perform_destroy(self, instance):
 
@@ -102,7 +123,7 @@ class BlogViewSets(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         try:
             result = serializer.save(author=request.user)
             blog = result['blog']
@@ -400,4 +421,3 @@ class BlogReadViewSet(viewsets.ModelViewSet):
             {"success": True, "total_blog_reads": output},
             status=status.HTTP_200_OK,
         )
-
