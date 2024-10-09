@@ -17,6 +17,7 @@ from drf_spectacular.types import OpenApiTypes
 from django.db.models import F, Value, CharField, Q
 from django.db.models.functions import Concat
 import cloudinary.uploader
+from topics.serializers import BlogTopicSerializer
 from django_filters import rest_framework as filterss
 
 class BlogFilter(filterss.FilterSet):
