@@ -12,4 +12,6 @@ router.register(r'forum-topics', ForumTopicViewSet, basename='forum-topic')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('all_topics/', CombinedTopicListView.as_view(), name='combined-topic-list'),
+
 ]

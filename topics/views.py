@@ -8,7 +8,9 @@ from rest_framework.decorators import action
 from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
+from django.utils.dateparse import parse_datetime
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from itertools import chain
 
 class TopicViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
@@ -314,3 +316,57 @@ class ForumTopicViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
+
+class CombinedTopicListView(generics.ListAPIView):
+    serializer_class = CombinedTopicSerializer
+    # permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        blog_topics = BlogTopic.objects.all()
+        forum_topics = ForumTopic.objects.all()
+
+        organization_id = self.request.query_params.get('organization')
+        group_id = self.request.query_params.get('group')
+        topic_type = self.request.query_params.get('topic_type')
+        author_id = self.request.query_params.get('author_id')
+        start_time = self.request.query_params.get('start_time')
+        end_time = self.request.query_params.get('end_time')
+
+        if organization_id:
+            blog_topics = blog_topics.filter(organization_id=organization_id)
+            forum_topics = forum_topics.filter(organization_id=organization_id)
+
+        if group_id:
+            blog_topics = blog_topics.filter(group_id=group_id)
+            forum_topics = forum_topics.filter(group_id=group_id)
+
+        if author_id:
+            blog_topics = blog_topics.filter(author_id=author_id)
+            forum_topics = forum_topics.filter(author_id=author_id)
+
+        if start_time:
+            start_datetime = parse_datetime(start_time)
+            if start_datetime:
+                blog_topics = blog_topics.filter(created_at__gte=start_datetime)
+                forum_topics = forum_topics.filter(created_at__gte=start_datetime)
+
+        if end_time:
+            end_datetime = parse_datetime(end_time)
+            if end_datetime:
+                blog_topics = blog_topics.filter(created_at__lte=end_datetime)
+                forum_topics = forum_topics.filter(created_at__lte=end_datetime)
+
+
+        if topic_type == 'blog':
+            forum_topics = ForumTopic.objects.none()
+        elif topic_type == 'forum':
+            blog_topics = BlogTopic.objects.none()
+        
+        combined_topics = sorted(
+            chain(blog_topics, forum_topics),
+            key=lambda instance: instance.created_at,
+            reverse=True
+        )
+        
+        
+        return combined_topics
