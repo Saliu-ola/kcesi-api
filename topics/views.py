@@ -319,7 +319,7 @@ class ForumTopicViewSet(viewsets.ModelViewSet):
 
 class CombinedTopicListView(generics.ListAPIView):
     serializer_class = CombinedTopicSerializer
-    # permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         blog_topics = BlogTopic.objects.all()
