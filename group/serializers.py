@@ -193,14 +193,18 @@ class UserGroupSerializer(serializers.ModelSerializer):
 
 class UsersInGroupListSerializer(serializers.ModelSerializer):
     username = serializers.StringRelatedField(source="user.username")
-    full_name = serializers.StringRelatedField(source="user.full_name")
+    # full_name = serializers.StringRelatedField(source="user.full_name")
     organization_name = serializers.StringRelatedField(source="user.organization_name")
     organization_id = serializers.StringRelatedField(source="user.organization_id")
+    full_name= serializers.SerializerMethodField()
     # user_groups = serializers.SerializerMethodField(method_name='get_user_groups')
 
     class Meta:
         model = UserGroup
         fields = ['user', 'organization_id', 'organization_name', 'username', 'full_name']#, 'user_groups']
+
+    def get_full_name(self,obj):
+        return f"{obj.user.first_name} {obj.user.last_name}"
     
     # def get_user_groups(self, instance):
     #     try:
