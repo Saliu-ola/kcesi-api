@@ -26,6 +26,11 @@ urlpatterns = [
     ),
     path(
         "library-files/<int:group_id>/",
+        GetLibraryFileListView.as_view(),
+        name="library-file-list-create",
+    ),
+    path(
+        "library-files/",
         LibraryFileListCreateView.as_view(),
         name="library-file-list-create",
     ),

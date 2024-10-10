@@ -81,7 +81,7 @@ class User(AbstractUser):
     REQUIRED_FIELDS = ["username"]
 
     @property
-    def full_name(self):
+    def get_full_name(self):
         return f"{self.first_name} {self.last_name}"
 
     @property
@@ -108,6 +108,8 @@ class User(AbstractUser):
             return f"{self.email}"
         else:
             return self.organization_name
+
+    
 
     class Meta:
         ordering = ("-created_at",)
