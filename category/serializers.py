@@ -5,12 +5,17 @@ from django.db.models import Q
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    creator_full_name = serializers.StringRelatedField(source='creator.full_name')
+    creator_full_name = serializers.SerializerMethodField()
     group_name = serializers.StringRelatedField(source='group.title')
+    organization_name = serializers.StringRelatedField(source='organization.name')
+
     class Meta:
         model = Category
         fields = "__all__"
         read_only_fields = ["creator"]
+
+    def get_creator_full_name(self,obj):
+        return f"{obj.creator.first_name} {obj.creator.last_name}"
 
     def validate(self, data):
         user = self.context["request"].user
