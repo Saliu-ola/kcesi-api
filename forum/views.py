@@ -50,8 +50,7 @@ class ForumViewSets(viewsets.ModelViewSet):
             user_groups = UserGroup.objects.filter(user=user).values_list('groups', flat=True)
             
             return self.queryset.filter(
-                Q(organization=organization, group_id__in=user_groups) |
-                Q(user_id=user.id)
+                Q(organization=organization, group_id__in=user_groups)
             ).distinct()
 
         else:

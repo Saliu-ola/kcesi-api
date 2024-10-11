@@ -85,8 +85,7 @@ class BlogViewSets(viewsets.ModelViewSet):
             user_groups = UserGroup.objects.filter(user=user).values_list('groups', flat=True)
 
             return self.queryset.filter(
-                Q(organization=organization, group_id__in=user_groups) |
-                Q(author_id=user.id)
+                Q(organization=organization, group_id__in=user_groups)
             ).distinct()
 
         # elif self.request.user.role_id in [self.ADMIN_ROLE_ID,self.USER_ROLE_ID]:
