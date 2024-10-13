@@ -20,10 +20,15 @@ import cloudinary.uploader
 from topics.serializers import BlogTopicSerializer
 from django_filters import rest_framework as filterss
 
+import django_filters
+
+
 class BlogFilter(filterss.FilterSet):
     author_first_name = filterss.CharFilter(
         field_name="author__first_name", lookup_expr="icontains"
     )
+    start_date = django_filters.DateTimeFilter(field_name='created_at', lookup_expr='gte')
+    end_date = django_filters.DateTimeFilter(field_name='created_at', lookup_expr='lte')
 
     class Meta:
         model = Blog
@@ -38,6 +43,8 @@ class BlogFilter(filterss.FilterSet):
             "organization__name",
             "group",
             "group__title",
+            'start_date',
+            'end_date'
         ]
 
 

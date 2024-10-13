@@ -14,6 +14,16 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from organization.models import Organization
 from group.models import Group
+import django_filters
+
+
+class CategoryFilter(django_filters.FilterSet):
+    start_date = django_filters.DateTimeFilter(field_name='created_at', lookup_expr='gte')
+    end_date = django_filters.DateTimeFilter(field_name='created_at', lookup_expr='lte')
+
+    class Meta:
+        model = Category
+        fields = ['name', 'creator', 'organization', 'group', 'start_date', 'end_date']
 
 
 class CategoryViewSets(viewsets.ModelViewSet):
@@ -22,7 +32,8 @@ class CategoryViewSets(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Category.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['name', 'creator', 'organization', 'group']
+    # filterset_fields = ['name', 'creator', 'organization', 'group']
+    filterset_class = CategoryFilter 
     search_fields = ['name']
     ordering_fields = ['created_at']
 
