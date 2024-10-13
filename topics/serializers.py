@@ -55,4 +55,4 @@ class CombinedTopicSerializer(serializers.Serializer):
         return 'blog' if isinstance(obj, BlogTopic) else 'forum'
     
     def get_author_full_name(self, obj):
-        return obj.author.get_full_name
+        return obj.author.full_name

@@ -130,7 +130,7 @@ class LibraryFileSerializer(serializers.ModelSerializer):
     #     return f"{obj.user.first_name} {obj.user.last_name}"
 
     def get_full_name(self, obj):
-        return obj.user.get_full_name
+        return obj.user.full_name
 
     def validate_file_url(self, value):
         if value and not value.lower().endswith('.pdf'):
