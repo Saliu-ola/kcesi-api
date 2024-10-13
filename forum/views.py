@@ -17,6 +17,17 @@ from django.db.models import F, Value, CharField, Q
 from organization.models import Organization
 from topics.serializers import ForumTopicSerializer
 from group.models import Group, UserGroup
+import django_filters
+
+
+class ForumFilter(django_filters.FilterSet):
+    start_date = django_filters.DateTimeFilter(field_name='created_at', lookup_expr='gte')
+    end_date = django_filters.DateTimeFilter(field_name='created_at', lookup_expr='lte')
+
+    class Meta:
+        model = Forum
+        fields =  ['category', 'category__name','organization__name','user', 'user__email', 'user__username', 'organization', 'group', "start_time", "end_time", 'start_date', 'end_date']
+
 
 class ForumViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
@@ -28,7 +39,8 @@ class ForumViewSets(viewsets.ModelViewSet):
         .select_related('user', 'organization', 'group', 'category')
     )
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category', 'category__name','organization__name','user', 'user__email', 'user__username', 'organization', 'group', "start_time", "end_time"]
+    # filterset_fields = ['category', 'category__name','organization__name','user', 'user__email', 'user__username', 'organization', 'group', "start_time", "end_time"]
+    filterset_class = ForumFilter 
     search_fields = ['topic', 'user__username']
     ordering_fields = ['created_at']
 

@@ -18,13 +18,26 @@ from .models import ResourceFileSize
 from cloudinary.exceptions import Error as CloudinaryError
 from django.db.models import F, Value, CharField, Q
 
+import django_filters
+
+class ResourceFilter(django_filters.FilterSet):
+    start_date = django_filters.DateTimeFilter(field_name='created_at', lookup_expr='gte')
+    end_date = django_filters.DateTimeFilter(field_name='created_at', lookup_expr='lte')
+
+    class Meta:
+        model = Resources
+        fields = ['type', 'size', 'organization', 'group', 'sender', 'receiver', 'start_date', 'end_date']
+
+
+
 class ResourcesViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
     serializer_class = ResourcesSerializer
     permission_classes = [IsAuthenticated]
     queryset = Resources.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['type', 'size', 'organization', 'group', 'sender', 'receiver']
+    # filterset_fields = ['type', 'size', 'organization', 'group', 'sender', 'receiver']
+    filterset_class = ResourceFilter 
     search_fields = ['title']
     ordering_fields = ['created_at']
     parser_classes = [MultiPartParser]
