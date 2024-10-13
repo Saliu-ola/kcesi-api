@@ -15,7 +15,15 @@ from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
 from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly,IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
+import django_filters
 
+class BrowserHistoryFilter(django_filters.FilterSet):
+    start_date = django_filters.DateTimeFilter(field_name='created_at', lookup_expr='gte')
+    end_date = django_filters.DateTimeFilter(field_name='created_at', lookup_expr='lte')
+
+    class Meta:
+        model = BrowserHistory
+        fields = ['user', 'organization', 'group', 'start_time', 'end_time', 'start_date', 'end_date']
 
 class BrowserHistoryViewSets(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "post", "put", "delete"]
@@ -23,7 +31,8 @@ class BrowserHistoryViewSets(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = BrowserHistory.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['user', 'organization', 'group', 'start_time', 'end_time']
+    # filterset_fields = ['user', 'organization', 'group', 'start_time', 'end_time']
+    filterset_class = BrowserHistoryFilter 
     search_fields = ['url']
     ordering_fields = ['created_at']
 

@@ -15,6 +15,25 @@ from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
+import django_filters
+
+
+class InAppChatFilter(django_filters.FilterSet):
+    start_date = django_filters.DateTimeFilter(field_name='created_at', lookup_expr='gte')
+    end_date = django_filters.DateTimeFilter(field_name='created_at', lookup_expr='lte')
+
+    class Meta:
+        model = InAppChat
+        fields = [
+        'sender',
+        'receiver',
+        'content_type',
+        'organization',
+        'group',
+        "unique_identifier",
+        'start_date',
+        'end_date'
+        ]
 
 
 class InAppChatViewSets(
@@ -29,14 +48,15 @@ class InAppChatViewSets(
     permission_classes = [IsAuthenticated]
     queryset = InAppChat.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = [
-        'sender',
-        'receiver',
-        'content_type',
-        'organization',
-        'group',
-        "unique_identifier",
-    ]
+    # filterset_fields = [
+    #     'sender',
+    #     'receiver',
+    #     'content_type',
+    #     'organization',
+    #     'group',
+    #     "unique_identifier",
+    # ]
+    filterset_class = InAppChatFilter 
     search_fields = ['message']
     ordering_fields = ['created_at']
 
