@@ -7,6 +7,15 @@ from rest_framework import generics, status, viewsets, filters
 from rest_framework.decorators import action
 from accounts.permissions import IsAdmin, IsSuperAdmin, IsSuperAdminOrAdmin
 from accounts.models import User
+import django_filters
+
+class OrganizationFilter(django_filters.FilterSet):
+    start_date = django_filters.DateTimeFilter(field_name='created_at', lookup_expr='gte')
+    end_date = django_filters.DateTimeFilter(field_name='created_at', lookup_expr='lte')
+
+    class Meta:
+        model = Organization
+        fields = ['name', 'organization_id', 'start_date', 'end_date']
 
 
 class OrganizationViewSets(viewsets.ModelViewSet):
@@ -15,10 +24,11 @@ class OrganizationViewSets(viewsets.ModelViewSet):
     permission_classes = [IsSuperAdminOrAdmin]
     queryset = Organization.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = [
-        'name',
-        'organization_id',
-    ]
+    # filterset_fields = [
+    #     'name',
+    #     'organization_id',
+    # ]
+    filterset_class = OrganizationFilter 
     search_fields = ['name']
     ordering_fields = ['created_at']
 
