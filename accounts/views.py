@@ -61,6 +61,29 @@ import csv
 from django.core.exceptions import ValidationError
 
 # Create your views here.
+import django_filters
+
+
+class UserFilter(django_filters.FilterSet):
+    start_date = django_filters.DateTimeFilter(field_name='created_at', lookup_expr='gte')
+    end_date = django_filters.DateTimeFilter(field_name='created_at', lookup_expr='lte')
+    group_id = django_filters.NumberFilter(method='filter_by_group')
+
+    class Meta:
+        model = User
+        fields = ['is_verified',
+        'email',
+        'organization_id',
+        'first_group_id',
+        'group_id',
+        'role_id',
+        'phone',
+        'organization_name',
+        'start_date',
+        'end_date']
+
+    def filter_by_group(self, queryset, name, value):
+        return queryset.filter(user_groups__groups__id=value).distinct()
 
 
 class UserViewSets(
@@ -74,17 +97,17 @@ class UserViewSets(
     permission_classes = [AllowAny]
     queryset = User.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = [
-        'is_verified',
-        'email',
-        'organization_id',
-        'first_group_id',
-        'role_id',
-        'phone',
-        'organization_name',
+    # filterset_fields = [
+    #     'is_verified',
+    #     'email',
+    #     'organization_id',
+    #     'first_group_id',
+    #     'role_id',
+    #     'phone',
+    #     'organization_name',
       
-    ]
-
+    # ]
+    filterset_class = UserFilter 
     search_fields = [
         'email',
         'username',
