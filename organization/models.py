@@ -6,7 +6,7 @@ class Organization(models.Model):
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
     def __str__(self) -> str:
-        return self.name
+        return self.name or " "
 
     class Meta:
         ordering = ["-created_at"]

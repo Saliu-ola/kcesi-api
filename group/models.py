@@ -25,7 +25,7 @@ class Group(models.Model):
     related_terms_library_b = models.JSONField(null=True, blank=True)           #from files upload
 
     def __str__(self) -> str:
-        return self.title
+        return self.title or " "
 
     class Meta:
         ordering = ["-created_at"]

@@ -107,7 +107,7 @@ class User(AbstractUser):
         elif self.email:
             return f"{self.email}"
         else:
-            return self.organization_name
+            return self.organization_name or " "
 
     
 

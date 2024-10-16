@@ -41,7 +41,7 @@ class Resources(models.Model):
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
     def __str__(self) -> str:
-        return self.title
+        return self.title or " "
 
     class Meta:
         ordering = ["-created_at"]

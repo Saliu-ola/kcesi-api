@@ -106,14 +106,13 @@ class BaseViewSet(viewsets.ModelViewSet):
         post_blog_count = self.get_count_model_instances(
             Blog, organization, group, date_range, {'author': user}
         )
-        # print("post_blog_ai_count", post_blog_count,user)
+        print("post_blog_ai_count", post_blog_count,user)
 
         post_blog_ai_score = self.get_aggregated_score(
             Blog, organization, group, date_range, {'author': user}
         )
         # print("post_blog_ai_score", post_blog_ai_score,user)
-
-        post_blog = calculate_ai_division(post_blog_ai_score, post_blog_count)
+        post_blog = post_blog_ai_score #calculate_ai_division(post_blog_ai_score, post_blog_count)
         # print("post_blog_ai_division", post_blog,user)
 
         send_chat_message_count = self.get_count_model_instances(
@@ -122,9 +121,10 @@ class BaseViewSet(viewsets.ModelViewSet):
         send_chat_message_ai_score = self.get_aggregated_score(
             InAppChat, organization, group, date_range, {'sender': user}
         )
-        send_chat_message = calculate_ai_division(
-            send_chat_message_ai_score, send_chat_message_count
-        )
+        send_chat_message = send_chat_message_ai_score
+        # send_chat_message = calculate_ai_division(
+        #     send_chat_message_ai_score, send_chat_message_count
+        # )
 
         post_forum_count = self.get_count_model_instances(
             Forum, organization, group, date_range, {'user': user}
@@ -132,7 +132,7 @@ class BaseViewSet(viewsets.ModelViewSet):
         post_forum_ai_score = self.get_aggregated_score(
             Forum, organization, group, date_range, {'user': user}
         )
-        post_forum = calculate_ai_division(post_forum_ai_score , post_forum_count)
+        post_forum = post_forum_ai_score # calculate_ai_division(post_forum_ai_score , post_forum_count)
 
 
         image_sharing = self.get_count_model_instances(
@@ -204,8 +204,8 @@ class BaseViewSet(viewsets.ModelViewSet):
         )
 
         total_comment_ai_score = Decimal(comment_for_blog_ai_score) + Decimal(comment_for_forum_ai_score)
-
-        comment = calculate_ai_division(total_comment_ai_score, total_comment_count)
+        comment = total_comment_ai_score
+        # comment = calculate_ai_division(total_comment_ai_score, total_comment_count)
 
         used_in_app_browser = BrowserHistory.objects.filter(
             organization=organization, group=group.pk, user = user, created_at__range=date_range
@@ -261,10 +261,12 @@ class BaseViewSet(viewsets.ModelViewSet):
             "recieve_chat_message": recieve_chat_message,
             "download_resources": download_resources,
         }
+        print( tallies, user)
 
         socialization_instance = self.receive_model_instance(
             Socialization, organization_id, group, organization, "Socialization"
         )
+        print("socialization_instance post_blog:", socialization_instance.post_blog)
 
         externalization_instance = self.receive_model_instance(
             Externalization, organization_id, group, organization, "Externalization"
