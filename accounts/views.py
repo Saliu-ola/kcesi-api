@@ -540,7 +540,7 @@ class UserViewSets(
         comment_for_forum_ai_score = Decimal(
             self.get_aggregated_score(ForumComment, organization, group, date_range)
         )
-        print(f"comment_for_blog_ai_score {comment_for_blog_ai_score} comment_for_forum_ai_score {comment_for_forum_ai_score}")
+        # print(f"comment_for_blog_ai_score {comment_for_blog_ai_score} comment_for_forum_ai_score {comment_for_forum_ai_score}")
 
         total_comment_ai_score = comment_for_blog_ai_score + comment_for_forum_ai_score
 
