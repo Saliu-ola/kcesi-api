@@ -63,7 +63,7 @@ class Socialization(models.Model):
             # print(f"Processing: {key}, Constant: {constant}, Tally: {tally}")
 
             if key in relevancy_fields:
-                percentage = min(tally / Decimal('100'), Decimal('1'))
+                percentage = tally / Decimal('100')
                 score += constant * percentage
                 # print(f"Percentage for {key}: {percentage} (Tally: {tally})")
             else:
@@ -122,9 +122,9 @@ class Externalization(models.Model):
         score = Decimal('0')
         for key, constant in constants.items():
             tally = Decimal(tallies.get(key, 0))
-
+            # print(f"constant {constant} {tally}" )
             if key in relevancy_fields:
-                percentage = min(tally / Decimal('100'), Decimal('1'))
+                percentage = tally / Decimal('100')
                 score += constant * percentage
             else:
                 score += constant * tally

@@ -508,6 +508,7 @@ class UserViewSets(
             organization=organization,
             group=group.pk,
             created_at__range=date_range,
+            sender__isnull=False 
         ).count()
 
         # created_topic = Topic.objects.filter(
@@ -539,6 +540,7 @@ class UserViewSets(
         comment_for_forum_ai_score = Decimal(
             self.get_aggregated_score(ForumComment, organization, group, date_range)
         )
+        # print(f"comment_for_blog_ai_score {comment_for_blog_ai_score} comment_for_forum_ai_score {comment_for_forum_ai_score}")
 
         total_comment_ai_score = comment_for_blog_ai_score + comment_for_forum_ai_score
 
@@ -591,6 +593,7 @@ class UserViewSets(
             "recieve_chat_message": recieve_chat_message,
             "download_resources": download_resources,
         }
+        # print(f"Tallies {tallies}")
 
         sec = socialization_instance.calculate_socialization_score(tallies)
         eec = externalization_instance.calculate_externalization_score(tallies)
@@ -903,6 +906,7 @@ class UserViewSets(
                 "recieve_chat_message": recieve_chat_message,
                 "download_resources": download_resources,
             }
+            print(f"Tallie: {tallies}")
 
             sec = socialization_instance.calculate_socialization_score(tallies)
             eec = externalization_instance.calculate_externalization_score(tallies)
