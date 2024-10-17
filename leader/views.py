@@ -1136,15 +1136,18 @@ class SECIActivityLeadersView(APIView):
         # Calculate scores and counts
         post_blog_count = get_count_model_instances(Blog, {**base_filters, 'author': user})
         post_blog_ai_score = get_aggregated_score(Blog, {**base_filters, 'author': user})
-        post_blog = calculate_ai_division(post_blog_ai_score, post_blog_count)
+        post_blog = post_blog_ai_score
+        # post_blog = calculate_ai_division(post_blog_ai_score, post_blog_count)
 
         send_chat_message_count = get_count_model_instances(InAppChat, {**base_filters, 'sender': user})
         send_chat_message_ai_score = get_aggregated_score(InAppChat, {**base_filters, 'sender': user})
-        send_chat_message = calculate_ai_division(send_chat_message_ai_score, send_chat_message_count)
+        send_chat_message = send_chat_message_ai_score
+        # send_chat_message = calculate_ai_division(send_chat_message_ai_score, send_chat_message_count)
 
         post_forum_count = get_count_model_instances(Forum, {**base_filters, 'user': user})
         post_forum_ai_score = get_aggregated_score(Forum, {**base_filters, 'user': user})
-        post_forum = calculate_ai_division(post_forum_ai_score, post_forum_count)
+        post_forum = post_forum_ai_score
+        # post_forum = calculate_ai_division(post_forum_ai_score, post_forum_count)
 
         image_sharing = get_count_model_instances(Resources, {**base_filters, 'type': 'IMAGE', 'sender': user})
         video_sharing = get_count_model_instances(Resources, {**base_filters, 'type': 'VIDEO', 'sender': user})
@@ -1161,7 +1164,8 @@ class SECIActivityLeadersView(APIView):
         comment_for_blog_ai_score = get_aggregated_score(Comment, {**base_filters, 'user': user})
         comment_for_forum_ai_score = get_aggregated_score(ForumComment, {**base_filters, 'user': user})
         total_comment_ai_score = Decimal(comment_for_blog_ai_score) + Decimal(comment_for_forum_ai_score)
-        comment = calculate_ai_division(total_comment_ai_score, total_comment_count)
+        comment = total_comment_ai_score
+        # comment = calculate_ai_division(total_comment_ai_score, total_comment_count)
 
         used_in_app_browser = BrowserHistory.objects.filter(**base_filters, user=user).aggregate(total_minutes=Sum('time_spent'))['total_minutes'] or 0
         used_in_app_browser = round(used_in_app_browser / 60, 2)

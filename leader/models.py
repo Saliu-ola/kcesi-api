@@ -60,17 +60,17 @@ class Socialization(models.Model):
         score = Decimal('0')
         for key, constant in constants.items():
             tally = Decimal(tallies.get(key, 0))
-            print(f"Processing: {key}, Constant: {constant}, Tally: {tally}")
+            # print(f"Processing: {key}, Constant: {constant}, Tally: {tally}")
 
             if key in relevancy_fields:
                 percentage = min(tally / Decimal('100'), Decimal('1'))
                 score += constant * percentage
-                print(f"Percentage for {key}: {percentage} (Tally: {tally})")
+                # print(f"Percentage for {key}: {percentage} (Tally: {tally})")
             else:
                 score += constant * tally
-                print(f"Direct multiplication for {key}: {constant} * {tally} = {constant * tally}")
-        print(f"Final score: {score}")
-        
+                # print(f"Direct multiplication for {key}: {constant} * {tally} = {constant * tally}")
+        # print(f"Final score: {score}")
+
         return score
 
         # return calculate_category_score(constants, tallies)
