@@ -462,7 +462,9 @@ class UserViewSets(
         post_blog_ai_score = Decimal(
             self.get_aggregated_score(Blog, organization, group, date_range)
         )
-        post_blog = calculate_ai_division(post_blog_ai_score, post_blog_count)
+
+        post_blog = post_blog_ai_score
+        # post_blog = calculate_ai_division(post_blog_ai_score, post_blog_count)
 
         send_chat_message_count = InAppChat.objects.filter(
             organization=organization, group=group.pk, created_at__range=date_range
@@ -471,9 +473,10 @@ class UserViewSets(
         send_chat_message_ai_score = Decimal(
             self.get_aggregated_score(InAppChat, organization, group, date_range)
         )
-        send_chat_message = calculate_ai_division(
-            send_chat_message_ai_score, send_chat_message_count
-        )
+        send_chat_message = send_chat_message_ai_score
+        # send_chat_message = calculate_ai_division(
+        #     send_chat_message_ai_score, send_chat_message_count
+        # )
 
         post_forum_count = Forum.objects.filter(
             organization=organization, group=group.pk, created_at__range=date_range
@@ -482,7 +485,9 @@ class UserViewSets(
         post_forum_ai_score = Decimal(
             self.get_aggregated_score(Forum, organization, group, date_range)
         )
-        post_forum = calculate_ai_division(post_forum_ai_score, post_forum_count)
+
+        post_forum = post_forum_ai_score
+        # post_forum = calculate_ai_division(post_forum_ai_score, post_forum_count)
 
         image_sharing = Resources.objects.filter(
             type='IMAGE',
@@ -537,7 +542,9 @@ class UserViewSets(
 
         total_comment_ai_score = comment_for_blog_ai_score + comment_for_forum_ai_score
 
-        comment = calculate_ai_division(total_comment_ai_score, total_comment_count)
+        comment = total_comment_ai_score
+
+        # comment = calculate_ai_division(total_comment_ai_score, total_comment_count)
 
         # used_in_app_browser = BrowserHistory.objects.filter(
         #     organization=organization, group=group.pk, created_at__range=date_range
@@ -771,8 +778,9 @@ class UserViewSets(
             ).aggregate(total_score=Sum("score"))
 
             post_blog_ai_score = blog_aggregate_score.get("total_score") or 0.00
+            post_blog = post_blog_ai_score
 
-            post_blog = calculate_ai_division(post_blog_ai_score, post_blog_count)
+            # post_blog = calculate_ai_division(post_blog_ai_score, post_blog_count)
 
             send_chat_message_count = InAppChat.objects.filter(
                     sender=user, created_at__range=date_range
@@ -785,9 +793,10 @@ class UserViewSets(
             send_chat_message_ai_score = (
                 send_chat_message_aggregate_score.get("total_score") or 0.00
             )
-            send_chat_message = calculate_ai_division(
-                send_chat_message_ai_score ,send_chat_message_count
-            )
+            send_chat_message = send_chat_message_ai_score
+            # send_chat_message = calculate_ai_division(
+            #     send_chat_message_ai_score ,send_chat_message_count
+            # )
 
             post_forum_count = Forum.objects.filter(user=user, created_at__range=date_range).count()
 
@@ -796,8 +805,9 @@ class UserViewSets(
             ).aggregate(total_score=Sum("score"))
 
             post_forum_ai_score = forum_aggregate_score.get("total_score") or 0.00
+            post_forum = post_forum_ai_score
 
-            post_forum = calculate_ai_division(post_forum_ai_score, post_forum_count)
+            # post_forum = calculate_ai_division(post_forum_ai_score, post_forum_count)
 
             image_sharing = Resources.objects.filter(
                 type='IMAGE',
@@ -849,8 +859,8 @@ class UserViewSets(
             # total_comment_ai_score = comment_for_blog_ai_score + comment_for_forum_ai_score
             # total_comment_ai_score = float(comment_for_blog_ai_score) + float(comment_for_forum_ai_score)
             total_comment_ai_score = decimal.Decimal(comment_for_blog_ai_score) + decimal.Decimal(comment_for_forum_ai_score)
-
-            comment = calculate_ai_division(total_comment_ai_score, total_comment_count)
+            comment = total_comment_ai_score
+            # comment = calculate_ai_division(total_comment_ai_score, total_comment_count)
 
             # used_in_app_browser = BrowserHistory.objects.filter(
             #         user=user, created_at__range=date_range

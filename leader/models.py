@@ -6,7 +6,8 @@ from simpleblog.utils import (
     calculate_percentage,
     calculate_category_score,
 )
-
+from decimal import Decimal, ROUND_DOWN, DivisionUndefined
+import decimal
 
 class Socialization(models.Model):
     post_blog = models.DecimalField(
@@ -55,7 +56,24 @@ class Socialization(models.Model):
             'created_topic': self.created_topic,
         }
 
-        return calculate_category_score(constants, tallies)
+        relevancy_fields = ['post_blog', 'post_forum', 'send_chat_message']
+        score = Decimal('0')
+        for key, constant in constants.items():
+            tally = Decimal(tallies.get(key, 0))
+            # print(f"Processing: {key}, Constant: {constant}, Tally: {tally}")
+
+            if key in relevancy_fields:
+                percentage = min(tally / Decimal('100'), Decimal('1'))
+                score += constant * percentage
+                # print(f"Percentage for {key}: {percentage} (Tally: {tally})")
+            else:
+                score += constant * tally
+                # print(f"Direct multiplication for {key}: {constant} * {tally} = {constant * tally}")
+        # print(f"Final score: {score}")
+
+        return score
+
+        # return calculate_category_score(constants, tallies)
 
     def calculate_socialization_percentage(self, sec, tes):
         score = sec
@@ -99,7 +117,20 @@ class Externalization(models.Model):
             'created_topic': self.created_topic,
             'comment': self.comment,
         }
-        return calculate_category_score(constants, tallies)
+
+        relevancy_fields = ['post_blog', 'post_forum', 'send_chat_message', 'comment']
+        score = Decimal('0')
+        for key, constant in constants.items():
+            tally = Decimal(tallies.get(key, 0))
+
+            if key in relevancy_fields:
+                percentage = min(tally / Decimal('100'), Decimal('1'))
+                score += constant * percentage
+            else:
+                score += constant * tally
+
+        return score
+        # return calculate_category_score(constants, tallies)
 
     def calculate_externalization_percentage(self, eec, tes):
         score = eec
