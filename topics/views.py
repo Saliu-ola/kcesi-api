@@ -329,8 +329,8 @@ class CombinedTopicListView(generics.ListAPIView):
         group_id = self.request.query_params.get('group')
         topic_type = self.request.query_params.get('topic_type')
         author_id = self.request.query_params.get('author_id')
-        start_time = self.request.query_params.get('start_time')
-        end_time = self.request.query_params.get('end_time')
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
 
         if organization_id:
             blog_topics = blog_topics.filter(organization_id=organization_id)
@@ -344,14 +344,14 @@ class CombinedTopicListView(generics.ListAPIView):
             blog_topics = blog_topics.filter(author_id=author_id)
             forum_topics = forum_topics.filter(author_id=author_id)
 
-        if start_time:
-            start_datetime = parse_datetime(start_time)
+        if start_date:
+            start_datetime = parse_datetime(start_date)
             if start_datetime:
                 blog_topics = blog_topics.filter(created_at__gte=start_datetime)
                 forum_topics = forum_topics.filter(created_at__gte=start_datetime)
 
-        if end_time:
-            end_datetime = parse_datetime(end_time)
+        if end_date:
+            end_datetime = parse_datetime(end_date)
             if end_datetime:
                 blog_topics = blog_topics.filter(created_at__lte=end_datetime)
                 forum_topics = forum_topics.filter(created_at__lte=end_datetime)
