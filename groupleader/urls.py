@@ -65,4 +65,9 @@ urlpatterns = [
         EditWordsInLibraryView.as_view(),
         name="edit-words-in-library",
     ),
+    path(
+        "library-files/<int:group_id>/delete/<int:library_id>/",
+        DeleteUploadedFiles.as_view(),
+        name="library-file-delete",
+    ),
 ]
