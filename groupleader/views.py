@@ -692,3 +692,30 @@ class EditWordsInLibraryView(generics.GenericAPIView):
         return Response(
             {"detail": "Words edited successfully"}, status=status.HTTP_200_OK
         )
+
+
+class DeleteUploadedFiles(generics.DestroyAPIView):
+    permission_classes = [IsGroupLeaderPermission, IsAuthenticated]
+
+    def destroy(self, request, *args, **kwargs):
+        group_id = kwargs.get("group_id")
+        library_id = kwargs.get("library_id")
+
+        if not group_id:
+            raise ValidationError("Ensure you pick a group.")
+
+        if not library_id:
+            raise ValidationError("Ensure you pick a library file to delete.")
+
+        # Get the library instance
+        library_instance = get_object_or_404(LibraryFile, pk=library_id)
+
+        # Check if the file is associated with the group
+        if not library_instance.group.filter(id=group_id).exists():
+            raise ValidationError(
+                "This library file is not associated with the specified group."
+            )
+
+        # Perform the deletion
+        library_instance.delete()
+        return Response({"detail": "Library file deleted successfully."}, status=204)

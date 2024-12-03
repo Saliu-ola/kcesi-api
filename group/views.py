@@ -213,7 +213,6 @@ class UserGroupsView(generics.ListAPIView):
     def get_queryset(self):
         user_id = self.kwargs["user_id"]
         return UserGroup.objects.filter(user_id=user_id ).prefetch_related("groups")
-    
 
 
 class UsersInGroupView(generics.ListAPIView):
@@ -225,12 +224,9 @@ class UsersInGroupView(generics.ListAPIView):
         return UserGroup.objects.filter(groups__id=group_id)
 
 
-
-
-
 class SearchGroupRelatedTermsView(APIView):
     permission_classes = [IsAuthenticated]
-    
+
     @extend_schema(
         parameters=[
             OpenApiParameter(name='library_type', description='Type of library (a or b)', required=True, type=str),
@@ -248,7 +244,7 @@ class SearchGroupRelatedTermsView(APIView):
 
         try:
             group = Group.objects.get(id=group_id)
-            
+
             if library_type == 'a':
                 related_terms = group.related_terms
             elif library_type == 'b':
@@ -263,10 +259,35 @@ class SearchGroupRelatedTermsView(APIView):
 
             paginator = CustomPagination()
             paginated_terms = paginator.paginate_queryset(matching_terms, request)
-            
+
             return paginator.get_paginated_response({'results': paginated_terms})
-        
+
         except Group.DoesNotExist:
             return Response({'error': 'Group not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+from rest_framework.exceptions import ValidationError
+
+class ClearFileLibraryView(generics.GenericAPIView):
+    
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, *args, **kwargs):
+        group_id = kwargs.get("group_id")
+
+        # Validate group ID
+        if not group_id:
+            raise ValidationError("Group ID is required.")
+
+        # Get the group instance
+        group_instance = get_object_or_404(Group, id=group_id)
+
+        # Clear the `related_terms_library_b` field
+        group_instance.related_terms_library_b = []
+        group_instance.save()
+
+        return Response(
+            {"detail": "Library B words cleared successfully."},
+            status=status.HTTP_200_OK,
+        )

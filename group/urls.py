@@ -26,4 +26,5 @@ urlpatterns = [
         SearchGroupRelatedTermsView.as_view(),
         name="search-library-words",
     ),
+    path("clear-words-in-library-b/",ClearFileLibraryView.as_view(),name="clear-words-library"),
 ]
