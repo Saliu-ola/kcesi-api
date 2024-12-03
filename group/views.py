@@ -269,10 +269,27 @@ class SearchGroupRelatedTermsView(APIView):
 
 from rest_framework.exceptions import ValidationError
 
+
 class ClearFileLibraryView(generics.GenericAPIView):
-    
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        description="Clear words in Library B for a specific group.",
+        parameters=[
+            OpenApiParameter(
+                name="group_id",
+                type=int,
+                location=OpenApiParameter.PATH,
+                description="ID of the group whose Library B you want to clear.",
+                required=True,
+            )
+        ],
+        responses={
+            200: {"description": "Library B words cleared successfully."},
+            404: {"description": "Group not found."},
+            400: {"description": "Group ID is required."},
+        },
+    )
     def patch(self, request, *args, **kwargs):
         group_id = kwargs.get("group_id")
 
