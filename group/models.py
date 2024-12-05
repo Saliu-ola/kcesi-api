@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.db import models
-
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
+from simpleblog.ai import get_cleaned_and_lematized_terms
 
 # Create your models here.
 
@@ -31,6 +33,32 @@ class Group(models.Model):
         ordering = ["-created_at"]
 
 
+# Attach the signal to the Group model
+@receiver(pre_save, sender=Group)
+def regenerate_related_terms(sender, instance, **kwargs):
+    """
+    This signal regenerates related_terms whenever the content of a Group changes.
+    """
+    if instance.pk:  # If the Group already exists (not a new object)
+        try:
+            # Fetch the current version of the Group from the database
+            old_instance = sender.objects.get(pk=instance.pk)
+
+            # Compare the old content with the new one
+            if old_instance.content != instance.content:
+                # Content has changed, regenerate related_terms
+                related_terms = get_cleaned_and_lematized_terms(instance.content)
+
+                if not related_terms:
+                    raise ValueError("No related terms found for the updated content")
+
+                # Assign the new related_terms to the instance
+                instance.related_terms = related_terms
+        except sender.DoesNotExist:
+            # If the Group doesn't exist in the database, it's being created
+            pass
+
+
 class UserGroup(models.Model):
     user = models.ForeignKey(
         "accounts.User",
@@ -48,7 +76,3 @@ class UserGroup(models.Model):
     class Meta:
         ordering = ["-created_at"]
         constraints = [models.UniqueConstraint(fields=['user'], name='unique_user_per_group')]
-
-
-
-
