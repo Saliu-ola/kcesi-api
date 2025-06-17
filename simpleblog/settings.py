@@ -166,14 +166,25 @@ CHANNEL_LAYERS = {
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": BASE_DIR / "db.sqlite3",
+#     }
+# }
+
+# DATABASES["default"] = dj_database_url.parse(config("DATABASE_URL"))
+
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'kseci-db',
+        'USER': 'postgres',
+        'PASSWORD': 'postgres',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
-
-DATABASES["default"] = dj_database_url.parse(config("DATABASE_URL"))
 
 
 # Password validation
@@ -221,6 +232,8 @@ STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
@@ -242,10 +255,13 @@ EMAIL_USE_TLS = "EMAIL_USE_TLS"
 GOOGLE_GEMINI_API_KEY = config("GOOGLE_GEMINI_API_KEY")
 
 # Add your Cloudinary configuration
-cloudinary.config(
-    cloud_name=config('CLOUD_NAME'),
-    api_key=config("API_KEY"),
-    api_secret=config("API_SECRET"),
-)
+# cloudinary.config(
+#     cloud_name=config('CLOUD_NAME'),
+#     api_key=config("API_KEY"),
+#     api_secret=config("API_SECRET"),
+# )
+
+# Base URL for media files
+BASE_URL = 'http://103.135.45.142:8000'
 
 DEFAULT_PASSWORD = config("DEFAULT_PASSWORD")

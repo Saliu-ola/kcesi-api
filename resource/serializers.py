@@ -1,4 +1,10 @@
 from rest_framework import serializers
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from django.conf import settings
+import os
+import shutil
+import uuid
 
 from .models import Resources, ResourceDownload
 import cloudinary.uploader
@@ -59,38 +65,77 @@ class CreateResourcesSerializer(serializers.ModelSerializer):
             raise ValidationError("File size must not be more than 2MB")
         return value
 
+    def get_unique_filename(self, original_filename):
+        # Get the file extension
+        ext = os.path.splitext(original_filename)[1]
+        # Generate a unique filename using UUID
+        unique_filename = f"{uuid.uuid4().hex}{ext}"
+        return unique_filename
+
+    def save_file(self, file):
+        # Ensure media directory exists
+        media_dir = os.path.join(settings.MEDIA_ROOT)
+        os.makedirs(media_dir, exist_ok=True)
+
+        # Generate a unique filename
+        unique_filename = self.get_unique_filename(file.name)
+        
+        # Full path where the file will be saved
+        full_path = os.path.join(media_dir, unique_filename)
+        
+        # Save the file
+        with open(full_path, 'wb+') as destination:
+            for chunk in file.chunks():
+                destination.write(chunk)
+        
+        # Return the relative path for URL generation
+        return f"media/{unique_filename}"
+
+    def get_full_url(self, file_path):
+        base_url = getattr(settings, 'BASE_URL', 'http://103.135.45.142:8000')
+        # Ensure proper path format
+        file_path = file_path.replace('\\', '/').replace('//', '/')
+        return f"{base_url}/{file_path}"
+
     def create(self, validated_data):
-        file = validated_data.pop('file')  # Extract 'file' from validated_data
-
-        # Upload the file to Cloudinary or your desired storage
-        upload_result = cloudinary.uploader.upload(file, resource_type='raw')
-
-        # Create a new Resources instance with the other fields
+        file = validated_data.pop('file')
+        
+        # Save the file and get its path
+        file_path = self.save_file(file)
+        
+        # Get the full URL
+        file_url = self.get_full_url(file_path)
+        
+        # Create the resource
         instance = Resources.objects.create(
-            media_url=upload_result["url"],
-            cloud_id=upload_result["public_id"],
-            size=upload_result["bytes"],
+            media_url=file_url,
+            cloud_id=file_path,
+            size=file.size,
             **validated_data,
         )
 
         return instance
 
     def update(self, instance, validated_data):
-        file = validated_data.pop('file', None)  # Extract 'file' from validated_data
+        file = validated_data.pop('file', None)
 
         if file:
-            # Delete the old file in Cloudinary
-            cloudinary.uploader.destroy(public_id=instance.cloud_id, resource_type="raw")
+            # Delete the old file if it exists
+            if instance.cloud_id:
+                old_file_path = os.path.join(settings.MEDIA_ROOT, os.path.basename(instance.cloud_id))
+                if os.path.exists(old_file_path):
+                    os.remove(old_file_path)
 
-            # Upload the new file to Cloudinary or your desired storage
-            upload_result = cloudinary.uploader.upload(file, resource_type='raw')
+            # Save the new file
+            file_path = self.save_file(file)
+            file_url = self.get_full_url(file_path)
+            
+            # Update instance
+            instance.media_url = file_url
+            instance.cloud_id = file_path
+            instance.size = file.size
 
-            # Update the media_url and cloud_id with the new values
-            instance.media_url = upload_result["url"]
-            instance.cloud_id = upload_result["public_id"]
-            instance.size = upload_result["bytes"]
-
-        # Update other fields as needed
+        # Update other fields
         instance.title = validated_data.get('title', instance.title)
         instance.type = validated_data.get('type', instance.type)
         instance.platform = validated_data.get('platform', instance.platform)
