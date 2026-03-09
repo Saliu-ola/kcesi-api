@@ -87,7 +87,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "simpleblog.urls"
 CORS_ALLOW_ALL_ORIGINS = True
-CSRF_TRUSTED_ORIGINS = ['https://staging-kscei.onrender.com']
+CSRF_TRUSTED_ORIGINS = ['https://staging-kscei.onrender.com',"http://localhost:5173","http://localhost:3000","http://localhost:3001"]
 REST_FRAMEWORK = {
     "NON_FIELD_ERRORS_KEY": "errors",
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',

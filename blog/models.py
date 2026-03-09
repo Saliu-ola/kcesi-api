@@ -48,7 +48,8 @@ class Comment(models.Model):
     )
 
     def __str__(self) -> str:
-        return f"{self.user} comments"
+        #return f"{self.user} comments"
+        return f"{self.user} on {self.post} comments"
 
     class Meta:
         ordering = ["-created_at"]

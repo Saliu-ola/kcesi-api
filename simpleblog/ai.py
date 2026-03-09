@@ -4,7 +4,8 @@ import nltk
 from nltk.corpus import stopwords
 stemmer = nltk.SnowballStemmer("english")
 from nltk.stem import WordNetLemmatizer
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 import pandas as pd
 import numpy as np
 import re
@@ -21,9 +22,17 @@ pd.set_option('display.max_rows', 500)
 # nltk.download('stopwords')
 
 # Configure Google Generative AI
-GOOGLE_GEMINI_API_KEY = os.environ.get("GOOGLE_GEMINI_API_KEY")
-genai.configure(api_key=GOOGLE_GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-pro')
+#GOOGLE_GEMINI_API_KEY = os.environ.get("GOOGLE_GEMINI_API_KEY")
+#genai.Client("AIzaSyBrIS-3L1YO3nLBvDnlpBJ-1kTZ3XFBKqA")
+#model = genai.GenerativeModel('gemini-1.5-flash')
+#model = genai.GenerativeModel('models/gemini-1.5-flash')
+
+# Force the client to use the stable 'v1' API version
+
+client = genai.Client(
+    api_key="AIzaSyBrIS-3L1YO3nLBvDnlpBJ-1kTZ3XFBKqA",
+    http_options=types.HttpOptions(api_version="v1")
+)
 
 # Initialize the lemmatizer
 lemmatizer = WordNetLemmatizer()
@@ -60,8 +69,9 @@ def clean_data_and_lemmatize(input_texts):
 
 
 def fetch_related_terms(description):
-    prompt = f"description: '{description}'. Fetch at least 3000 unique related terms for a given description, and return them as cleaned and lemmatized words as a list.should be in fomat [term,term,term]"
-    response = model.generate_content(prompt)
+    prompt = f"description: '{description}'. Fetch at least 200 unique related terms for a given description, and return them as cleaned and lemmatized words as a list.should be in fomat [term,term,term]"
+    #response = model.generate_content(prompt)
+    response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
     result = response.text
     related_terms_list = result.split(',')
     if not related_terms_list:
@@ -72,7 +82,8 @@ def fetch_related_terms(description):
 
 def fetch_update_related_terms(description):
     prompt = f"description: '{description}'. Fetch at least 50 unique related terms for a given description, and return them as cleaned and lemmatized words as a list. Format should be [term,term,term]."
-    response = model.generate_content(prompt)
+    #response = model.generate_content(prompt)
+    response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
     result = response.text
     related_terms_list = result.split(",")
     if not related_terms_list:
@@ -83,7 +94,8 @@ def fetch_update_related_terms(description):
 
 def check_percentage_relevance_of_uncommon_words(uncommon_words,description):
     prompt = f" for description: '{description}', what is the percentage relevance or relation of the words '{uncommon_words}',return only the percentage digits, e.g 24.55 in 2d.p,if the words are not relevant return 0.00 "
-    response = model.generate_content(prompt)
+    #response = model.generate_content(prompt)
+    response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
     result = response.text
     return result
 
