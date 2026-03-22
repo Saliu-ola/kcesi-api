@@ -105,7 +105,9 @@ class CreateResourcesSerializer(serializers.ModelSerializer):
         return f"media/{unique_filename}"
 
     def get_full_url(self, file_path):
-        base_url = getattr(settings, 'BASE_URL', 'http://knowshare.info:8000')
+        # base_url = getattr(settings, 'BASE_URL', 'http://knowshare.info:8000')
+        base_url = 'http://knowshare.info:8000'
+        print(base_url)
         # Ensure proper path format
         file_path = file_path.replace('\\', '/').replace('//', '/')
         return f"{base_url}/{file_path}"
