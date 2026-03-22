@@ -31,7 +31,7 @@ def check_env():
     print("\n--- Installed Packages (Relevant) ---")
     try:
         # Check specific packages directly
-        for pkg in ['channels', 'channels-redis', 'daphne', 'redis', 'websockets', 'twisted']:
+        for pkg in ['channels', 'channels-redis', 'daphne', 'redis', 'websockets', 'twisted', 'djangorestframework-simplejwt']:
             try:
                 import importlib.metadata
                 ver = importlib.metadata.version(pkg)

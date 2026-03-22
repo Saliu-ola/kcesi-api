@@ -6,35 +6,41 @@ import time
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        from django.contrib.auth import get_user_model
-        from django.contrib.auth.models import AnonymousUser
-        from django.db.models import F
-        from rest_framework_simplejwt.tokens import UntypedToken
-        from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-
-        self.room_name = self.scope['url_route']['kwargs']['room_name']
-        self.room_group_name = 'chat_%s' % self.room_name
-
         try:
-            token = self.scope['query_string'].decode('utf-8').split('token=')[1]
-            decoded_data = UntypedToken(token).payload
-            user_id = decoded_data['user_id']
+            from django.contrib.auth import get_user_model
+            from django.contrib.auth.models import AnonymousUser
+            from django.db.models import F
+            from rest_framework_simplejwt.tokens import UntypedToken
+            from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
-            user = await self.get_user(user_id)
-        except (InvalidToken, IndexError, TokenError, get_user_model().DoesNotExist):
-            user = AnonymousUser()
+            self.room_name = self.scope['url_route']['kwargs']['room_name']
+            self.room_group_name = 'chat_%s' % self.room_name
 
-        if isinstance(user, AnonymousUser):
-            await self.accept()
-            await self.send(
-                text_data=json.dumps({"error": "Authentication invalid or not provided"})
-            )
-            await self.close()
-        else:
-            await self.channel_layer.group_add(self.room_group_name, self.channel_name)
-            self.scope['user'] = user
-            await self.update_online_count(user.pk, increment=True)
-            await self.accept()
+            try:
+                token = self.scope['query_string'].decode('utf-8').split('token=')[1]
+                decoded_data = UntypedToken(token).payload
+                user_id = decoded_data['user_id']
+
+                user = await self.get_user(user_id)
+            except (InvalidToken, IndexError, TokenError, get_user_model().DoesNotExist):
+                user = AnonymousUser()
+
+            if isinstance(user, AnonymousUser):
+                await self.accept()
+                await self.send(
+                    text_data=json.dumps({"error": "Authentication invalid or not provided"})
+                )
+                await self.close()
+            else:
+                await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+                self.scope['user'] = user
+                await self.update_online_count(user.pk, increment=True)
+                await self.accept()
+        except Exception as e:
+            import traceback
+            print(f"DEBUG WS ERROR: {e}")
+            traceback.print_exc()
+            raise e
 
     async def disconnect(self, close_code):
         await self.update_online_count(self.scope['user'].pk, increment=False)
