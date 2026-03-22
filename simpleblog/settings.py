@@ -119,6 +119,7 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "LICENCE": {"name": "BSD License"},
     "CONTACT": {"name": "Oladitan Saliu ", "email": "saliuoladitan@gmail.com"},
+    "POSTPROCESSING_HOOKS": ["simpleblog.schema_hooks.postprocess_schema_hooks"],
 }
 
 
