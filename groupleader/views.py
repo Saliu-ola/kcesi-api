@@ -1,4 +1,6 @@
+import os
 from django.shortcuts import render
+from django.conf import settings
 from rest_framework import generics
 from .models import *
 from .serializers import *
@@ -271,11 +273,32 @@ class ProcessLibraryFiles(GenericAPIView):
             file_url = lib_file.file_url
             if not file_url:
                 continue
-            # response = requests.get(lib_file.file_url)
-            response = requests.get(file_url)
-            if response.status_code == 200:
+
+            # Attempt to read from local filesystem if it's a media URL
+            content = None
+            if "/media/" in file_url:
+                try:
+                    relative_path = file_url.split("/media/")[1]
+                    local_path = os.path.join(settings.MEDIA_ROOT, relative_path)
+                    if os.path.exists(local_path):
+                        with open(local_path, "rb") as f:
+                            content = f.read()
+                except Exception as e:
+                    print(f"Error reading local file: {e}")
+
+            if content is None:
+                # Fallback to HTTP request if local file not found or URL is external
+                try:
+                    response = requests.get(file_url, timeout=10)
+                    if response.status_code == 200:
+                        content = response.content
+                except requests.RequestException as e:
+                    print(f"Request error for {file_url}: {e}")
+                    continue
+
+            if content:
                 with open("temp.pdf", "wb") as f:
-                    f.write(response.content)
+                    f.write(content)
 
                 reader = PdfReader("temp.pdf")
                 fullfileText = ""
@@ -568,7 +591,10 @@ class DeleteWordsFromLibraryView(generics.GenericAPIView):
     def delete(self, request, *args, **kwargs):
         group_id = self.kwargs.get("group_id")
         library = request.query_params.get("library")
-        words_to_delete = request.query_params.get("words", "")
+        # Support both 'words' and 'word' query parameters
+        words_raw = request.query_params.get("words") or request.query_params.get("word", "")
+        # Clean input: split by comma, strip whitespace, and unify case
+        words_to_delete = [w.strip().lower() for w in words_raw.split(",") if w.strip()]
 
         try:
             group = Group.objects.get(id=group_id)
@@ -584,14 +610,12 @@ class DeleteWordsFromLibraryView(generics.GenericAPIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Convert the words_to_delete from string to list
-        words_to_delete = words_to_delete.split(",")
-
+        # Deletion logic starts here
         if library == "a":
             if group.related_terms is None:
                 group.related_terms = []
             group.related_terms = [
-                word for word in group.related_terms if word not in words_to_delete
+                word for word in group.related_terms if word.strip().lower() not in words_to_delete
             ]
         elif library == "b":
             if group.related_terms_library_b is None:
@@ -599,7 +623,7 @@ class DeleteWordsFromLibraryView(generics.GenericAPIView):
             group.related_terms_library_b = [
                 word
                 for word in group.related_terms_library_b
-                if word not in words_to_delete
+                if word.strip().lower() not in words_to_delete
             ]
         else:
             return Response(
