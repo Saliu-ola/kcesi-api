@@ -18,7 +18,6 @@ from rest_framework.validators import ValidationError
 from .models import ResourceFileSize
 
 
-MAXIMUM_SIZE_UPLOAD = 2 * 1024 * 1024  # 2MB
 RESOURCE_TYPES = (
     ("AUDIO", "AUDIO"),
     ("VIDEO", "VIDEO"),
@@ -60,10 +59,24 @@ class CreateResourcesSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "media_url", "cloud_id", "size"]
 
-    def validate_file(self, value):
-        if value.size > MAXIMUM_SIZE_UPLOAD:
-            raise ValidationError("File size must not be more than 2MB")
-        return value
+    def validate(self, data):
+        file = data.get('file')
+        file_type = data.get('type')
+
+        if file and file_type:
+            # Check for specific limit in ResourceFileSize
+            file_size_limit = ResourceFileSize.objects.filter(file_type=file_type).first()
+            if file_size_limit:
+                max_size_bytes = file_size_limit.max_size * 1024 * 1024
+                if file.size > max_size_bytes:
+                    raise ValidationError(f"File size for {file_type} must not be more than {file_size_limit.max_size}MB")
+            else:
+                # Default limit if not set in database (e.g., 5MB)
+                DEFAULT_LIMIT_MB = 5
+                if file.size > DEFAULT_LIMIT_MB * 1024 * 1024:
+                    raise ValidationError(f"File size for {file_type} must not be more than {DEFAULT_LIMIT_MB}MB (Default)")
+        
+        return data
 
     def get_unique_filename(self, original_filename):
         # Get the file extension
