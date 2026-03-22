@@ -90,7 +90,7 @@ async def test_ws_client(token):
     ws_url = f"ws://localhost:8000/ws/chat/test_room/?token={token}"
     print(f"Connecting to: {ws_url}")
     try:
-        async with websockets.connect(ws_url, timeout=5) as ws:
+        async with websockets.connect(ws_url, open_timeout=5) as ws:
             print("✅ OK: WS Handshake Success!")
             await ws.send(json.dumps({"message": "Diagnostic", "sender": 0}))
             reply = await asyncio.wait_for(ws.recv(), timeout=5)
