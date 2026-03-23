@@ -352,8 +352,12 @@ class ProcessLibraryFiles(GenericAPIView):
 
                 # Update the related_terms_library_b field in the Group model
                 group = lib_file.group.first()
-                if group.related_terms_library_b is None:
-                    group.related_terms_library_b = []
+                if not isinstance(group.related_terms_library_b, list):
+                    if isinstance(group.related_terms_library_b, str) and group.related_terms_library_b.strip() != "":
+                        group.related_terms_library_b = [x.strip() for x in group.related_terms_library_b.split(',') if x.strip()]
+                    else:
+                        group.related_terms_library_b = []
+                
                 group.related_terms_library_b.extend(unique_final_words_for_lib)
                 group.related_terms_library_b = list(
                     np.unique(np.array(group.related_terms_library_b))
@@ -516,10 +520,14 @@ class AddWordsToLibraryView(generics.GenericAPIView):
         if library == "a":
             if group.related_terms is None:
                 group.related_terms = []
+            elif isinstance(group.related_terms, str):
+                group.related_terms = [x.strip() for x in group.related_terms.split(',') if x.strip()] if group.related_terms.strip() else []
             existing_words = set(group.related_terms)
         elif library == "b":
             if group.related_terms_library_b is None:
                 group.related_terms_library_b = []
+            elif isinstance(group.related_terms_library_b, str):
+                group.related_terms_library_b = [x.strip() for x in group.related_terms_library_b.split(',') if x.strip()] if group.related_terms_library_b.strip() else []
             existing_words = set(group.related_terms_library_b)
         else:
             return Response(

@@ -130,6 +130,11 @@ class GroupViewSets(viewsets.ModelViewSet):
                     ]
 
                     # Update the related terms and save the group
+                    if not isinstance(group.related_terms, list):
+                        if isinstance(group.related_terms, str) and group.related_terms.strip() != "":
+                            group.related_terms = [x.strip() for x in group.related_terms.split(',') if x.strip()]
+                        else:
+                            group.related_terms = []
                     group.related_terms.extend(updated_related_terms)
                     group.save()
 

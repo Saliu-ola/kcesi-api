@@ -30,7 +30,7 @@ pd.set_option('display.max_rows', 500)
 # Force the client to use the stable 'v1' API version
 
 client = genai.Client(
-    api_key="AIzaSyBrIS-3L1YO3nLBvDnlpBJ-1kTZ3XFBKqA",
+    api_key="AIzaSyBeS7heIsNSB3GEFfrknG6cLOOTU1oPmrI",
     http_options=types.HttpOptions(api_version="v1")
 )
 
