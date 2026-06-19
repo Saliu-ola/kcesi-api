@@ -30,10 +30,9 @@ pd.set_option('display.max_rows', 500)
 # Force the client to use the stable 'v1' API version
 
 client = genai.Client(
-    api_key="AIzaSyBeS7heIsNSB3GEFfrknG6cLOOTU1oPmrI",
+    api_key="AIzaSyA5HJX57WGfzGoPUtmME67I8IBR6j-V8us",
     http_options=types.HttpOptions(api_version="v1")
 )
-
 # Initialize the lemmatizer
 lemmatizer = WordNetLemmatizer()
 

@@ -184,7 +184,10 @@ class UserGroupsViewSets(viewsets.ModelViewSet):
         serializer = UpdateUserGroupSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             user = serializer.validated_data["user"]
-            user_group_instance = get_object_or_404(UserGroup, user=user)
+            # get_or_create handles brand-new users who have no UserGroup record yet
+            # (e.g. users who registered via the external invitation link).
+            # get_object_or_404 was used before, which caused a 404 for new users.
+            user_group_instance, _ = UserGroup.objects.get_or_create(user=user)
             initial_groups = user_group_instance.groups.all()
             new_groups = serializer.validated_data["groups"]
             user_group_instance.groups.set(list(initial_groups) + list(new_groups))

@@ -4,6 +4,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 from django.conf import settings
 from django.conf.urls.static import static 
 from django.views.static import serve
+from drf_spectacular.openapi import AutoSchema 
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -22,7 +23,11 @@ urlpatterns = [
     path("feedbacks/", include("feedback.urls")),
     path("hate-speech/", include("hate_speech.urls")),
     path("auth/", include("accounts.urls")),
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    #path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    #path('api/v2/doc/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    #path('api/v2/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    path('api/schema/', SpectacularAPIView.as_view(schema=AutoSchema()), name='schema'),
+    
     path('api/v2/doc/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/v2/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     path('',include('groupleader.urls')),

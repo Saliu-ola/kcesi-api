@@ -128,6 +128,16 @@ class UserSignUpSerializer(serializers.ModelSerializer):
 
         user.set_password(password)
 
+        # If user registered via external link they will have an organization_id
+        # but no organization_name (it wasn't sent in the form). Look it up so
+        # that group-membership validation (which compares organization_name) works.
+        if user.organization_id and not user.organization_name:
+            try:
+                org = Organization.objects.get(organization_id=user.organization_id)
+                user.organization_name = org.name
+            except Organization.DoesNotExist:
+                pass  # organization_id is invalid; leave name as null
+
         user.save()
 
         Token.objects.create(user=user)

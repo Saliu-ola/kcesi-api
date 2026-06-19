@@ -266,3 +266,27 @@ GOOGLE_GEMINI_API_KEY = config("GOOGLE_GEMINI_API_KEY")
 BASE_URL = 'http://103.135.45.142:8000'
 
 DEFAULT_PASSWORD = config("DEFAULT_PASSWORD")
+
+
+
+
+# At the bottom of settings.py
+#import drf_spectacular.openapi
+
+# FORCE the setting into the live API settings
+#api_settings.DEFAULT_SCHEMA_CLASS = drf_spectacular.openapi.AutoSchema
+
+# --- Your previous Monkey Patch should follow below this ---
+#import drf_spectacular.plumbing
+#original_sanitize = drf_spectacular.plumbing.sanitize_result_object
+
+#def patched_sanitize_result_object(result):
+#    if isinstance(result, dict) and 'paths' in result:
+#        for path in result['paths'].values():
+#            for method in path.values():
+#                if isinstance(method, dict) and 'operationId' not in method:
+#                    method['operationId'] = 'unknown_operation'
+#    return original_sanitize(result)
+
+#drf_spectacular.plumbing.sanitize_result_object = patched_sanitize_result_object
+
